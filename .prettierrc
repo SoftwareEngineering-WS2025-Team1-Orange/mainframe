@@ -1,0 +1,11 @@
+{
+  "useTabs": false,
+  "endOfLine": "auto",
+  "printWidth": 80,
+  "eslintIntegration": true,
+  "parser": "typescript",
+  "vueIndentScriptAndStyle": false,
+  "tabWidth": 2,
+  "semi": true,
+  "singleQuote": true
+}
