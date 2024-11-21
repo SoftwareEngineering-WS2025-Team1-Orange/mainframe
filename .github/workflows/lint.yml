@@ -25,13 +25,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.11.0
+          cache: 'yarn'
 
-      - name: Run install
-        uses: borales/actions-yarn@v4
-        with:
-          cmd: install --frozen-lockfile # will run `yarn install` command
+      - name: Enable corepack
+        shell: bash
+        run: corepack enable
 
-      - name: Build production bundle
-        uses: borales/actions-yarn@v4
-        with:
-          cmd: lint # will run `yarn lint` command
+      - name: Install dependencies
+        run: yarn install --immutable
+        shell: bash
+
+      - name: Runt linter and formatter
+        run: yarn run lint
+        shell: bash
+        
