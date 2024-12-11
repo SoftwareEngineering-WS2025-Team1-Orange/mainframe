@@ -29,9 +29,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # If using Prisma, copy the Prisma schema and generate the Prisma client
-# COPY prisma ./prisma
-# RUN yarn prisma generate
-# RUN touch .env && echo "JWT_SECRET=${JWT_SECRET}\nDATABASE_URL=${DATABASE_URL}" > .env
+COPY prisma ./prisma
+RUN yarn prisma generate
+RUN touch .env && echo "JWT_SECRET=${JWT_SECRET}\nDATABASE_URL=${DATABASE_URL}" > .env
 
 RUN yarn build
 
