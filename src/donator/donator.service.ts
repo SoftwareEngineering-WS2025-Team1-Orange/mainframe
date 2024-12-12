@@ -4,7 +4,7 @@ import { Donator } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateDonatorDto } from './dto';
+import { ConnectDonationBoxDto, CreateDonatorDto } from './dto';
 
 @Injectable()
 export class DonatorService {
@@ -39,5 +39,17 @@ export class DonatorService {
     });
 
     return newDonator;
+  }
+
+  async connectDonationBox(id: number, donationBox: ConnectDonationBoxDto) {
+    await this.prismaService.donationBox.update({
+      where: {
+        CUID: donationBox.id,
+      },
+      data: {
+        last_status: 'AVAILABLE',
+        donatorId: id,
+      },
+    });
   }
 }
