@@ -10,5 +10,6 @@ module.exports = {
       files: 'LICENSE',
       options: { parser: 'markdown' }
     }
-  ]
+  ],
+  singleQuote: true,
 };
