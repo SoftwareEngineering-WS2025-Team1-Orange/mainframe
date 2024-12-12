@@ -4,8 +4,8 @@ CREATE TYPE "Status" AS ENUM ('WORKING', 'READY', 'AVAILABLE', 'UNAVAILABLE', 'U
 -- CreateTable
 CREATE TABLE "Donator" (
     "id" SERIAL NOT NULL,
-    "firstname" TEXT NOT NULL,
-    "lastname" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "salt" TEXT NOT NULL,

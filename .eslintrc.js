@@ -29,6 +29,7 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc.js'],
   rules: {
+    'max-classes-per-file': 'off',
     // Too restrictive, writing ugly code to defend against a very unlikely scenario: https://eslint.org/docs/rules/no-prototype-builtins
     'no-prototype-builtins': 'off',
     // https://basarat.gitbooks.io/typescript/docs/tips/defaultIsBad.html

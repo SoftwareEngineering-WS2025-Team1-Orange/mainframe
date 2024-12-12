@@ -27,7 +27,11 @@
     "@nestjs/platform-express": "^10.0.0",
     "@prisma/client": "^6.0.1",
     "@prisma/extension-accelerate": "^1.2.1",
+    "argon2": "^0.41.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
+    "http-status-codes": "^2.3.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },

@@ -15,8 +15,8 @@ datasource db {
 
 model Donator {
   id          Int           @id @default(autoincrement())
-  firstname   String
-  lastname    String
+  firstName   String
+  lastName    String
   email       String
   password    String
   salt        String
