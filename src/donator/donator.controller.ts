@@ -11,7 +11,11 @@ import {
   Version,
 } from '@nestjs/common';
 import { DonatorService } from './donator.service';
-import { CreateDonatorDto, ReturnDonatorDto } from './dto';
+import {
+  CreateDonatorDto,
+  ReturnDonatorDto,
+  ConnectDonationBoxDto,
+} from './dto';
 
 @Controller('donator')
 export class DonatorController {
@@ -21,7 +25,7 @@ export class DonatorController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnDonatorDto })
   @Post('/')
-  findAllDonator(@Body() createDonatorDto: CreateDonatorDto) {
+  postDonator(@Body() createDonatorDto: CreateDonatorDto) {
     return this.donatorService.createDonator(createDonatorDto);
   }
 
@@ -29,7 +33,16 @@ export class DonatorController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnDonatorDto })
   @Get('/:id')
-  findDonatorById(@Param('id', ParseIntPipe) id: number) {
+  getDonatorById(@Param('id', ParseIntPipe) id: number) {
     return this.donatorService.findDonatorById(id);
+  }
+
+  @Version('1')
+  @Post('/:id/donationbox')
+  postDonationBoxToDonator(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() donationBox: ConnectDonationBoxDto,
+  ) {
+    this.donatorService.connectDonationBox(id, donationBox).catch(() => {});
   }
 }
