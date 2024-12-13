@@ -11,7 +11,7 @@ import { Server } from 'ws';
 import { DonationboxService } from '@/donationbox/donationbox.service';
 import { JwtDonationBoxDto } from '@/donationbox/dto/jwt.dto';
 
-@WebSocketGateway(3001)
+@WebSocketGateway({ version: 1, path: '/api/v1/donationbox' })
 export default class DonationboxGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
