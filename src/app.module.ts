@@ -11,6 +11,7 @@ import { DonationboxModule } from './donationbox/donationbox.module';
 import AppController from '@/app.controller';
 import AppService from '@/app.service';
 import DonationboxGateway from '@/donationbox/donationbox.gateway';
+import { DonationboxController } from '@/donationbox/donationbox.controller';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import DonationboxGateway from '@/donationbox/donationbox.gateway';
     ConfigModule.forRoot(),
     DonationboxModule,
   ],
-  controllers: [DonatorController, AppController],
+  controllers: [DonatorController, AppController, DonationboxController],
   providers: [
     DonatorService,
     PrismaService,

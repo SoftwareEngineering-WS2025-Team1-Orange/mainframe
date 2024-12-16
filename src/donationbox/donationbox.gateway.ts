@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server } from 'ws';
 import { DonationboxService } from '@/donationbox/donationbox.service';
-import { JwtDonationBoxDto } from '@/donationbox/dto/jwt.dto';
+import { JwtDonationBoxDto, DonationBoxStatusDto } from './dto';
 
 @WebSocketGateway({ version: 1, path: '/api/v1/donationbox' })
 export default class DonationboxGateway
@@ -22,46 +22,38 @@ export default class DonationboxGateway
   @WebSocketServer()
   server: Server;
 
-  list: WebSocket[] = [];
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   afterInit(server: Server) {
     this.logger.log('WebSocket server initialized');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  handleConnection(client: WebSocket) {}
+  handleConnection(client: WebSocket) {
+    this.logger.log('Client connected');
+  }
 
   handleDisconnect(client: WebSocket) {
-    this.list = this.list.filter((item) => item !== client);
+    this.donationboxService.removeAuthorizedClient(client);
   }
 
   @SubscribeMessage('authRequest')
-  async handleMessage(
+  async handleAuthRequestEvent(
     client: WebSocket,
     payload: JwtDonationBoxDto,
   ): Promise<void> {
-    const token = await this.donationboxService.verifyToken(payload);
-    if (!token) {
-      client.send('Unauthorized');
-      client.close();
-      return null;
-    }
-    client.send('Authorized');
-    client.send('Send Status');
-    this.list.push(client);
-    return null;
+    await this.donationboxService.verifyClient(client, payload);
   }
 
   @SubscribeMessage('statusResponse')
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async handleFollowUp(client: WebSocket, payload: string): Promise<void> {
-    if (!this.list.includes(client)) {
-      client.send('Unauthorized');
-      client.close();
+  async handleStatusResponseEvent(
+    client: WebSocket,
+    payload: DonationBoxStatusDto,
+  ): Promise<void> {
+    if (!this.donationboxService.isAuthorizedClient(client)) {
       return null;
     }
-    client.send('Success');
+    const { status } = payload;
+    await this.donationboxService.handleStatusResponse(client, status);
     return null;
   }
 }
