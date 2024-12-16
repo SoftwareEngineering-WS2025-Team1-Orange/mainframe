@@ -2,14 +2,14 @@ name: 'Build and push preview docker image'
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 permissions:
   contents: read
   packages: write
 
 jobs:
-  docker:
+  dockerize_and_push:
     concurrency:
       group: ${{ github.ref }}
       cancel-in-progress: true
@@ -37,3 +37,12 @@ jobs:
           context: .
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ghcr.io/${{ env.repo }}:preview
+  deploy:
+    name: "Deploy to staging"
+    runs-on: "ubuntu-latest"
+    environment: staging
+    needs: dockerize_and_push
+
+    steps:
+      - name: "Deploy to staging via webhook"
+        run: curl -X POST ${{ secrets.DEPLOYMENT_WEBHOOK_URL }}

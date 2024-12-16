@@ -55,3 +55,14 @@ jobs:
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
+
+  deploy:
+    name: "Deploy to production"
+    runs-on: "ubuntu-latest"
+    environment: production
+    needs: tagged_release
+
+    steps:
+      - name: "Deploy to production via webhook"
+        run: curl -X POST ${{ secrets.DEPLOYMENT_WEBHOOK_URL }}
+
