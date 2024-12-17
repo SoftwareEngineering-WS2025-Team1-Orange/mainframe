@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { DonationboxController } from './donationbox.controller';
+import { DonationboxController } from '@/donationbox/donationbox.controller';
 import { DonationboxService } from '@/donationbox/donationbox.service';
 
 @Module({
