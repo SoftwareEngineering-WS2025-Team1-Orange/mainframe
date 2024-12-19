@@ -3,7 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createId } from '@paralleldrive/cuid2';
 import { Status } from '@prisma/client';
+import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/prisma/prisma.service';
+import { formatMessage, formatError } from '@/util/wshelper';
 import {
   DonationBoxDtoResponse,
   JwtDonationBoxDto,
@@ -42,8 +44,8 @@ export class DonationboxService {
   authorizedClients: Map<WebSocket, string> = new Map();
 
   private addAuthorizedClient(client: WebSocket, cuid: string) {
-    client.send('Authorized');
-    client.send('Send Status');
+    client.send(formatMessage('authResponse', { message: 'Authorized' }));
+    client.send(formatMessage('statusRequest', { message: 'Send status' }));
     this.authorizedClients.set(client, cuid);
   }
 
@@ -53,7 +55,9 @@ export class DonationboxService {
 
   isAuthorizedClient(client: WebSocket): boolean {
     if (!this.authorizedClients.has(client)) {
-      client.send('Unauthorized');
+      client.send(
+        formatError('authResponse', StatusCodes.FORBIDDEN, 'Unauthorized'),
+      );
       client.close();
     }
     return true;
@@ -77,8 +81,16 @@ export class DonationboxService {
     token_wrapper: JwtDonationBoxDto,
   ): Promise<string | null> {
     const token = await this.verifyToken(token_wrapper);
+
     if (!token) {
-      return null;
+      client.send(
+        formatError(
+          'authResponse',
+          StatusCodes.BAD_REQUEST,
+          'The token is invalid',
+        ),
+      );
+      client.close();
     }
 
     const { cuid }: { cuid: string } = this.jwtService.decode(token);
@@ -101,7 +113,7 @@ export class DonationboxService {
   }
 
   private async dispatchReady(client: WebSocket) {
-    return client.send('Start Job');
+    return client.send(formatMessage('jobRequest', { message: 'Ready' }));
   }
 
   async handleStatusResponse(client: WebSocket, status: Status) {

@@ -1,7 +1,7 @@
 module.exports = {
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    project: 'tsconfig.json',
+    project: './tsconfig.json',
     tsconfigRootDir: __dirname,
     sourceType: 'module'
   },
@@ -67,7 +67,9 @@ module.exports = {
     // Disable this rule for the hooks folder
     'unicorn/filename-case': 'off',
     // Next uses default exports
-    'import/no-default-export': 'off'
+    'import/no-default-export': 'off',
+
+    'import/extensions': 'off'
   },
   overrides: [
     {
