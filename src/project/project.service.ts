@@ -25,7 +25,7 @@ export class ProjectService {
     filterCategory?: Category,
     // filterIsFavorite: boolean = false,
     filterName?: string,
-    filterShowArchived: boolean = false,
+    filterIncludeArchived: boolean = false,
     // filterDonatedTo: boolean = false,
     paginationPage: number = 1,
     paginationResultsPerPage: number = 10,
@@ -42,7 +42,7 @@ export class ProjectService {
           filterName
             ? { name: { contains: filterName, mode: 'insensitive' } }
             : {},
-          !filterShowArchived ? { archived: false } : {},
+          !filterIncludeArchived ? { archived: false } : {},
           filterNgoId ? { ngoId: filterNgoId } : {},
           filterNgoName
             ? {
