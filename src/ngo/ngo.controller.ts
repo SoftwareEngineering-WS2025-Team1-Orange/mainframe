@@ -12,8 +12,13 @@ import {
   Version,
 } from '@nestjs/common';
 import { NgoService } from './ngo.service';
-import { CreateNgoDto, ReturnNgoDto } from '@/ngo/dto/ngo.dto';
+import {
+  CreateNgoDto,
+  ReturnNgoDto,
+  ReturnPaginatedNgosDto,
+} from '@/ngo/dto/ngo.dto';
 import { getSortType } from '@/utils/sort_filter.service';
+import { PaginationQueryArguments } from '@/utils/pagination.service';
 
 @Controller('ngo')
 export class NgoController {
@@ -21,7 +26,7 @@ export class NgoController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnNgoDto })
+  @SerializeOptions({ type: ReturnPaginatedNgosDto })
   @Get('/')
   getFilteredNgos(
     @Query('filter_ngo_id', new ParseIntPipe({ optional: true }))
@@ -31,10 +36,13 @@ export class NgoController {
     @Query('filter_name_contains') filterName?: string,
     // @Query('filter_donated_to', new ParseBoolPipe({ optional: true }))
     // filterDonatedTo: boolean = false,
-    @Query('pagination_page', new ParseIntPipe({ optional: true }))
+    @Query(PaginationQueryArguments.page, new ParseIntPipe({ optional: true }))
     paginationPage?: number,
-    @Query('pagination_results_per_page', new ParseIntPipe({ optional: true }))
-    paginationResultsPerPage?: number,
+    @Query(
+      PaginationQueryArguments.pageSize,
+      new ParseIntPipe({ optional: true }),
+    )
+    paginationPageSize?: number,
     @Query('sort_type') sortType?: string,
     @Query('sort_for') sortFor?: string,
   ) {
@@ -44,7 +52,7 @@ export class NgoController {
       filterName,
       // filterDonatedTo,
       paginationPage,
-      paginationResultsPerPage,
+      paginationPageSize,
       getSortType(sortType),
       sortFor,
     );

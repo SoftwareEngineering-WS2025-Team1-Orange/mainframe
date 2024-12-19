@@ -1,7 +1,8 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { Category, Project } from '@prisma/client';
+import { Category, Prisma, Project } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Pagination } from '@/utils/pagination.service';
 
 @Injectable()
 export class ProjectService {
@@ -33,30 +34,44 @@ export class ProjectService {
     filterNgoName?: string,
     sortType?: string,
     sortFor?: string,
-  ): Promise<Project[]> {
+  ): Promise<{ projects: Project[]; pagination: Pagination }> {
+    const whereInputObject: Prisma.ProjectWhereInput = {
+      AND: [
+        filterProjectId ? { id: filterProjectId } : {},
+        filterCategory ? { category: filterCategory } : {},
+        filterName
+          ? { name: { contains: filterName, mode: 'insensitive' } }
+          : {},
+        !filterIncludeArchived ? { archived: false } : {},
+        filterNgoId ? { ngoId: filterNgoId } : {},
+        filterNgoName
+          ? {
+              ngo: { name: { contains: filterNgoName, mode: 'insensitive' } },
+            }
+          : {},
+      ],
+    };
+
+    const numTotalResults = await this.prismaService.project.count();
+    const numFilteredResults = await this.prismaService.project.count({
+      where: {
+        ...whereInputObject,
+      },
+    });
+    const pagination = new Pagination(
+      numTotalResults,
+      numFilteredResults,
+      paginationResultsPerPage,
+      paginationPage,
+    );
     const projects = await this.prismaService.project.findMany({
       where: {
-        AND: [
-          filterProjectId ? { id: filterProjectId } : {},
-          filterCategory ? { category: filterCategory } : {},
-          filterName
-            ? { name: { contains: filterName, mode: 'insensitive' } }
-            : {},
-          !filterIncludeArchived ? { archived: false } : {},
-          filterNgoId ? { ngoId: filterNgoId } : {},
-          filterNgoName
-            ? {
-                ngo: { name: { contains: filterNgoName, mode: 'insensitive' } },
-              }
-            : {},
-        ],
+        ...whereInputObject,
       },
-      skip: (paginationPage - 1) * paginationResultsPerPage,
-      take: paginationResultsPerPage,
+      ...pagination.constructPaginationQueryObject(),
       orderBy: { [this.getSortField(sortFor)]: sortType },
     });
-
-    return projects;
+    return { projects, pagination };
   }
 
   private getSortField(sortFor?: string): string {

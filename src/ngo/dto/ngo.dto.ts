@@ -1,10 +1,12 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import {
   IsEmail,
   IsNotEmpty,
   IsString,
   IsStrongPassword,
 } from 'class-validator';
+import { NGO } from '@prisma/client';
+import { ReturnPaginationDto } from '@/dto/pagination.dto';
 
 export class ReturnNgoDto {
   @Expose()
@@ -43,6 +45,16 @@ export class ReturnNgoDto {
   constructor(partial: Partial<ReturnNgoDto>) {
     Object.assign(this, partial);
   }
+}
+
+export class ReturnPaginatedNgosDto {
+  @Expose()
+  @Type(() => ReturnPaginationDto)
+  pagination: ReturnPaginationDto;
+
+  @Expose()
+  @Type(() => ReturnNgoDto)
+  ngos: NGO[];
 }
 
 export class CreateNgoDto {
