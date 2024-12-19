@@ -9,13 +9,26 @@ permissions:
   packages: write
 
 jobs:
+  apply_migration:
+    name: Apply migration to database
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Apply migration
+        uses: ./.github/workflows/apply_migration.yml
+        secrets:
+          - WIREGUARD_CONF: ${{ secrets.WIREGUARD_CONF }}
+          - DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+
   dockerize_and_push:
+    name: Build and push preview docker image
+    needs: apply_migration
+    runs-on: ubuntu-latest
+    environment: staging
     concurrency:
       group: ${{ github.ref }}
       cancel-in-progress: true
-
-    runs-on: ubuntu-latest
-    environment: staging
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4

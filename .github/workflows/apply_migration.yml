@@ -1,0 +1,56 @@
+name: Apply prisma migration to database
+
+on:
+  workflow_call:
+    secrets:
+      WIREGUARD_CONF:
+        required: true
+      DATABASE_URL:
+        required: true
+jobs:
+  apply_migration:
+    name: Update the database schema
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: prisma
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.11.0
+
+      - name: Enable corepack
+        shell: bash
+        run: corepack enable
+
+      - name: Install dependencies
+        run: |
+          yarn init -2
+          yarn add prisma
+        shell: bash
+
+      - name: Install WireGuard
+        run: |
+          sudo apt update
+          sudo apt install -y wireguard iproute2
+        shell: bash
+
+      - name: Configure WireGuard
+        run: |
+          sudo cat > wg0.conf << EOL
+          ${{ secrets.WIREGUARD_CONF }}
+          EOL
+
+      - name: Start WireGuard
+        run: sudo wg-quick up ./wg0.conf
+
+      - name: Push migration to database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: yarn prisma migrate deploy
+        shell: bash
+
