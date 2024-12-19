@@ -11,15 +11,12 @@ permissions:
 
 jobs:
   apply_migration:
-    name: Apply migration to database
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - name: Apply migration
-        uses: ./.github/workflows/apply_migration.yml
-        secrets:
-          - WIREGUARD_CONF: ${{ secrets.WIREGUARD_CONF }}
-          - DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    uses: ./.github/workflows/apply_migration.yml
+    with:
+      ENVIRONMENT: production
+    secrets:
+      WIREGUARD_CONF: ${{ secrets.WIREGUARD_CONF }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
   push_to_registry:
     name: Push Docker image to GitHub container registry

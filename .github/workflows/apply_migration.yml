@@ -2,6 +2,10 @@ name: Apply prisma migration to database
 
 on:
   workflow_call:
+    inputs:
+      ENVIRONMENT:
+        required: true
+        type: string
     secrets:
       WIREGUARD_CONF:
         required: true
@@ -11,7 +15,7 @@ jobs:
   apply_migration:
     name: Update the database schema
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ inputs.ENVIRONMENT }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -42,7 +46,7 @@ jobs:
       - name: Configure WireGuard
         run: |
           sudo cat > wg0.conf << EOL
-          ${{ secrets.WIREGUARD_CONF }}
+            ${{ secrets.WIREGUARD_CONF }}
           EOL
 
       - name: Start WireGuard
