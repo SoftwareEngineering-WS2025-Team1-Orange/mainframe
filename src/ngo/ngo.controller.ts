@@ -1,17 +1,19 @@
 import {
+  Body,
   ClassSerializerInterceptor,
   Controller,
   Get,
   Param,
   ParseIntPipe,
+  Post,
   Query,
   SerializeOptions,
   UseInterceptors,
   Version,
 } from '@nestjs/common';
 import { NgoService } from './ngo.service';
-import { ReturnNgoDto } from '@/ngo/dto/ngo.dto';
-import { getSortType } from '@/utils/sort_filter.util';
+import { CreateNgoDto, ReturnNgoDto } from '@/ngo/dto/ngo.dto';
+import { getSortType } from '@/utils/sort_filter.service';
 
 @Controller('ngo')
 export class NgoController {
@@ -46,6 +48,14 @@ export class NgoController {
       getSortType(sortType),
       sortFor,
     );
+  }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({ type: ReturnNgoDto })
+  @Post('/')
+  postNgo(@Body() createNgoDto: CreateNgoDto) {
+    return this.ngoService.createNgo(createNgoDto);
   }
 
   @Version('1')

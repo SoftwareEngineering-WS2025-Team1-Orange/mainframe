@@ -1,7 +1,10 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { NGO } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
+import { randomBytes } from 'node:crypto';
+import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service';
+import { CreateNgoDto } from '@/ngo/dto/ngo.dto';
 
 @Injectable()
 export class NgoService {
@@ -44,6 +47,22 @@ export class NgoService {
       orderBy: { [this.getSortField(sortFor)]: sortType },
     });
     return ngos;
+  }
+
+  async createNgo(ngo: CreateNgoDto): Promise<NGO> {
+    const salt = randomBytes(16).toString('hex');
+    const ngoWithHash = {
+      ...ngo,
+      password: await argon2.hash(ngo.password + salt),
+    };
+
+    const newNgo = await this.prismaService.nGO.create({
+      data: {
+        ...ngoWithHash,
+        salt,
+      },
+    });
+    return newNgo;
   }
 
   private getSortField(sortFor?: string): string {

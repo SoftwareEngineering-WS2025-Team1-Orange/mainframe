@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { ReturnProjectDto } from '@/project/dto/project.dto';
-import { getSortType, parseEnumCategory } from '@/utils/sort_filter.util';
+import { getSortType, parseEnumCategory } from '@/utils/sort_filter.service';
 
 @Controller('project')
 export class ProjectController {
