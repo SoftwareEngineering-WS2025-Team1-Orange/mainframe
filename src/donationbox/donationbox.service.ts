@@ -5,7 +5,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { Status } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/prisma/prisma.service';
-import { formatMessage, formatError } from '@/util/wshelper';
+import { formatMessage, formatError } from '@/utils/wshelper';
 import {
   DonationBoxDtoResponse,
   JwtDonationBoxDto,

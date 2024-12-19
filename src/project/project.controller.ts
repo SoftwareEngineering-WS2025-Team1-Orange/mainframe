@@ -29,8 +29,8 @@ export class ProjectController {
     // @Query('filter_is_favorite', new ParseBoolPipe({ optional: true }))
     filterIsFavorite?: boolean,
     @Query('filter_name_contains') filterName?: string,
-    @Query('filter_show_archived', new ParseBoolPipe({ optional: true }))
-    filterShowArchived?: boolean,
+    @Query('filter_include_archived', new ParseBoolPipe({ optional: true }))
+    filterIncludeArchived?: boolean,
     // @Query('filter_donated_to', new ParseBoolPipe({ optional: true }))
     filterDonatedTo?: boolean,
     @Query('filter_page', new ParseIntPipe({ optional: true }))
@@ -49,7 +49,7 @@ export class ProjectController {
       parseEnumCategory(filterCategory),
       // filterIsFavorite,
       filterName,
-      filterShowArchived,
+      filterIncludeArchived,
       // filterDonatedTo,
       filterPage,
       filterResultsPerPage,
