@@ -11,8 +11,12 @@ import {
   Version,
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
-import { ReturnProjectDto } from '@/project/dto/project.dto';
+import {
+  ReturnPaginatedProjectsDto,
+  ReturnProjectDto,
+} from '@/project/dto/project.dto';
 import { getSortType, parseEnumCategory } from '@/utils/sort_filter.service';
+import { PaginationQueryArguments } from '@/utils/pagination.service';
 
 @Controller('project')
 export class ProjectController {
@@ -20,7 +24,7 @@ export class ProjectController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnProjectDto })
+  @SerializeOptions({ type: ReturnPaginatedProjectsDto })
   @Get('/')
   getFilteredProjects(
     @Query('filter_project_id', new ParseIntPipe({ optional: true }))
@@ -33,10 +37,13 @@ export class ProjectController {
     filterIncludeArchived?: boolean,
     // @Query('filter_donated_to', new ParseBoolPipe({ optional: true }))
     filterDonatedTo?: boolean,
-    @Query('filter_page', new ParseIntPipe({ optional: true }))
-    filterPage?: number,
-    @Query('filter_results_per_page', new ParseIntPipe({ optional: true }))
-    filterResultsPerPage?: number,
+    @Query(PaginationQueryArguments.page, new ParseIntPipe({ optional: true }))
+    paginationPage?: number,
+    @Query(
+      PaginationQueryArguments.pageSize,
+      new ParseIntPipe({ optional: true }),
+    )
+    paginationPageSize?: number,
     @Query('filter_ngo_id', new ParseIntPipe({ optional: true }))
     filterNgoId?: number,
     @Query('filter_ngo_name_contains')
@@ -51,8 +58,8 @@ export class ProjectController {
       filterName,
       filterIncludeArchived,
       // filterDonatedTo,
-      filterPage,
-      filterResultsPerPage,
+      paginationPage,
+      paginationPageSize,
       filterNgoId,
       filterNgoName,
       getSortType(sortType),

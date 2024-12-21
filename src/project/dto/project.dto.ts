@@ -1,4 +1,6 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
+import { Project } from '@prisma/client';
+import { ReturnPaginationDto } from '@/dto/pagination.dto';
 
 export class ReturnProjectDto {
   @Expose()
@@ -43,4 +45,14 @@ export class ReturnProjectDto {
   constructor(partial: Partial<ReturnProjectDto>) {
     Object.assign(this, partial);
   }
+}
+
+export class ReturnPaginatedProjectsDto {
+  @Expose()
+  @Type(() => ReturnPaginationDto)
+  pagination: ReturnPaginationDto;
+
+  @Expose()
+  @Type(() => ReturnProjectDto)
+  projects: Project[];
 }

@@ -1,10 +1,11 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { NGO } from '@prisma/client';
+import { NGO, Prisma } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateNgoDto } from '@/ngo/dto/ngo.dto';
+import { Pagination } from '@/utils/pagination.service';
 
 @Injectable()
 export class NgoService {
@@ -32,21 +33,35 @@ export class NgoService {
     paginationResultsPerPage: number = 10,
     sortType?: string,
     sortFor?: string,
-  ): Promise<NGO[]> {
+  ): Promise<{ ngos: NGO[]; pagination: Pagination }> {
+    const whereInputObject: Prisma.NGOWhereInput = {
+      AND: [
+        filterId ? { id: filterId } : {},
+        filterName
+          ? { name: { contains: filterName, mode: 'insensitive' } }
+          : {},
+      ],
+    };
+
+    const numTotalResults = await this.prismaService.nGO.count();
+    const numFilteredResults = await this.prismaService.nGO.count({
+      where: { ...whereInputObject },
+    });
+    const pagination = new Pagination(
+      numTotalResults,
+      numFilteredResults,
+      paginationResultsPerPage,
+      paginationPage,
+    );
     const ngos = await this.prismaService.nGO.findMany({
-      where: {
-        AND: [
-          filterId ? { id: filterId } : {},
-          filterName
-            ? { name: { contains: filterName, mode: 'insensitive' } }
-            : {},
-        ],
-      },
-      skip: (paginationPage - 1) * paginationResultsPerPage,
-      take: paginationResultsPerPage,
+      where: { ...whereInputObject },
+      ...pagination.constructPaginationQueryObject(),
       orderBy: { [this.getSortField(sortFor)]: sortType },
     });
-    return ngos;
+    return {
+      ngos,
+      pagination,
+    };
   }
 
   async createNgo(ngo: CreateNgoDto): Promise<NGO> {
