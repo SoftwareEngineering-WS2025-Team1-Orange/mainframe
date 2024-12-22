@@ -6,6 +6,7 @@ import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateNgoDto } from '@/ngo/dto/ngo.dto';
 import { Pagination } from '@/utils/pagination.service';
+import { NGOWithPermissions } from '@/api-ngo/auth/types';
 
 @Injectable()
 export class NgoService {
@@ -33,7 +34,7 @@ export class NgoService {
     paginationResultsPerPage: number = 10,
     sortType?: string,
     sortFor?: string,
-  ): Promise<{ ngos: NGO[]; pagination: Pagination }> {
+  ): Promise<{ ngos: NGOWithPermissions[]; pagination: Pagination }> {
     const whereInputObject: Prisma.NGOWhereInput = {
       AND: [
         filterId ? { id: filterId } : {},
@@ -57,11 +58,26 @@ export class NgoService {
       where: { ...whereInputObject },
       ...pagination.constructPaginationQueryObject(),
       orderBy: { [this.getSortField(sortFor)]: sortType },
+      include: {
+        permissions: true,
+      },
     });
     return {
       ngos,
       pagination,
     };
+  }
+
+  async updateRefreshToken(id: number, refreshToken: string | null) {
+    const hashedRefreshToken = await argon2.hash(refreshToken);
+    await this.prismaService.nGO.update({
+      where: {
+        id,
+      },
+      data: {
+        refreshToken: hashedRefreshToken,
+      },
+    });
   }
 
   async createNgo(ngo: CreateNgoDto): Promise<NGO> {

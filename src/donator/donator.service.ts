@@ -1,10 +1,12 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { Donator } from '@prisma/client';
+import { Donator, DonatorPermissionsEnum, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConnectDonationBoxDto, CreateDonatorDto } from './dto';
+import { Pagination } from '@/utils/pagination.service';
+import { DonatorWithPermissions } from '@/api-donator/auth/types';
 
 @Injectable()
 export class DonatorService {
@@ -24,17 +26,84 @@ export class DonatorService {
     return donator;
   }
 
+  async updateRefreshToken(id: number, refreshToken: string | null) {
+    const hashedRefreshToken = await argon2.hash(refreshToken);
+    await this.prismaService.donator.update({
+      where: {
+        id,
+      },
+      data: {
+        refreshToken: hashedRefreshToken,
+      },
+    });
+  }
+
+  async findFilteredDonator(
+    filterId?: number,
+    // filterIsFavorite: boolean = false,
+    filterMail?: string,
+    // filterDonatedTo: boolean = false,
+    paginationPage: number = 1,
+    paginationResultsPerPage: number = 10,
+    sortType?: string,
+    sortFor?: string,
+  ): Promise<{ donators: DonatorWithPermissions[]; pagination: Pagination }> {
+    const whereInputObject: Prisma.DonatorWhereInput = {
+      AND: [
+        filterId ? { id: filterId } : {},
+        filterMail
+          ? { email: { contains: filterMail, mode: 'insensitive' } }
+          : {},
+      ],
+    };
+
+    const numTotalResults = await this.prismaService.donator.count();
+    const numFilteredResults = await this.prismaService.donator.count({
+      where: { ...whereInputObject },
+    });
+    const pagination = new Pagination(
+      numTotalResults,
+      numFilteredResults,
+      paginationResultsPerPage,
+      paginationPage,
+    );
+    const donators = await this.prismaService.donator.findMany({
+      where: { ...whereInputObject },
+      include: {
+        permissions: true,
+      },
+      ...pagination.constructPaginationQueryObject(),
+      orderBy: { [this.getSortField(sortFor)]: sortType },
+    });
+    return {
+      donators,
+      pagination,
+    };
+  }
+
   async createDonator(donator: CreateDonatorDto): Promise<Donator> {
     const salt = randomBytes(16).toString('hex');
+
     const donatorWithHash = {
       ...donator,
       password: await argon2.hash(donator.password + salt),
     };
 
+    const defaultRoles = [
+      DonatorPermissionsEnum.READ_OWN,
+      DonatorPermissionsEnum.WRITE_OWN,
+    ];
+
     const newDonator = await this.prismaService.donator.create({
       data: {
         ...donatorWithHash,
         salt,
+        permissions: {
+          connectOrCreate: defaultRoles.map((role) => ({
+            where: { name: role },
+            create: { name: role },
+          })),
+        },
       },
     });
 
@@ -51,5 +120,16 @@ export class DonatorService {
         donatorId: id,
       },
     });
+  }
+
+  private getSortField(sortFor?: string): string {
+    switch (sortFor) {
+      case 'created_at':
+        return 'createdAt';
+      case 'email':
+        return 'email';
+      default:
+        return 'id';
+    }
   }
 }
