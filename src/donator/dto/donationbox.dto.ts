@@ -1,7 +1,36 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import {IsEnum, IsNotEmpty, IsString} from 'class-validator';
+import {Expose, Exclude} from "class-transformer";
+import {Status} from "@prisma/client";
 
-export class ConnectDonationBoxDto {
+export class RegisterDonationBoxDto {
   @IsString()
   @IsNotEmpty()
-  id: string;
+  cuid: string;
 }
+
+export class DonationBoxDto {
+  @Expose()
+  readonly id: number;
+
+  @Expose()
+  readonly cuid: string;
+
+  @IsEnum(Status)
+  status: Status;
+
+  @Expose()
+  power_consumption?: number;
+
+  @Expose()
+  power_supply_id?: number;
+
+  @Exclude()
+  donatorId: number
+
+  @Exclude()
+  createdAt: Date;
+
+  @Exclude()
+  updatedAt: Date;
+}
+

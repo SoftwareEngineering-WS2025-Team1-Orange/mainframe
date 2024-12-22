@@ -23,6 +23,7 @@ model Donator {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   DonationBox       DonationBox[]
+  PowerSupplies     PowerSupply[]
   FavouriteNgos     NGO[]
   FavouriteProjects Project[]
 }
@@ -42,8 +43,33 @@ model DonationBox {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  donatorId Int?
-  donator   Donator? @relation(fields: [donatorId], references: [id])
+  donatorId     Int?
+  powerSupplyId Int?
+  donator       Donator?     @relation(fields: [donatorId], references: [id])
+  powerSupply   PowerSupply? @relation(fields: [powerSupplyId], references: [id])
+}
+
+model PowerSupply {
+  id        Int      @id @default(autoincrement())
+  name      String
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  configSchemaId Int
+  configSchema   SupportedPowerSupply @relation(fields: [configSchemaId], references: [id])
+  donatorId      Int
+  donator        Donator              @relation(fields: [donatorId], references: [id])
+  donationBoxes  DonationBox[]
+}
+
+model SupportedPowerSupply {
+  id           Int      @id @default(autoincrement())
+  configSchema Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  powerSupplies PowerSupply[]
 }
 
 model NGO {
