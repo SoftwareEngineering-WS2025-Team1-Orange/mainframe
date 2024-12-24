@@ -21,7 +21,7 @@ import {
 import { ReturnPaginatedDonationsDto } from '@/donator/dto/donation.dto';
 import { PaginationQueryArguments } from '@/utils/pagination.service';
 import { getSortType, SortType } from '@/utils/sort_filter.service';
-import {DonationFilter} from "@/donator/donator.filter.interface";
+import { DonationFilter } from '@/donator/donator.filter.interface';
 
 @Controller('donator')
 export class DonatorController {

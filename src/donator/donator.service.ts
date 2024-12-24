@@ -7,7 +7,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { CreateDonatorDto, RegisterDonationBoxDto } from './dto';
 import { Pagination } from '@/utils/pagination.service';
 import { getSortType, SortType } from '@/utils/sort_filter.service';
-import {DonationFilter} from "@/donator/donator.filter.interface";
+import { DonationFilter } from '@/donator/donator.filter.interface';
 
 @Injectable()
 export class DonatorService {
