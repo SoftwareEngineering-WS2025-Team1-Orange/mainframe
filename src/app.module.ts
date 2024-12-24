@@ -18,7 +18,7 @@ import { DonationboxController } from '@/donationbox/donationbox.controller';
 import { ProjectController } from '@/project/project.controller';
 import { ProjectService } from '@/project/project.service';
 import { ProjectModule } from '@/project/project.module';
-import {DonationModule} from "@/donation/donation.module";
+import { DonationModule } from '@/donation/donation.module';
 
 @Module({
   imports: [

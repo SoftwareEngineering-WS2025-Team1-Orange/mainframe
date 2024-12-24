@@ -23,7 +23,8 @@ export class DonationController {
   @SerializeOptions({ type: ReturnPaginatedDonationsDto })
   @Get('/')
   getDonatorsDonations(
-    @Query('donator_id', new ParseIntPipe({ optional: true })) donatorId: number,
+    @Query('donator_id', new ParseIntPipe({ optional: true }))
+    donatorId: number,
     @Query('filter_id', new ParseIntPipe({ optional: true })) filterId?: number,
     @Query('filter_ngo_id', new ParseIntPipe({ optional: true }))
     filterNgoId?: number,
