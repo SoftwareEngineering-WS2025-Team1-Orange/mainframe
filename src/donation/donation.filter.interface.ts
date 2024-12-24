@@ -1,5 +1,4 @@
 export interface DonationFilter {
-  // Move to shared "services" location after future project restructuring
   filterId?: number;
   filterDonatorId?: number;
   filterDonatorFirstName?: string;
