@@ -14,18 +14,21 @@ datasource db {
 }
 
 model Donator {
-  id                Int           @id @default(autoincrement())
-  firstName         String
-  lastName          String
-  email             String
-  password          String
-  salt              String
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String
+  password  String
+  salt      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  balance   Float    @default(0)
+
   DonationBox       DonationBox[]
   PowerSupplies     PowerSupply[]
   FavouriteNgos     NGO[]
   FavouriteProjects Project[]
+  Transaction       Donation[]
 }
 
 enum Status {
@@ -73,19 +76,20 @@ model SupportedPowerSupply {
 }
 
 model NGO {
-  id                   Int       @id @default(autoincrement())
+  id                   Int        @id @default(autoincrement())
   name                 String
-  email                String    @unique
+  email                String     @unique
   contact              String
   website_url          String
   description          String
   address              String
   password             String
   salt                 String
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
   projects             Project[]
   FavouritedByDonators Donator[]
+  donations            Donation[]
 }
 
 enum Category {
@@ -113,6 +117,21 @@ model Project {
   category            Category
 
   ngoId                Int?
-  ngo                  NGO?      @relation(fields: [ngoId], references: [id])
+  ngo                  NGO?       @relation(fields: [ngoId], references: [id])
   FavouritedByDonators Donator[]
+  donations            Donation[]
+}
+
+model Donation {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  donatorId Int
+  projectId Int?
+  ngoId     Int
+  donator   Donator  @relation(fields: [donatorId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id])
+  ngo       NGO      @relation(fields: [ngoId], references: [id])
 }

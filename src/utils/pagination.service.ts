@@ -12,8 +12,8 @@ export class Pagination {
   constructor(
     totalResults: number,
     filteredResults: number,
-    pageSize: number,
-    currentPage: number,
+    pageSize: number = 10,
+    currentPage: number = 1,
   ) {
     this.totalResults = totalResults;
     this.filteredResults = filteredResults;
@@ -34,3 +34,5 @@ export enum PaginationQueryArguments {
   pageSize = 'pagination_page_size',
   page = 'pagination_page',
 }
+
+export const defaultPaginationPageSize = 10;

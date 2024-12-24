@@ -1,10 +1,13 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { Donator } from '@prisma/client';
+import { Donation, Donator, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/prisma/prisma.service';
-import { RegisterDonationBoxDto, CreateDonatorDto } from './dto';
+import { CreateDonatorDto, RegisterDonationBoxDto } from './dto';
+import { Pagination } from '@/utils/pagination.service';
+import { getSortType, SortType } from '@/utils/sort_filter.service';
+import {DonationFilter} from "@/donator/donator.filter.interface";
 
 @Injectable()
 export class DonatorService {
@@ -62,5 +65,130 @@ export class DonatorService {
         donatorId,
       },
     });
+  }
+
+  async findFilteredDonations(
+    filters: DonationFilter,
+  ): Promise<{ donations: Donation[]; pagination: Pagination }> {
+    const whereInputObject: Prisma.DonationWhereInput = {
+      AND: [
+        filters.filterId ? { id: filters.filterId } : {},
+        filters.filterDonatorId ? { donatorId: filters.filterDonatorId } : {},
+        filters.filterDonatorFirstName
+          ? {
+              donator: {
+                firstName: {
+                  contains: filters.filterDonatorFirstName,
+                  mode: 'insensitive',
+                },
+              },
+            }
+          : {},
+        filters.filterDonatorLastName
+          ? {
+              donator: {
+                lastName: {
+                  contains: filters.filterDonatorLastName,
+                  mode: 'insensitive',
+                },
+              },
+            }
+          : {},
+        filters.filterProjectId ? { projectId: filters.filterProjectId } : {},
+        filters.filterProjectName
+          ? {
+              project: {
+                name: {
+                  contains: filters.filterProjectName,
+                  mode: 'insensitive',
+                },
+              },
+            }
+          : {},
+        filters.filterNgoId ? { project: { ngoId: filters.filterNgoId } } : {},
+        filters.filterNgoName
+          ? {
+              project: {
+                ngo: {
+                  name: {
+                    contains: filters.filterNgoName,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            }
+          : {},
+        filters.filterCreatedFrom
+          ? { createdAt: { gte: filters.filterCreatedFrom } }
+          : {},
+        filters.filterCreatedTo
+          ? { createdAt: { lte: filters.filterCreatedTo } }
+          : {},
+        filters.filterAmountFrom
+          ? { amount: { gte: filters.filterAmountFrom } }
+          : {},
+        filters.filterAmountTo
+          ? { amount: { lte: filters.filterAmountTo } }
+          : {},
+      ],
+    };
+
+    const numTotalResults = await this.prismaService.donation.count();
+    const numFilteredResults = await this.prismaService.donation.count({
+      where: {
+        ...whereInputObject,
+      },
+    });
+    const pagination = new Pagination(
+      numTotalResults,
+      numFilteredResults,
+      filters.paginationPageSize,
+      filters.paginationPage,
+    );
+    const donations = await this.prismaService.donation.findMany({
+      where: {
+        ...whereInputObject,
+      },
+      ...pagination.constructPaginationQueryObject(),
+      include: {
+        project: {
+          select: {
+            name: true,
+            id: true,
+          },
+        },
+        ngo: {
+          select: {
+            name: true,
+            id: true,
+          },
+        },
+        donator: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: {
+        [this.getSortField(filters.sortFor)]: getSortType(
+          filters.sortType,
+          SortType.DESC,
+        ),
+      },
+    });
+    return { donations, pagination };
+  }
+
+  private getSortField(sortFor?: string): string {
+    switch (sortFor) {
+      case 'created_at':
+        return 'createdAt';
+      case 'amount':
+        return 'amount';
+      default:
+        return 'createdAt';
+    }
   }
 }

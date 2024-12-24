@@ -32,4 +32,8 @@ export class DonationBoxDto {
 
   @Exclude()
   updatedAt: Date;
+
+  constructor(partial: Partial<DonationBoxDto>) {
+    Object.assign(this, partial);
+  }
 }
