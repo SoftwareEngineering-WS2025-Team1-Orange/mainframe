@@ -38,10 +38,7 @@ model DonatorScope {
 }
 
 enum DonatorScopeEnum {
-  READ_ALL
-  READ_OWN
-  WRITE_ALL
-  WRITE_OWN
+  NOT_IMPLEMENTED
 }
 
 enum Status {
@@ -83,10 +80,7 @@ model NGO {
 }
 
 enum NGOScopeEnum {
-  READ_ALL
-  READ_OWN
-  WRITE_ALL
-  WRITE_OWN
+  NOT_IMPLEMENTED
 }
 
 model NGOScope {

@@ -1,5 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { NGO, Prisma } from '@prisma/client';
+import { NGO, NGOScopeEnum, Prisma } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
@@ -89,10 +89,18 @@ export class NgoService {
       password: await argon2.hash(ngo.password + salt),
     };
 
+    const defaultRoles = [NGOScopeEnum.NOT_IMPLEMENTED];
+
     const newNgo = await this.prismaService.nGO.create({
       data: {
         ...ngoWithHash,
         salt,
+        scope: {
+          connectOrCreate: defaultRoles.map((scope) => ({
+            where: { name: scope },
+            create: { name: scope },
+          })),
+        },
       },
     });
     return newNgo;

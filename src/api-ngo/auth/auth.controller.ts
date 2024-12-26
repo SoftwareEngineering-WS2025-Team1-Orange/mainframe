@@ -17,10 +17,10 @@ import {
   OAuth2Dto,
   OAuth2PasswordDto,
   OAuth2RefreshTokenDto,
-} from '@/api-ngo/auth/dto/auth.dto';
-import { AccessTokenGuard } from '@/api-ngo/auth/accessToken.guard';
+} from '@/shared/auth/dto/auth.dto';
+import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
 
-@Controller('api-ngo/auth')
+@Controller('api-ngo/shared')
 export class AuthController {
   constructor(private authService: AuthService) {}
 

@@ -91,10 +91,7 @@ export class DonatorService {
       password: await argon2.hash(donator.password + salt),
     };
 
-    const defaultRoles = [
-      DonatorScopeEnum.READ_OWN,
-      DonatorScopeEnum.WRITE_OWN,
-    ];
+    const defaultRoles = [DonatorScopeEnum.NOT_IMPLEMENTED];
 
     const newDonator = await this.prismaService.donator.create({
       data: {

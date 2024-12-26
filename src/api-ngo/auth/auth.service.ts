@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { NgoService } from '@/ngo/ngo.service';
 import { NGOWithScope } from '@/api-ngo/auth/types';
-import { OAuth2PasswordDto } from '@/api-ngo/auth/dto/auth.dto';
+import { OAuth2PasswordDto } from '@/shared/auth/dto/auth.dto';
 
 @Injectable()
 export class AuthService {

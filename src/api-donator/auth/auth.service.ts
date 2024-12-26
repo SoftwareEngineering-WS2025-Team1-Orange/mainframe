@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { DonatorService } from '@/donator/donator.service';
 import { DonatorWithScope } from '@/api-donator/auth/types';
-import { OAuth2PasswordDto } from '@/api-donator/auth/dto/auth.dto';
+import { OAuth2PasswordDto } from '@/shared/auth/dto/auth.dto';
 
 @Injectable()
 export class AuthService {

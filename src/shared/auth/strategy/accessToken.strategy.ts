@@ -2,13 +2,10 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JWTDonatorPayload } from '@/api-donator/auth/types';
+import { JWTNgoPayload } from '@/api-ngo/auth/types';
 
 @Injectable()
-export class AccessTokenStrategy extends PassportStrategy(
-  Strategy,
-  'jwt-donator',
-) {
+export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(private configService: ConfigService) {
     const accessToken: string = configService.get('JWT_ACCESS_SECRET');
     super({
@@ -18,7 +15,7 @@ export class AccessTokenStrategy extends PassportStrategy(
     });
   }
 
-  async validate(payload: JWTDonatorPayload) {
+  async validate(payload: JWTNgoPayload) {
     return payload;
   }
 }

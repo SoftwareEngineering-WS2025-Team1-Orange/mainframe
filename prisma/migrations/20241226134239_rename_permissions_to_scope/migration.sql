@@ -8,10 +8,10 @@
 
 */
 -- CreateEnum
-CREATE TYPE "DonatorScopeEnum" AS ENUM ('READ_ALL', 'READ_OWN', 'WRITE_ALL', 'WRITE_OWN');
+CREATE TYPE "DonatorScopeEnum" AS ENUM ('NOT_IMPLEMENTED');
 
 -- CreateEnum
-CREATE TYPE "NGOScopeEnum" AS ENUM ('READ_ALL', 'READ_OWN', 'WRITE_ALL', 'WRITE_OWN');
+CREATE TYPE "NGOScopeEnum" AS ENUM ('NOT_IMPLEMENTED');
 
 -- DropForeignKey
 ALTER TABLE "_DonatorToDonatorPermissions" DROP CONSTRAINT "_DonatorToDonatorPermissions_A_fkey";
