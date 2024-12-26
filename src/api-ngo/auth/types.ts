@@ -1,14 +1,14 @@
-import { NGOPermissions, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
-export type NGOWithPermissions = Prisma.NGOGetPayload<{
+export type NGOWithScope = Prisma.NGOGetPayload<{
   include: {
-    permissions: true;
+    scope: true;
   };
 }>;
 
-export interface JWTNGOPayload {
+export interface JWTNgoPayload {
   email: string;
-  permissions: NGOPermissions[];
+  scope: NGOWithScope[];
   sub: number;
   iat: number;
 }

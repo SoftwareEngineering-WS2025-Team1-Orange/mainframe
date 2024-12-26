@@ -1,12 +1,12 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { Donator, DonatorPermissionsEnum, Prisma } from '@prisma/client';
+import { Donator, DonatorScopeEnum, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConnectDonationBoxDto, CreateDonatorDto } from './dto';
 import { Pagination } from '@/utils/pagination.service';
-import { DonatorWithPermissions } from '@/api-donator/auth/types';
+import { DonatorWithScope } from '@/api-donator/auth/types';
 
 @Injectable()
 export class DonatorService {
@@ -27,7 +27,9 @@ export class DonatorService {
   }
 
   async updateRefreshToken(id: number, refreshToken: string | null) {
-    const hashedRefreshToken = await argon2.hash(refreshToken);
+    const hashedRefreshToken = refreshToken
+      ? await argon2.hash(refreshToken)
+      : null;
     await this.prismaService.donator.update({
       where: {
         id,
@@ -47,7 +49,7 @@ export class DonatorService {
     paginationResultsPerPage: number = 10,
     sortType?: string,
     sortFor?: string,
-  ): Promise<{ donators: DonatorWithPermissions[]; pagination: Pagination }> {
+  ): Promise<{ donators: DonatorWithScope[]; pagination: Pagination }> {
     const whereInputObject: Prisma.DonatorWhereInput = {
       AND: [
         filterId ? { id: filterId } : {},
@@ -70,7 +72,7 @@ export class DonatorService {
     const donators = await this.prismaService.donator.findMany({
       where: { ...whereInputObject },
       include: {
-        permissions: true,
+        scope: true,
       },
       ...pagination.constructPaginationQueryObject(),
       orderBy: { [this.getSortField(sortFor)]: sortType },
@@ -90,18 +92,18 @@ export class DonatorService {
     };
 
     const defaultRoles = [
-      DonatorPermissionsEnum.READ_OWN,
-      DonatorPermissionsEnum.WRITE_OWN,
+      DonatorScopeEnum.READ_OWN,
+      DonatorScopeEnum.WRITE_OWN,
     ];
 
     const newDonator = await this.prismaService.donator.create({
       data: {
         ...donatorWithHash,
         salt,
-        permissions: {
-          connectOrCreate: defaultRoles.map((role) => ({
-            where: { name: role },
-            create: { name: role },
+        scope: {
+          connectOrCreate: defaultRoles.map((scope) => ({
+            where: { name: scope },
+            create: { name: scope },
           })),
         },
       },

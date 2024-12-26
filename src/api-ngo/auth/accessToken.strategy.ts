@@ -1,28 +1,21 @@
-import { Strategy } from 'passport-local';
+import { Strategy, ExtractJwt } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ExtractJwt } from 'passport-jwt';
-import { AuthService } from '@/api-ngo/auth/auth.service';
-import { JWTNGOPayload } from '@/api-ngo/auth/types';
+import { JWTDonatorPayload } from '@/api-donator/auth/types';
 
 @Injectable()
-export class AccessTokenStrategy extends PassportStrategy(
-  Strategy,
-  'jwt-donator',
-) {
-  constructor(
-    private authService: AuthService,
-    private configService: ConfigService,
-  ) {
+export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt-ngo') {
+  constructor(private configService: ConfigService) {
     const accessToken: string = configService.get('JWT_ACCESS_SECRET');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: accessToken,
+      ignoreExpiration: false,
     });
   }
 
-  validate(payload: JWTNGOPayload) {
+  async validate(payload: JWTDonatorPayload) {
     return payload;
   }
 }

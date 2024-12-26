@@ -1,32 +1,24 @@
-import { Strategy } from 'passport-local';
+import { Strategy, ExtractJwt } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
-import { ExtractJwt } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { AuthService } from '@/api-ngo/auth/auth.service';
 
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(
   Strategy,
-  'jwt-ngo',
+  'jwt-ngo-refresh',
 ) {
-  constructor(
-    private authService: AuthService,
-    private configService: ConfigService,
-  ) {
+  constructor(private configService: ConfigService) {
     const refreshToken: string = configService.get('JWT_REFRESH_SECRET');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: refreshToken,
       passReqToCallback: true,
+      ignoreExpiration: false,
     });
   }
 
-  validate(req: Request, payload: object) {
-    const refreshToken = req.headers
-      .get('Authorization')
-      .replace('Bearer', '')
-      .trim();
-    return { ...payload, refreshToken };
+  validate(payload: object) {
+    return payload;
   }
 }

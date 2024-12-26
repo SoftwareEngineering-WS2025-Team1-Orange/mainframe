@@ -3,8 +3,8 @@ import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { DonatorService } from '@/donator/donator.service';
-import { DonatorWithPermissions } from '@/api-donator/auth/types';
-import { AuthDto } from '@/api-donator/auth/dto/auth.dto';
+import { DonatorWithScope } from '@/api-donator/auth/types';
+import { OAuth2PasswordDto } from '@/api-donator/auth/dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,8 +14,14 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async signIn(data: AuthDto) {
-    const donator = await this.validateDonator(data.username, data.password);
+  async signIn(data: OAuth2PasswordDto) {
+    const donator: DonatorWithScope = await this.validateDonator(
+      data.username,
+      data.password,
+    );
+    if (!donator) {
+      throw new ForbiddenException('Access Denied');
+    }
     const tokens = await this.getTokens(donator);
     await this.donatorService.updateRefreshToken(
       donator.id,
@@ -24,16 +30,20 @@ export class AuthService {
     return tokens;
   }
 
+  async generateTokensFromRefreshToken(token: string) {
+    return this.refreshTokens(token);
+  }
+
   async logout(donatorId: number) {
     return this.donatorService.updateRefreshToken(donatorId, null);
   }
 
-  async getTokens(donator: DonatorWithPermissions) {
+  async getTokens(donator: DonatorWithScope) {
     const payload = {
       email: donator.email,
-      permissions: donator.permissions.map((role) => role.name),
+      scope: donator.scope.map((scope) => scope.name),
       sub: donator.id,
-      iat: Date.now(),
+      iat: Math.floor(Date.now() / 1000),
     };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
@@ -57,11 +67,16 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(donatorId: number, refreshToken: string) {
+  async refreshTokens(refreshToken: string) {
+    const { sub: donatorId } = await this.jwtService.verifyAsync<{
+      sub: number;
+    }>(refreshToken, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+    });
     const donatorPaginationObject =
       await this.donatorService.findFilteredDonator(donatorId);
     const donator = donatorPaginationObject.donators[0];
-    if (!donator || !donator) {
+    if (!donator || !donator.refreshToken) {
       throw new ForbiddenException('Access Denied');
     }
     const refreshTokenMatches = await argon2.verify(
@@ -82,11 +97,10 @@ export class AuthService {
   private async validateDonator(
     mail: string,
     pass: string,
-  ): Promise<DonatorWithPermissions | null> {
+  ): Promise<DonatorWithScope | null> {
     const donatorPaginationObject =
       await this.donatorService.findFilteredDonator(null, mail);
     const donator = donatorPaginationObject.donators[0];
-
     if (
       !donator ||
       !(await argon2.verify(donator.password, pass + donator.salt))

@@ -3,8 +3,8 @@ import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { NgoService } from '@/ngo/ngo.service';
-import { NGOWithPermissions } from '@/api-ngo/auth/types';
-import { AuthDto } from '@/api-ngo/auth/dto/auth.dto';
+import { NGOWithScope } from '@/api-ngo/auth/types';
+import { OAuth2PasswordDto } from '@/api-ngo/auth/dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,23 +14,33 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async signIn(data: AuthDto) {
-    const ngo = await this.validateNGO(data.username, data.password);
+  async signIn(data: OAuth2PasswordDto) {
+    const ngo: NGOWithScope = await this.validateNgo(
+      data.username,
+      data.password,
+    );
+    if (!ngo) {
+      throw new ForbiddenException('Access Denied');
+    }
     const tokens = await this.getTokens(ngo);
     await this.ngoService.updateRefreshToken(ngo.id, tokens.refreshToken);
     return tokens;
   }
 
-  async logout(donatorId: number) {
-    return this.ngoService.updateRefreshToken(donatorId, null);
+  async generateTokensFromRefreshToken(token: string) {
+    return this.refreshTokens(token);
   }
 
-  async getTokens(ngo: NGOWithPermissions) {
+  async logout(ngoId: number) {
+    return this.ngoService.updateRefreshToken(ngoId, null);
+  }
+
+  async getTokens(ngo: NGOWithScope) {
     const payload = {
       name: ngo.name,
-      permissions: ngo.permissions.map((role) => role.name),
+      scope: ngo.scope.map((scope) => scope.name),
       sub: ngo.id,
-      iat: Date.now(),
+      iat: Math.floor(Date.now() / 1000),
     };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
@@ -54,10 +64,15 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(ngoId: number, refreshToken: string) {
+  async refreshTokens(refreshToken: string) {
+    const { sub: ngoId } = await this.jwtService.verifyAsync<{
+      sub: number;
+    }>(refreshToken, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+    });
     const ngoPaginationObject = await this.ngoService.findFilteredNgos(ngoId);
     const ngo = ngoPaginationObject.ngos[0];
-    if (!ngo || !ngo) {
+    if (!ngo || !ngo.refreshToken) {
       throw new ForbiddenException('Access Denied');
     }
     const refreshTokenMatches = await argon2.verify(
@@ -72,16 +87,16 @@ export class AuthService {
     return tokens;
   }
 
-  async validateNGO(
-    ngoName: string,
+  private async validateNgo(
+    name: string,
     pass: string,
-  ): Promise<NGOWithPermissions | null> {
+  ): Promise<NGOWithScope | null> {
     const ngoPaginationObject = await this.ngoService.findFilteredNgos(
       null,
-      ngoName,
+      name,
     );
     const ngo = ngoPaginationObject.ngos[0];
-    if (!ngo || !(await argon2.verify(pass + ngo.salt, ngo.password))) {
+    if (!ngo || !(await argon2.verify(ngo.password, pass + ngo.salt))) {
       return null;
     }
     return ngo;

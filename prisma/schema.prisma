@@ -24,20 +24,20 @@ model Donator {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  permissions       DonatorPermissions[]
+  scope             DonatorScope[]
   donationBox       DonationBox[]
   favouriteNgos     NGO[]
   favouriteProjects Project[]
 }
 
-model DonatorPermissions {
-  id   Int                    @id @default(autoincrement())
-  name DonatorPermissionsEnum @unique
+model DonatorScope {
+  id   Int              @id @default(autoincrement())
+  name DonatorScopeEnum @unique
 
   donators Donator[]
 }
 
-enum DonatorPermissionsEnum {
+enum DonatorScopeEnum {
   READ_ALL
   READ_OWN
   WRITE_ALL
@@ -79,19 +79,19 @@ model NGO {
 
   projects             Project[]
   favouritedByDonators Donator[]
-  permissions          NGOPermissions[]
+  scope                NGOScope[]
 }
 
-enum NGOPermissionsEnum {
+enum NGOScopeEnum {
   READ_ALL
   READ_OWN
   WRITE_ALL
   WRITE_OWN
 }
 
-model NGOPermissions {
-  id   Int                @id @default(autoincrement())
-  name NGOPermissionsEnum @unique
+model NGOScope {
+  id   Int          @id @default(autoincrement())
+  name NGOScopeEnum @unique
 
   ngos NGO[]
 }

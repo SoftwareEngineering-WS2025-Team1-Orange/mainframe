@@ -1,14 +1,14 @@
-import { DonatorPermissions, Prisma } from '@prisma/client';
+import { DonatorScope, Prisma } from '@prisma/client';
 
-export type DonatorWithPermissions = Prisma.DonatorGetPayload<{
+export type DonatorWithScope = Prisma.DonatorGetPayload<{
   include: {
-    permissions: true;
+    scope: true;
   };
 }>;
 
 export interface JWTDonatorPayload {
   email: string;
-  permissions: DonatorPermissions[];
+  scope: DonatorScope[];
   sub: number;
   iat: number;
 }
