@@ -34,5 +34,3 @@ export enum PaginationQueryArguments {
   pageSize = 'pagination_page_size',
   page = 'pagination_page',
 }
-
-export const defaultPaginationPageSize = 10;
