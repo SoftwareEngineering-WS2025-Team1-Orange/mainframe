@@ -19,6 +19,8 @@ import { ProjectController } from '@/project/project.controller';
 import { ProjectService } from '@/project/project.service';
 import { ProjectModule } from '@/project/project.module';
 import { DonationModule } from '@/donation/donation.module';
+import { ApiDonatorModule } from '@/api-donator/api-donator.module';
+import { ApiNgoModule } from '@/api-ngo/api-ngo.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { DonationModule } from '@/donation/donation.module';
     ConfigModule.forRoot(),
     DonationboxModule,
     ProjectModule,
+    ApiDonatorModule,
+    ApiNgoModule,
   ],
   controllers: [
     DonatorController,

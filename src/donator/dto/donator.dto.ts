@@ -6,6 +6,7 @@ import {
 } from 'class-validator';
 
 import { Exclude, Expose } from 'class-transformer';
+import { DonatorScope } from '@prisma/client';
 
 export class ReturnDonatorDto {
   @Expose()
@@ -28,6 +29,12 @@ export class ReturnDonatorDto {
 
   @Exclude()
   salt: string;
+
+  @Exclude()
+  refreshToken: string | null;
+
+  @Expose()
+  scope: DonatorScope[];
 
   @Exclude()
   createdAt: Date;

@@ -1,11 +1,12 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { NGO, Prisma } from '@prisma/client';
+import { NGO, NGOScopeEnum, Prisma } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateNgoDto } from '@/ngo/dto/ngo.dto';
 import { Pagination } from '@/utils/pagination.service';
+import { NGOWithScope } from '@/api-ngo/auth/types';
 
 @Injectable()
 export class NgoService {
@@ -28,17 +29,21 @@ export class NgoService {
     filterId?: number,
     // filterIsFavorite: boolean = false,
     filterName?: string,
+    filterMail?: string,
     // filterDonatedTo: boolean = false,
     paginationPage: number = 1,
     paginationResultsPerPage: number = 10,
     sortType?: string,
     sortFor?: string,
-  ): Promise<{ ngos: NGO[]; pagination: Pagination }> {
+  ): Promise<{ ngos: NGOWithScope[]; pagination: Pagination }> {
     const whereInputObject: Prisma.NGOWhereInput = {
       AND: [
         filterId ? { id: filterId } : {},
         filterName
           ? { name: { contains: filterName, mode: 'insensitive' } }
+          : {},
+        filterMail
+          ? { email: { contains: filterMail, mode: 'insensitive' } }
           : {},
       ],
     };
@@ -57,11 +62,28 @@ export class NgoService {
       where: { ...whereInputObject },
       ...pagination.constructPaginationQueryObject(),
       orderBy: { [this.getSortField(sortFor)]: sortType },
+      include: {
+        scope: true,
+      },
     });
     return {
       ngos,
       pagination,
     };
+  }
+
+  async updateRefreshToken(id: number, refreshToken: string | null) {
+    const hashedRefreshToken = refreshToken
+      ? await argon2.hash(refreshToken)
+      : null;
+    await this.prismaService.nGO.update({
+      where: {
+        id,
+      },
+      data: {
+        refreshToken: hashedRefreshToken,
+      },
+    });
   }
 
   async createNgo(ngo: CreateNgoDto): Promise<NGO> {
@@ -71,10 +93,18 @@ export class NgoService {
       password: await argon2.hash(ngo.password + salt),
     };
 
+    const defaultRoles = [NGOScopeEnum.NOT_IMPLEMENTED];
+
     const newNgo = await this.prismaService.nGO.create({
       data: {
         ...ngoWithHash,
         salt,
+        scope: {
+          connectOrCreate: defaultRoles.map((scope) => ({
+            where: { name: scope },
+            create: { name: scope },
+          })),
+        },
       },
     });
     return newNgo;

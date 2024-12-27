@@ -34,6 +34,7 @@ export class NgoController {
     // @Query('filter_is_favorite', new ParseBoolPipe({ optional: true }))
     // filterIsFavorite: boolean = false,
     @Query('filter_name_contains') filterName?: string,
+    @Query('filter_mail_contains') filterMail?: string,
     // @Query('filter_donated_to', new ParseBoolPipe({ optional: true }))
     // filterDonatedTo: boolean = false,
     @Query(PaginationQueryArguments.page, new ParseIntPipe({ optional: true }))
@@ -50,6 +51,7 @@ export class NgoController {
       filterId,
       // filterIsFavorite,
       filterName,
+      filterMail,
       // filterDonatedTo,
       paginationPage,
       paginationPageSize,

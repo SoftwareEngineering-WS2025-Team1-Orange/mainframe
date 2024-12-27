@@ -14,21 +14,34 @@ datasource db {
 }
 
 model Donator {
-  id        Int      @id @default(autoincrement())
-  firstName String
-  lastName  String
-  email     String
-  password  String
-  salt      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  balance   Float    @default(0)
+  id           Int      @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  email        String   @unique
+  password     String
+  salt         String
+  refreshToken String?
+  balance      Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  DonationBox       DonationBox[]
-  PowerSupplies     PowerSupply[]
-  FavouriteNgos     NGO[]
-  FavouriteProjects Project[]
-  Transaction       Donation[]
+  scope             DonatorScope[]
+  donationBox       DonationBox[]
+  powerSupplies     PowerSupply[]
+  favouriteNgos     NGO[]
+  favouriteProjects Project[]
+  transaction       Donation[]
+}
+
+model DonatorScope {
+  id   Int              @id @default(autoincrement())
+  name DonatorScopeEnum @unique
+
+  donators Donator[]
+}
+
+enum DonatorScopeEnum {
+  NOT_IMPLEMENTED
 }
 
 enum Status {
@@ -76,20 +89,34 @@ model SupportedPowerSupply {
 }
 
 model NGO {
-  id                   Int        @id @default(autoincrement())
-  name                 String
-  email                String     @unique
-  contact              String
-  website_url          String
-  description          String
-  address              String
-  password             String
-  salt                 String
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  contact      String
+  website_url  String
+  description  String
+  address      String
+  password     String
+  refreshToken String?
+  salt         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   projects             Project[]
-  FavouritedByDonators Donator[]
+  favouritedByDonators Donator[]
   donations            Donation[]
+  scope                NGOScope[]
+}
+
+enum NGOScopeEnum {
+  NOT_IMPLEMENTED
+}
+
+model NGOScope {
+  id   Int          @id @default(autoincrement())
+  name NGOScopeEnum @unique
+
+  ngos NGO[]
 }
 
 enum Category {
