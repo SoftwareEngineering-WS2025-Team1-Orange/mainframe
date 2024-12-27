@@ -5,14 +5,14 @@ export enum SortType {
   DESC = 'desc',
 }
 
-export function getSortType(sortType?: string): string {
+export function getSortType(sortType?: string, defaultType?: SortType): string {
   if (
     sortType &&
     Object.values(SortType).includes(sortType.toLowerCase().trim() as SortType)
   ) {
     return sortType.toLowerCase().trim();
   }
-  return SortType.ASC;
+  return defaultType || SortType.ASC;
 }
 
 export function parseEnumCategory(category: string): Category | undefined {

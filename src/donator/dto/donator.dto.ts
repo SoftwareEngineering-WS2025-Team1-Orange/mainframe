@@ -20,6 +20,9 @@ export class ReturnDonatorDto {
   @Expose()
   email: string;
 
+  @Expose()
+  balance: number;
+
   @Exclude()
   password: string;
 

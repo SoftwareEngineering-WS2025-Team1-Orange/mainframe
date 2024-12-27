@@ -14,17 +14,21 @@ datasource db {
 }
 
 model Donator {
-  id                Int           @id @default(autoincrement())
-  firstName         String
-  lastName          String
-  email             String
-  password          String
-  salt              String
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String
+  password  String
+  salt      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  balance   Float    @default(0)
+
   DonationBox       DonationBox[]
+  PowerSupplies     PowerSupply[]
   FavouriteNgos     NGO[]
   FavouriteProjects Project[]
+  Transaction       Donation[]
 }
 
 enum Status {
@@ -42,24 +46,50 @@ model DonationBox {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  donatorId Int?
-  donator   Donator? @relation(fields: [donatorId], references: [id])
+  donatorId     Int?
+  powerSupplyId Int?
+  donator       Donator?     @relation(fields: [donatorId], references: [id])
+  powerSupply   PowerSupply? @relation(fields: [powerSupplyId], references: [id])
+}
+
+model PowerSupply {
+  id        Int      @id @default(autoincrement())
+  name      String
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  configSchemaId Int
+  configSchema   SupportedPowerSupply @relation(fields: [configSchemaId], references: [id])
+  donatorId      Int
+  donator        Donator              @relation(fields: [donatorId], references: [id])
+  donationBoxes  DonationBox[]
+}
+
+model SupportedPowerSupply {
+  id           Int      @id @default(autoincrement())
+  configSchema Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  powerSupplies PowerSupply[]
 }
 
 model NGO {
-  id                   Int       @id @default(autoincrement())
+  id                   Int        @id @default(autoincrement())
   name                 String
-  email                String    @unique
+  email                String     @unique
   contact              String
   website_url          String
   description          String
   address              String
   password             String
   salt                 String
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
   projects             Project[]
   FavouritedByDonators Donator[]
+  donations            Donation[]
 }
 
 enum Category {
@@ -87,6 +117,21 @@ model Project {
   category            Category
 
   ngoId                Int?
-  ngo                  NGO?      @relation(fields: [ngoId], references: [id])
+  ngo                  NGO?       @relation(fields: [ngoId], references: [id])
   FavouritedByDonators Donator[]
+  donations            Donation[]
+}
+
+model Donation {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  donatorId Int
+  projectId Int?
+  ngoId     Int
+  donator   Donator  @relation(fields: [donatorId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id])
+  ngo       NGO      @relation(fields: [ngoId], references: [id])
 }

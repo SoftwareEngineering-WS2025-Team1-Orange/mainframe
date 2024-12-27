@@ -13,8 +13,9 @@ import {
 import { DonatorService } from './donator.service';
 import {
   CreateDonatorDto,
+  DonationBoxDto,
+  RegisterDonationBoxDto,
   ReturnDonatorDto,
-  ConnectDonationBoxDto,
 } from './dto';
 
 @Controller('donator')
@@ -32,17 +33,29 @@ export class DonatorController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnDonatorDto })
-  @Get('/:id')
-  getDonatorById(@Param('id', ParseIntPipe) id: number) {
-    return this.donatorService.findDonatorById(id);
+  @Get('/:donator_id')
+  getDonatorById(@Param('donator_id', ParseIntPipe) donatorId: number) {
+    return this.donatorService.findDonatorById(donatorId);
   }
 
   @Version('1')
-  @Post('/:id/donationbox')
+  @Post('/:donator_id/donationbox')
   postDonationBoxToDonator(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() donationBox: ConnectDonationBoxDto,
+    @Param('donator_id', ParseIntPipe) donatorId: number,
+    @Body() donationBox: RegisterDonationBoxDto,
   ) {
-    this.donatorService.connectDonationBox(id, donationBox).catch(() => {});
+    this.donatorService
+      .registerDonationBox(donatorId, donationBox)
+      .catch(() => {});
+  }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({ type: DonationBoxDto })
+  @Get('/:donator_id/donationbox')
+  getDonationboxesOfDonator(
+    @Param('donator_id', ParseIntPipe) donatorId: number,
+  ) {
+    return this.donatorService.findDonatorsDonationboxes(donatorId);
   }
 }
