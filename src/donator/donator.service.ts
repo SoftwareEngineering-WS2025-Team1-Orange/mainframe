@@ -4,7 +4,7 @@ import { Donator, DonatorScopeEnum, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/prisma/prisma.service';
-import { ConnectDonationBoxDto, CreateDonatorDto } from './dto';
+import { CreateDonatorDto, RegisterDonationBoxDto } from './dto';
 import { Pagination } from '@/utils/pagination.service';
 import { DonatorWithScope } from '@/api-donator/auth/types';
 
@@ -109,14 +109,25 @@ export class DonatorService {
     return newDonator;
   }
 
-  async connectDonationBox(id: number, donationBox: ConnectDonationBoxDto) {
+  async registerDonationBox(
+    donatorId: number,
+    donationBox: RegisterDonationBoxDto,
+  ) {
     await this.prismaService.donationBox.update({
       where: {
-        CUID: donationBox.id,
+        CUID: donationBox.cuid,
       },
       data: {
         last_status: 'AVAILABLE',
-        donatorId: id,
+        donatorId,
+      },
+    });
+  }
+
+  async findDonatorsDonationboxes(donatorId: number) {
+    return this.prismaService.donationBox.findMany({
+      where: {
+        donatorId,
       },
     });
   }

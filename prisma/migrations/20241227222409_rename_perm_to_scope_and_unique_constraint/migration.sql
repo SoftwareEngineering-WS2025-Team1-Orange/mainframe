@@ -5,6 +5,7 @@
   - You are about to drop the `NGOPermissions` table. If the table is not empty, all the data it contains will be lost.
   - You are about to drop the `_DonatorToDonatorPermissions` table. If the table is not empty, all the data it contains will be lost.
   - You are about to drop the `_NGOToNGOPermissions` table. If the table is not empty, all the data it contains will be lost.
+  - A unique constraint covering the columns `[email]` on the table `Donator` will be added. If there are existing duplicate values, this will fail.
 
 */
 -- CreateEnum
@@ -86,6 +87,9 @@ CREATE INDEX "_DonatorToDonatorScope_B_index" ON "_DonatorToDonatorScope"("B");
 
 -- CreateIndex
 CREATE INDEX "_NGOToNGOScope_B_index" ON "_NGOToNGOScope"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Donator_email_key" ON "Donator"("email");
 
 -- AddForeignKey
 ALTER TABLE "_DonatorToDonatorScope" ADD CONSTRAINT "_DonatorToDonatorScope_A_fkey" FOREIGN KEY ("A") REFERENCES "Donator"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -5,7 +5,7 @@ import {
   IsString,
   IsStrongPassword,
 } from 'class-validator';
-import { NGO } from '@prisma/client';
+import { DonatorScope, NGO } from '@prisma/client';
 import { ReturnPaginationDto } from '@/dto/pagination.dto';
 
 export class ReturnNgoDto {
@@ -28,12 +28,6 @@ export class ReturnNgoDto {
   contact: string;
 
   @Exclude()
-  createdAt: Date;
-
-  @Exclude()
-  updatedAt: Date;
-
-  @Exclude()
   password: string;
 
   @Exclude()
@@ -41,6 +35,18 @@ export class ReturnNgoDto {
 
   @Exclude()
   salt: string;
+
+  @Exclude()
+  refreshToken: string | null;
+
+  @Expose()
+  scope: DonatorScope[];
+
+  @Exclude()
+  createdAt: Date;
+
+  @Exclude()
+  updatedAt: Date;
 
   constructor(partial: Partial<ReturnNgoDto>) {
     Object.assign(this, partial);
