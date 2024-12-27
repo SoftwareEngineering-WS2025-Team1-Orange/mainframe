@@ -29,6 +29,7 @@ export class NgoService {
     filterId?: number,
     // filterIsFavorite: boolean = false,
     filterName?: string,
+    filterMail?: string,
     // filterDonatedTo: boolean = false,
     paginationPage: number = 1,
     paginationResultsPerPage: number = 10,
@@ -40,6 +41,9 @@ export class NgoService {
         filterId ? { id: filterId } : {},
         filterName
           ? { name: { contains: filterName, mode: 'insensitive' } }
+          : {},
+        filterMail
+          ? { email: { contains: filterMail, mode: 'insensitive' } }
           : {},
       ],
     };

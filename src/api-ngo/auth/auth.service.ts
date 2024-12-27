@@ -37,7 +37,7 @@ export class AuthService {
 
   async getTokens(ngo: NGOWithScope) {
     const payload = {
-      name: ngo.name,
+      email: ngo.email,
       scope: ngo.scope.map((scope) => scope.name),
       sub: ngo.id,
       iat: Math.floor(Date.now() / 1000),
@@ -88,12 +88,13 @@ export class AuthService {
   }
 
   private async validateNgo(
-    name: string,
+    mail: string,
     pass: string,
   ): Promise<NGOWithScope | null> {
     const ngoPaginationObject = await this.ngoService.findFilteredNgos(
       null,
-      name,
+      null,
+      mail,
     );
     const ngo = ngoPaginationObject.ngos[0];
     if (!ngo || !(await argon2.verify(ngo.password, pass + ngo.salt))) {
