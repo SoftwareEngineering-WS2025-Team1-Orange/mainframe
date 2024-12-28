@@ -6,7 +6,7 @@ import { AccessTokenStrategy } from '@/shared/auth/strategy/accessToken.strategy
 import { RefreshTokenStrategy } from '@/shared/auth/strategy/refreshToken.strategy';
 import { AuthController } from '@/api-donator/auth/auth.controller';
 import { AuthService } from '@/api-donator/auth/auth.service';
-import { DonatorService } from '@/donator/donator.service';
+import { DonatorService } from '@/shared/services/donator.service';
 
 @Module({
   imports: [JwtModule.register({}), ConfigModule, PassportModule],

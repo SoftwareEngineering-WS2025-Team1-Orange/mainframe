@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { NgoService } from '@/ngo/ngo.service';
+import { NgoService } from '@/shared/services/ngo.service';
 import { NGOWithScope } from '@/api-ngo/auth/types';
 import { OAuth2PasswordDto } from '@/shared/auth/dto/auth.dto';
 

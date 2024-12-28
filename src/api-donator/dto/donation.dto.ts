@@ -1,5 +1,5 @@
 import { Expose, Exclude, Type } from 'class-transformer';
-import { ReturnPaginationDto } from '@/dto/pagination.dto';
+import { ReturnPaginationDto } from '@/shared/dto/pagination.dto';
 
 class ReturnDonationDonatorDto {
   @Expose()

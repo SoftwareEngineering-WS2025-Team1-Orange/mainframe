@@ -20,7 +20,7 @@ import {
 } from '@/shared/auth/dto/auth.dto';
 import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
 
-@Controller('api-donator/shared')
+@Controller('donator/shared')
 export class AuthController {
   constructor(private authService: AuthService) {}
 

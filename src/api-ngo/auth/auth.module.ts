@@ -6,10 +6,11 @@ import { AccessTokenStrategy } from '@/shared/auth/strategy/accessToken.strategy
 import { RefreshTokenStrategy } from '@/shared/auth/strategy/refreshToken.strategy';
 import { AuthController } from '@/api-ngo/auth/auth.controller';
 import { AuthService } from '@/api-ngo/auth/auth.service';
-import { NgoService } from '@/ngo/ngo.service';
+import { NgoService } from '@/shared/services/ngo.service';
+import {SharedServicesModule} from "@/shared/services/shared-services.module";
 
 @Module({
-  imports: [JwtModule.register({}), ConfigModule, PassportModule],
+  imports: [JwtModule.register({}), ConfigModule, PassportModule, SharedServicesModule],
   controllers: [AuthController],
   providers: [
     AccessTokenStrategy,

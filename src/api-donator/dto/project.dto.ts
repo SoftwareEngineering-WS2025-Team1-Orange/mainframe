@@ -1,6 +1,6 @@
 import { Expose, Type } from 'class-transformer';
 import { Project } from '@prisma/client';
-import { ReturnPaginationDto } from '@/dto/pagination.dto';
+import { ReturnPaginationDto } from '@/shared/dto/pagination.dto';
 
 export class ReturnProjectDto {
   @Expose()
