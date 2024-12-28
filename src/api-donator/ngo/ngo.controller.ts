@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseBoolPipe,
   ParseIntPipe,
   Query,
   SerializeOptions,
@@ -14,11 +15,11 @@ import {
   ReturnNgoDto,
   ReturnPaginatedNgosDto,
 } from '@/api-donator/ngo/dto/ngo.dto';
-import { getSortType } from '@/utils/sort_filter.helper';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { prefix } from '@/api-donator/prefix';
+import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
 
-@Controller(`${prefix}/ngo`)
+@Controller(`${prefix}/:donatorid/ngo`)
 export class NgoController {
   constructor(private ngoService: NgoService) {}
 
@@ -27,14 +28,15 @@ export class NgoController {
   @SerializeOptions({ type: ReturnPaginatedNgosDto })
   @Get('/')
   getFilteredNgos(
+    @Param('donatorid', ParseIntPipe) donatorId: number,
     @Query('filter_ngo_id', new ParseIntPipe({ optional: true }))
     filterId?: number,
-    // @Query('filter_is_favorite', new ParseBoolPipe({ optional: true }))
-    // filterIsFavorite: boolean = false,
+    @Query('filter_is_favorite', new ParseBoolPipe({ optional: true }))
+    filterIsFavorite?: boolean,
     @Query('filter_name_contains') filterName?: string,
     @Query('filter_mail_contains') filterMail?: string,
-    // @Query('filter_donated_to', new ParseBoolPipe({ optional: true }))
-    // filterDonatedTo: boolean = false,
+    @Query('filter_donated_to', new ParseBoolPipe({ optional: true }))
+    filterDonatedTo?: boolean,
     @Query(PaginationQueryArguments.page, new ParseIntPipe({ optional: true }))
     paginationPage?: number,
     @Query(
@@ -45,17 +47,22 @@ export class NgoController {
     @Query('sort_type') sortType?: string,
     @Query('sort_for') sortFor?: string,
   ) {
-    return this.ngoService.findFilteredNgos(
+    const filters: NgoFilter = {
       filterId,
-      // filterIsFavorite,
+      filterFavorizedByDonatorId: filterIsFavorite ? donatorId : null,
+      filterNotFavorizedByDonatorId:
+        filterIsFavorite === false ? donatorId : null,
       filterName,
       filterMail,
-      // filterDonatedTo,
-      paginationPage,
+      filterDonatedToByDonatorId: filterDonatedTo ? donatorId : null,
+      filterNotDonatedToByDonatorId:
+        filterDonatedTo === false ? donatorId : null,
       paginationPageSize,
-      getSortType(sortType),
+      paginationPage,
       sortFor,
-    );
+      sortType,
+    };
+    return this.ngoService.findFilteredNgosWithFavourite(filters, donatorId);
   }
 
   @Version('1')

@@ -42,6 +42,9 @@ export class ReturnProjectDto {
   @Expose()
   ngoId?: number;
 
+  @Expose()
+  isFavorite: boolean;
+
   constructor(partial: Partial<ReturnProjectDto>) {
     Object.assign(this, partial);
   }

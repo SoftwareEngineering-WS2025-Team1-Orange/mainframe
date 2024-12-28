@@ -12,7 +12,7 @@ import { DonationService } from '@/shared/services/donation.service';
 import { ReturnPaginatedDonationsDto } from '@/api-donator/donation/dto';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
-import { DonationFilter } from '@/utils/donation.filter.interface';
+import { DonationFilter } from '@/shared/filters/donation.filter.interface';
 import { prefix } from '@/api-donator/prefix';
 
 @Controller(`${prefix}/donation`)

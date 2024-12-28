@@ -3,7 +3,7 @@ import { Donation, Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
-import { DonationFilter } from '@/utils/donation.filter.interface';
+import { DonationFilter } from '@/shared/filters/donation.filter.interface';
 
 @Injectable()
 export class DonationService {

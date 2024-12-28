@@ -1,4 +1,6 @@
-export interface DonationFilter {
+import { BaseFilter } from '@/shared/filters/base.filter.interface';
+
+export interface DonationFilter extends BaseFilter {
   filterId?: number;
   filterDonatorId?: number;
   filterDonatorFirstName?: string;
@@ -11,8 +13,4 @@ export interface DonationFilter {
   filterCreatedTo?: Date;
   filterAmountFrom?: number;
   filterAmountTo?: number;
-  paginationPage?: number;
-  paginationPageSize?: number;
-  sortType?: string;
-  sortFor?: string;
 }
