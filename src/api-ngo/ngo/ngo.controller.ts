@@ -8,10 +8,7 @@ import {
   Version,
 } from '@nestjs/common';
 import { NgoService } from '@/shared/services/ngo.service';
-import {
-  CreateNgoDto,
-  ReturnNgoDto
-} from './dto/ngo.dto';
+import { CreateNgoDto, ReturnNgoDto } from './dto/ngo.dto';
 import { prefix } from '@/api-ngo/prefix';
 
 @Controller(`${prefix}/ngo`)
