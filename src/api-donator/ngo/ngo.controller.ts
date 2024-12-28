@@ -1,11 +1,9 @@
 import {
-  Body,
   ClassSerializerInterceptor,
   Controller,
   Get,
   Param,
   ParseIntPipe,
-  Post,
   Query,
   SerializeOptions,
   UseInterceptors,
@@ -13,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { NgoService } from '@/shared/services/ngo.service';
 import {
-  CreateNgoDto,
   ReturnNgoDto,
   ReturnPaginatedNgosDto,
 } from '@/api-donator/ngo/dto/ngo.dto';
@@ -59,14 +56,6 @@ export class NgoController {
       getSortType(sortType),
       sortFor,
     );
-  }
-
-  @Version('1')
-  @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnNgoDto })
-  @Post('/')
-  postNgo(@Body() createNgoDto: CreateNgoDto) {
-    return this.ngoService.createNgo(createNgoDto);
   }
 
   @Version('1')

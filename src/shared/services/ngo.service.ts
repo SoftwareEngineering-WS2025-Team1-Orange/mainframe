@@ -4,7 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
 import { PrismaService } from '@/shared/prisma/prisma.service';
-import { CreateNgoDto } from '@/api-donator/ngo/dto/ngo.dto';
+import { CreateNgoDto } from '@/api-ngo/ngo/dto/ngo.dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { NGOWithScope } from '@/api-ngo/auth/types';
 

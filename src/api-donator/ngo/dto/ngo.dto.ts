@@ -1,10 +1,4 @@
 import { Exclude, Expose, Type } from 'class-transformer';
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  IsStrongPassword,
-} from 'class-validator';
 import { DonatorScope, NGO } from '@prisma/client';
 import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
 
@@ -61,39 +55,4 @@ export class ReturnPaginatedNgosDto {
   @Expose()
   @Type(() => ReturnNgoDto)
   ngos: NGO[];
-}
-
-export class CreateNgoDto {
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsString()
-  website_url: string;
-
-  @IsString()
-  @IsNotEmpty()
-  description: string;
-
-  @IsString()
-  @IsNotEmpty()
-  address: string;
-
-  @IsString()
-  @IsNotEmpty()
-  contact: string;
-
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
-
-  @IsStrongPassword({
-    minLength: 8,
-    minLowercase: 1,
-    minUppercase: 1,
-    minNumbers: 1,
-    minSymbols: 1,
-  })
-  @IsNotEmpty()
-  password: string;
 }
