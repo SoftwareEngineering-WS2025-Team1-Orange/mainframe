@@ -1,13 +1,13 @@
 import { validateOrReject, ValidationError } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { BadRequestException } from '@nestjs/common';
+import { Request, Response } from 'express';
 import {
   GrantType,
   OAuth2Dto,
   OAuth2PasswordDto,
   OAuth2RefreshTokenDto,
 } from '@/shared/auth/dto/auth.dto';
-import { plainToInstance } from 'class-transformer';
-import { BadRequestException } from '@nestjs/common';
-import { Request, Response } from 'express';
 
 export function buildValidationErrorResponse(errors: ValidationError[]) {
   return {
