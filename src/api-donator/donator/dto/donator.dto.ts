@@ -33,7 +33,7 @@ export class ReturnDonatorDto {
   @Exclude()
   refreshToken: string | null;
 
-  @Expose()
+  @Exclude()
   scope: DonatorScope[];
 
   @Exclude()

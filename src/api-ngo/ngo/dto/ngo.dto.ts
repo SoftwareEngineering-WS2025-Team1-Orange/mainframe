@@ -38,7 +38,7 @@ export class ReturnNgoDto {
   @Exclude()
   refreshToken: string | null;
 
-  @Expose()
+  @Exclude()
   scope: DonatorScope[];
 
   @Exclude()
