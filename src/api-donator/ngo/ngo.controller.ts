@@ -11,16 +11,17 @@ import {
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import { NgoService } from './ngo.service';
+import { NgoService } from '@/shared/services/ngo.service';
 import {
   CreateNgoDto,
   ReturnNgoDto,
   ReturnPaginatedNgosDto,
-} from '@/ngo/dto/ngo.dto';
-import { getSortType } from '@/utils/sort_filter.service';
-import { PaginationQueryArguments } from '@/utils/pagination.service';
+} from '@/api-donator/ngo/dto/ngo.dto';
+import { getSortType } from '@/utils/sort_filter.helper';
+import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
+import { prefix } from '@/api-donator/prefix';
 
-@Controller('ngo')
+@Controller(`${prefix}/ngo`)
 export class NgoController {
   constructor(private ngoService: NgoService) {}
 

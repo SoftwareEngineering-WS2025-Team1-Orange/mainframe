@@ -4,13 +4,13 @@ import { ConfigService } from '@nestjs/config';
 import { createId } from '@paralleldrive/cuid2';
 import { Status } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
-import { PrismaService } from '@/prisma/prisma.service';
-import { formatMessage, formatError } from '@/utils/wshelper';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import { formatMessage, formatError } from '@/utils/ws.helper';
 import {
   DonationBoxDtoResponse,
   JwtDonationBoxDto,
   JwtDonationBoxDtoResponse,
-} from './dto';
+} from '@/api-donationbox/donationbox/dto';
 
 @Injectable()
 export class DonationboxService {

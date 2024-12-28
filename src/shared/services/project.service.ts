@@ -1,8 +1,8 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { Category, Prisma, Project } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
-import { PrismaService } from '@/prisma/prisma.service';
-import { Pagination } from '@/utils/pagination.service';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import { Pagination } from '@/utils/pagination/pagination.helper';
 
 @Injectable()
 export class ProjectService {

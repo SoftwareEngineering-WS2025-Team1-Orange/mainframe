@@ -1,12 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
-import AppService from './app.service';
+import { AppService, HealthCheck } from './app.service';
 
 @Controller()
 export default class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  health(): Promise<HealthCheck> {
+    return this.appService.health();
   }
 }

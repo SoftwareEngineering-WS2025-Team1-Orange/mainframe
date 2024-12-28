@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { NgoController } from './ngo.controller';
-import { NgoService } from './ngo.service';
+import { NgoService } from '@/shared/services/ngo.service';
 
 @Module({
   controllers: [NgoController],

@@ -8,13 +8,14 @@ import {
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import { DonationService } from './donation.service';
-import { ReturnPaginatedDonationsDto } from '@/donation/dto';
-import { PaginationQueryArguments } from '@/utils/pagination.service';
-import { getSortType, SortType } from '@/utils/sort_filter.service';
-import { DonationFilter } from './donation.filter.interface';
+import { DonationService } from '@/shared/services/donation.service';
+import { ReturnPaginatedDonationsDto } from '@/api-donator/donation/dto';
+import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
+import { getSortType, SortType } from '@/utils/sort_filter.helper';
+import { DonationFilter } from '@/utils/donation.filter.interface';
+import { prefix } from '@/api-donator/prefix';
 
-@Controller('donation')
+@Controller(`${prefix}/donation`)
 export class DonationController {
   constructor(private donationService: DonationService) {}
 

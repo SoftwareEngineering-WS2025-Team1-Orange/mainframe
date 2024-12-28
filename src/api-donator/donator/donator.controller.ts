@@ -10,7 +10,7 @@ import {
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import { DonatorService } from './donator.service';
+import { DonatorService } from '@/shared/services/donator.service';
 import {
   CreateDonatorDto,
   DonationBoxDto,
@@ -18,7 +18,9 @@ import {
   ReturnDonatorDto,
 } from './dto';
 
-@Controller('donator')
+import { prefix } from '@/api-donator/prefix';
+
+@Controller(`${prefix}/donator`)
 export class DonatorController {
   constructor(private donatorService: DonatorService) {}
 
@@ -39,7 +41,7 @@ export class DonatorController {
   }
 
   @Version('1')
-  @Post('/:donator_id/donationbox')
+  @Post('/:donator_id/api-donationbox')
   postDonationBoxToDonator(
     @Param('donator_id', ParseIntPipe) donatorId: number,
     @Body() donationBox: RegisterDonationBoxDto,
@@ -52,7 +54,7 @@ export class DonatorController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: DonationBoxDto })
-  @Get('/:donator_id/donationbox')
+  @Get('/:donator_id/api-donationbox')
   getDonationboxesOfDonator(
     @Param('donator_id', ParseIntPipe) donatorId: number,
   ) {

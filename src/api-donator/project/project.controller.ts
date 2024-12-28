@@ -10,13 +10,13 @@ import {
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import { ProjectService } from './project.service';
+import { ProjectService } from '@/shared/services/project.service';
 import {
   ReturnPaginatedProjectsDto,
   ReturnProjectDto,
-} from '@/project/dto/project.dto';
-import { getSortType, parseEnumCategory } from '@/utils/sort_filter.service';
-import { PaginationQueryArguments } from '@/utils/pagination.service';
+} from '@/api-donator/project/dto/project.dto';
+import { getSortType, parseEnumCategory } from '@/utils/sort_filter.helper';
+import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 
 @Controller('project')
 export class ProjectController {

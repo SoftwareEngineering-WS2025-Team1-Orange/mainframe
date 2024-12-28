@@ -6,7 +6,7 @@ import {
   IsStrongPassword,
 } from 'class-validator';
 import { DonatorScope, NGO } from '@prisma/client';
-import { ReturnPaginationDto } from '@/dto/pagination.dto';
+import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
 
 export class ReturnNgoDto {
   @Expose()

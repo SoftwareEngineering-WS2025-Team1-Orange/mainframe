@@ -3,9 +3,9 @@ import { NGO, NGOScopeEnum, Prisma } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateNgoDto } from '@/ngo/dto/ngo.dto';
-import { Pagination } from '@/utils/pagination.service';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import { CreateNgoDto } from '@/api-donator/ngo/dto/ngo.dto';
+import { Pagination } from '@/utils/pagination/pagination.helper';
 import { NGOWithScope } from '@/api-ngo/auth/types';
 
 @Injectable()

@@ -8,10 +8,10 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server } from 'ws';
-import { DonationboxService } from '@/donationbox/donationbox.service';
+import { DonationboxService } from '@/api-donationbox/donationbox/donationbox.service';
 import { JwtDonationBoxDto, DonationBoxStatusDto } from './dto';
 
-@WebSocketGateway({ version: 1, path: '/api/v1/donationbox' })
+@WebSocketGateway({ version: 1, path: '/api/v1/api-donationbox' })
 export default class DonationboxGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {

@@ -3,9 +3,12 @@ import * as argon2 from 'argon2';
 import { Donator, DonatorScopeEnum, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateDonatorDto, RegisterDonationBoxDto } from './dto';
-import { Pagination } from '@/utils/pagination.service';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import {
+  CreateDonatorDto,
+  RegisterDonationBoxDto,
+} from '@/api-donator/donator/dto';
+import { Pagination } from '@/utils/pagination/pagination.helper';
 import { DonatorWithScope } from '@/api-donator/auth/types';
 
 @Injectable()

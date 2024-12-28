@@ -7,14 +7,14 @@ import {
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import { DonationboxService } from '@/donationbox/donationbox.service';
+import { DonationboxService } from '@/api-donationbox/donationbox/donationbox.service';
 import {
   CreateJWTDonationBoxDto,
   DonationBoxDtoResponse,
   JwtDonationBoxDtoResponse,
 } from './dto';
 
-@Controller('donationbox')
+@Controller('api-donationbox')
 export class DonationboxController {
   constructor(readonly donationboxService: DonationboxService) {}
 
