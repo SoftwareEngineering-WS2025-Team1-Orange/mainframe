@@ -21,10 +21,7 @@ import { ApiNgoModule } from '@/api-ngo/api-ngo.module';
     ApiDonatorModule,
     ApiNgoModule,
   ],
-  controllers: [
-    AppController,
-    DonationboxController,
-  ],
+  controllers: [AppController, DonationboxController],
   providers: [
     DonatorService,
     PrismaService,

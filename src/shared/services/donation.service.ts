@@ -18,47 +18,47 @@ export class DonationService {
         filters.filterDonatorId ? { donatorId: filters.filterDonatorId } : {},
         filters.filterDonatorFirstName
           ? {
-            donator: {
-              firstName: {
-                contains: filters.filterDonatorFirstName,
-                mode: 'insensitive',
+              donator: {
+                firstName: {
+                  contains: filters.filterDonatorFirstName,
+                  mode: 'insensitive',
+                },
               },
-            },
-          }
+            }
           : {},
         filters.filterDonatorLastName
           ? {
-            donator: {
-              lastName: {
-                contains: filters.filterDonatorLastName,
-                mode: 'insensitive',
+              donator: {
+                lastName: {
+                  contains: filters.filterDonatorLastName,
+                  mode: 'insensitive',
+                },
               },
-            },
-          }
+            }
           : {},
         filters.filterProjectId ? { projectId: filters.filterProjectId } : {},
         filters.filterProjectName
           ? {
-            project: {
-              name: {
-                contains: filters.filterProjectName,
-                mode: 'insensitive',
+              project: {
+                name: {
+                  contains: filters.filterProjectName,
+                  mode: 'insensitive',
+                },
               },
-            },
-          }
+            }
           : {},
         filters.filterNgoId ? { project: { ngoId: filters.filterNgoId } } : {},
         filters.filterNgoName
           ? {
-            project: {
-              ngo: {
-                name: {
-                  contains: filters.filterNgoName,
-                  mode: 'insensitive',
+              project: {
+                ngo: {
+                  name: {
+                    contains: filters.filterNgoName,
+                    mode: 'insensitive',
+                  },
                 },
               },
-            },
-          }
+            }
           : {},
         filters.filterCreatedFrom
           ? { createdAt: { gte: filters.filterCreatedFrom } }

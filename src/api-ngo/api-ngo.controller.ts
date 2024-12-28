@@ -10,13 +10,12 @@ import {
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import {CreateNgoDto, ReturnNgoDto} from "@/api-ngo/dto/ngo.dto";
-import {NgoService} from "@/shared/services/ngo.service";
+import { CreateNgoDto, ReturnNgoDto } from '@/api-ngo/dto/ngo.dto';
+import { NgoService } from '@/shared/services/ngo.service';
 
 @Controller('ngo')
 export class ApiNgoController {
-  constructor(private ngoService: NgoService) {
-  }
+  constructor(private ngoService: NgoService) {}
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
@@ -40,5 +39,4 @@ export class ApiNgoController {
   getNgoById(@Param('id', ParseIntPipe) id: number) {
     return this.ngoService.findNgoById(id);
   }
-
 }

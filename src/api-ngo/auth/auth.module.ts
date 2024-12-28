@@ -7,10 +7,15 @@ import { RefreshTokenStrategy } from '@/shared/auth/strategy/refreshToken.strate
 import { AuthController } from '@/api-ngo/auth/auth.controller';
 import { AuthService } from '@/api-ngo/auth/auth.service';
 import { NgoService } from '@/shared/services/ngo.service';
-import {SharedServicesModule} from "@/shared/services/shared-services.module";
+import { SharedServicesModule } from '@/shared/services/shared-services.module';
 
 @Module({
-  imports: [JwtModule.register({}), ConfigModule, PassportModule, SharedServicesModule],
+  imports: [
+    JwtModule.register({}),
+    ConfigModule,
+    PassportModule,
+    SharedServicesModule,
+  ],
   controllers: [AuthController],
   providers: [
     AccessTokenStrategy,
