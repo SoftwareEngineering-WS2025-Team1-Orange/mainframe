@@ -35,7 +35,7 @@ export class DonationboxService {
     const token = await this.jwtService.signAsync(
       { cuid },
       {
-        secret: this.configService.get('JWT_SECRET'),
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
       },
     );
     return { token };

@@ -1,19 +1,57 @@
-import { HttpException, Injectable } from '@nestjs/common';
-import { NGO, NGOScopeEnum, Prisma } from '@prisma/client';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { NGO, NGOScopeEnum, Prisma, Project } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
+import { Client } from 'minio';
+import { InjectMinio } from 'nestjs-minio';
 import { PrismaService } from '@/shared/prisma/prisma.service';
-import { CreateNgoDto } from '@/api-ngo/ngo/dto/ngo.dto';
+import { CreateNgoDto, UpdateNgoDto } from '@/api-ngo/ngo/dto/ngo.dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { NGOWithScope } from '@/api-ngo/auth/types';
 import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
+import { ProjectFilter } from '@/shared/filters/project.filter.interface';
+import { ProjectService } from '@/shared/services/project.service';
 
 @Injectable()
 export class NgoService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private projectService: ProjectService,
+    @InjectMinio() private minioClient: Client,
+  ) {
+    // eslint-disable-next-line unicorn/consistent-function-scoping
+    const initMinio = async () => {
+      const isBucketAvailable = await this.minioClient.bucketExists('public');
+      if (!isBucketAvailable) {
+        const settings = JSON.stringify({
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: {
+                AWS: ['*'],
+              },
+              Action: ['s3:GetObject'],
+              Resource: ['arn:aws:s3:::public/*'],
+            },
+          ],
+        });
+        // Settings for public minio bucket that is accessible from the outside
+        await this.minioClient.makeBucket('public', 'us-east-1', {});
+        await this.minioClient.setBucketPolicy('public', settings);
+      }
+    };
 
-  async findNgoById(id: number): Promise<NGO> {
+    initMinio().catch(() => {});
+  }
+
+  async findNgoByIdWithProjectFilter(
+    id: number,
+    projectFilter?: ProjectFilter,
+  ): Promise<
+    (NGO & { projects: { projects: Project[]; pagination: Pagination } }) | NGO
+  > {
     const ngo = await this.prismaService.nGO.findFirst({
       where: {
         id,
@@ -23,6 +61,22 @@ export class NgoService {
     if (!ngo) {
       throw new HttpException('NGO not found', StatusCodes.NOT_FOUND);
     }
+
+    if (projectFilter) {
+      const { projects, pagination } =
+        await this.projectService.findFilteredProjects({
+          ...projectFilter,
+          filterNgoId: id,
+        });
+      return {
+        ...ngo,
+        projects: {
+          projects,
+          pagination,
+        },
+      };
+    }
+
     return ngo;
   }
 
@@ -162,6 +216,55 @@ export class NgoService {
       },
     });
     return newNgo;
+  }
+
+  async updateNgoBanner(
+    id: number,
+    banner?: Express.Multer.File,
+  ): Promise<NGO> {
+    if (!banner) {
+      const ngo = await this.prismaService.nGO.findFirst({
+        where: {
+          id,
+        },
+      });
+      if (!ngo) {
+        throw new NotFoundException('NGO not found');
+      }
+      const bannerUri = ngo.banner_uri.split('public')[1];
+      await this.minioClient.removeObject('public/', bannerUri);
+      return this.prismaService.nGO.update({
+        where: {
+          id,
+        },
+        data: { banner_uri: null },
+      });
+    }
+
+    const uploadedObjectInfo = await this.minioClient.putObject(
+      'public',
+      `ngo/${id}/banner.${banner.mimetype.split('/')[1]}`,
+      banner.buffer,
+      banner.size,
+      {
+        'Content-Type': banner.mimetype,
+      },
+    );
+    return this.prismaService.nGO.update({
+      where: {
+        id,
+      },
+      data: { banner_uri: uploadedObjectInfo.etag },
+    });
+  }
+
+  async updateNgo(id: number, ngo: UpdateNgoDto): Promise<NGO> {
+    return this.prismaService.nGO.update({
+      where: {
+        id,
+      },
+      data: ngo,
+    });
   }
 
   private getSortField(sortFor?: string): string {

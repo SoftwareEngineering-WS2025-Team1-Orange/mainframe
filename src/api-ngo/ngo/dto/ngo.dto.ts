@@ -1,11 +1,24 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import {
   IsEmail,
   IsNotEmpty,
   IsString,
   IsStrongPassword,
 } from 'class-validator';
-import { DonatorScope } from '@prisma/client';
+import { DonatorScope, Project } from '@prisma/client';
+import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
+import { ReturnProjectDto } from '@/api-donator/project/dto/project.dto';
+import { Optional } from '@nestjs/common';
+
+class PaginatedProjects {
+  @Expose()
+  @Type(() => ReturnPaginationDto)
+  pagination: ReturnPaginationDto;
+
+  @Expose()
+  @Type(() => ReturnProjectDto)
+  projects: Project[];
+}
 
 export class ReturnNgoDto {
   @Expose()
@@ -47,9 +60,39 @@ export class ReturnNgoDto {
   @Exclude()
   updatedAt: Date;
 
+  @Expose()
+  @Type(() => PaginatedProjects)
+  projects: PaginatedProjects;
+
   constructor(partial: Partial<ReturnNgoDto>) {
     Object.assign(this, partial);
   }
+}
+
+export class UpdateNgoDto {
+  @IsString()
+  @Optional()
+  name?: string;
+
+  @IsString()
+  @Optional()
+  website_url?: string;
+
+  @IsString()
+  @Optional()
+  description?: string;
+
+  @IsString()
+  @Optional()
+  address?: string;
+
+  @IsString()
+  @Optional()
+  contact?: string;
+
+  @IsEmail()
+  @Optional()
+  email?: string;
 }
 
 export class CreateNgoDto {

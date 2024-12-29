@@ -70,6 +70,6 @@ export class NgoController {
   @SerializeOptions({ type: ReturnNgoDto })
   @Get('/:id')
   getNgoById(@Param('id', ParseIntPipe) id: number) {
-    return this.ngoService.findNgoById(id);
+    return this.ngoService.findNgoByIdWithProjectFilter(id);
   }
 }

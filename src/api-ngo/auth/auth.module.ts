@@ -7,6 +7,7 @@ import { RefreshTokenStrategy } from '@/shared/auth/strategy/refreshToken.strate
 import { AuthController } from '@/api-ngo/auth/auth.controller';
 import { AuthService } from '@/api-ngo/auth/auth.service';
 import { NgoService } from '@/shared/services/ngo.service';
+import { ProjectService } from '@/shared/services/project.service';
 
 @Module({
   imports: [JwtModule.register({}), ConfigModule, PassportModule],
@@ -16,6 +17,7 @@ import { NgoService } from '@/shared/services/ngo.service';
     RefreshTokenStrategy,
     AuthService,
     NgoService,
+    ProjectService,
   ],
 })
 export class AuthModule {}

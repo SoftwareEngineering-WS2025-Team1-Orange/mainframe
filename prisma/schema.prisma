@@ -96,6 +96,7 @@ model NGO {
   contact      String
   website_url  String
   description  String
+  banner_uri   String?
   address      String
   password     String
   refreshToken String?
@@ -139,6 +140,7 @@ model Project {
   fundraising_closed  Boolean
   progress            Float
   archived            Boolean
+  banner_uri          String?
   target_date         DateTime
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

@@ -11,7 +11,7 @@ import { Request, Response } from 'express';
 import { AuthService } from '@/api-donator/auth/auth.service';
 import { OAuth2Dto, OAuth2PasswordDto } from '@/shared/auth/dto/auth.dto';
 import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
-import { prefix } from '@/api-ngo/prefix';
+import { prefix } from '@/api-donator/prefix';
 import { handleOAuthFlow } from '@/utils/auth.helper';
 
 @Controller(`${prefix}/auth`)
