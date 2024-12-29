@@ -15,7 +15,9 @@ export class DonationService {
     const whereInputObject: Prisma.DonationWhereInput = {
       AND: [
         filters.filterId != null ? { id: filters.filterId } : {},
-        filters.filterDonatorId != null ? { donatorId: filters.filterDonatorId } : {},
+        filters.filterDonatorId != null
+          ? { donatorId: filters.filterDonatorId }
+          : {},
         filters.filterDonatorFirstName
           ? {
               donator: {
@@ -36,7 +38,9 @@ export class DonationService {
               },
             }
           : {},
-        filters.filterProjectId != null ? { projectId: filters.filterProjectId } : {},
+        filters.filterProjectId != null
+          ? { projectId: filters.filterProjectId }
+          : {},
         filters.filterProjectName
           ? {
               project: {
@@ -47,7 +51,9 @@ export class DonationService {
               },
             }
           : {},
-        filters.filterNgoId != null ? { project: { ngoId: filters.filterNgoId } } : {},
+        filters.filterNgoId != null
+          ? { project: { ngoId: filters.filterNgoId } }
+          : {},
         filters.filterNgoName
           ? {
               project: {

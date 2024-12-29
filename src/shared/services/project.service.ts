@@ -128,7 +128,7 @@ export class ProjectService {
             name: true,
             id: true,
           },
-        }
+        },
       },
       orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
     });

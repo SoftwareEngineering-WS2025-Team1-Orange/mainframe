@@ -1,4 +1,4 @@
-import {BaseFilter} from "@/shared/filters/base.filter.interface";
+import { BaseFilter } from '@/shared/filters/base.filter.interface';
 
 export interface DonatorFilter extends BaseFilter {
   filterId?: number;

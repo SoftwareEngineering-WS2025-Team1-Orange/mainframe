@@ -1,7 +1,8 @@
 import {
   ClassSerializerInterceptor,
   Controller,
-  Get, Param,
+  Get,
+  Param,
   ParseIntPipe,
   Query,
   SerializeOptions,

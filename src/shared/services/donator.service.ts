@@ -10,7 +10,7 @@ import {
 } from '@/api-donator/donator/dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { DonatorWithScope } from '@/api-donator/auth/types';
-import {DonatorFilter} from "@/shared/filters/donator.filter.interface";
+import { DonatorFilter } from '@/shared/filters/donator.filter.interface';
 
 @Injectable()
 export class DonatorService {
@@ -45,7 +45,7 @@ export class DonatorService {
   }
 
   async findFilteredDonator(
-    filters: DonatorFilter
+    filters: DonatorFilter,
   ): Promise<{ donators: DonatorWithScope[]; pagination: Pagination }> {
     const whereInputObject: Prisma.DonatorWhereInput = {
       AND: [
@@ -54,11 +54,21 @@ export class DonatorService {
           ? { email: { contains: filters.filterMail, mode: 'insensitive' } }
           : {},
         filters.filterFirstName
-          ? { firstName: { contains: filters.filterFirstName, mode: 'insensitive' } }
+          ? {
+              firstName: {
+                contains: filters.filterFirstName,
+                mode: 'insensitive',
+              },
+            }
           : {},
         filters.filterLastName
-          ? { lastName: { contains: filters.filterLastName, mode: 'insensitive' } }
-          : {}
+          ? {
+              lastName: {
+                contains: filters.filterLastName,
+                mode: 'insensitive',
+              },
+            }
+          : {},
       ],
     };
 
