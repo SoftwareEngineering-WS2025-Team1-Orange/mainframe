@@ -17,6 +17,11 @@ export class TransactionService {
     private earningsService: EarningService,
   ) {}
 
+  private transactionType = {
+    Earning: 'E',
+    Donation: 'D',
+  };
+
   async findFilteredTransactions(
     earningFilters: EarningFilter,
     donationFilters: DonationFilter,
@@ -37,11 +42,11 @@ export class TransactionService {
 
     const donationsWithType = donationsResult.donations.map((donation) => ({
       ...donation,
-      type: 'D',
+      type: this.transactionType.Donation,
     }));
     const earningsWithType = earningsResult.earnings.map((earning) => ({
       ...earning,
-      type: 'E',
+      type: this.transactionType.Earning,
     }));
 
     const combinedResults: ((Donation | Earning) & { type: string })[] =
@@ -85,19 +90,29 @@ export class TransactionService {
   ): ((Donation | Earning) & { type: string })[] {
     const donationsWithType = donations.map((donation) => ({
       ...donation,
-      type: 'D',
+      type: this.transactionType.Donation,
     }));
     const earningsWithType = earnings.map((earning) => ({
       ...earning,
-      type: 'E',
+      type: this.transactionType.Earning,
     }));
 
     const combinedResults = [...donationsWithType, ...earningsWithType];
     combinedResults.sort((a, b) => {
-      const fieldA: Date | number = a[this.getSortField(baseFilter.sortFor)] as Date | number; // created_at or amount
-      const fieldB: Date | number = b[this.getSortField(baseFilter.sortFor)] as Date | number; // created_at or amount
-      if (fieldA < fieldB) return getSortType(baseFilter.sortType) === SortType.ASC as string ? -1 : 1;
-      if (fieldA > fieldB) return getSortType(baseFilter.sortType) === SortType.ASC as string ? 1 : -1;
+      const fieldA: Date | number = a[this.getSortField(baseFilter.sortFor)] as
+        | Date
+        | number; // created_at or amount
+      const fieldB: Date | number = b[this.getSortField(baseFilter.sortFor)] as
+        | Date
+        | number; // created_at or amount
+      if (fieldA < fieldB)
+        return getSortType(baseFilter.sortType) === (SortType.ASC as string)
+          ? -1
+          : 1;
+      if (fieldA > fieldB)
+        return getSortType(baseFilter.sortType) === (SortType.ASC as string)
+          ? 1
+          : -1;
       return 0;
     });
 
