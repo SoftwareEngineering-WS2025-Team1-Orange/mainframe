@@ -6,9 +6,9 @@ import {
   IsStrongPassword,
 } from 'class-validator';
 import { DonatorScope, Project } from '@prisma/client';
+import { Optional } from '@nestjs/common';
 import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
 import { ReturnProjectDto } from '@/api-donator/project/dto/project.dto';
-import { Optional } from '@nestjs/common';
 
 class PaginatedProjects {
   @Expose()
