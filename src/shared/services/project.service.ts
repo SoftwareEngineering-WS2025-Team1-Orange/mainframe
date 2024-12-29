@@ -60,13 +60,13 @@ export class ProjectService {
   ): Promise<{ projects: Project[]; pagination: Pagination }> {
     const whereInputObject: Prisma.ProjectWhereInput = {
       AND: [
-        filters.filterId ? { id: filters.filterId } : {},
+        filters.filterId != null ? { id: filters.filterId } : {},
         filters.filterCategory ? { category: filters.filterCategory } : {},
         filters.filterName
           ? { name: { contains: filters.filterName, mode: 'insensitive' } }
           : {},
         !filters.filterIncludeArchived ? { archived: false } : {},
-        filters.filterNgoId ? { ngoId: filters.filterNgoId } : {},
+        filters.filterNgoId != null ? { ngoId: filters.filterNgoId } : {},
         filters.filterNgoName
           ? {
               ngo: {
@@ -74,28 +74,28 @@ export class ProjectService {
               },
             }
           : {},
-        filters.filterFavoriteByDonatorId
+        filters.filterFavoriteByDonatorId != null
           ? {
               FavouritedByDonators: {
                 some: { id: filters.filterFavoriteByDonatorId },
               },
             }
           : {},
-        filters.filterNotFavoriteByDonatorId
+        filters.filterNotFavoriteByDonatorId != null
           ? {
               FavouritedByDonators: {
                 none: { id: filters.filterNotFavoriteByDonatorId },
               },
             }
           : {},
-        filters.filterDonatedToByDonatorId
+        filters.filterDonatedToByDonatorId != null
           ? {
               donations: {
                 some: { donatorId: filters.filterDonatedToByDonatorId },
               },
             }
           : {},
-        filters.filterNotDonatedToByDonatorId
+        filters.filterNotDonatedToByDonatorId != null
           ? {
               donations: {
                 none: { donatorId: filters.filterNotDonatedToByDonatorId },
@@ -122,6 +122,14 @@ export class ProjectService {
         ...whereInputObject,
       },
       ...pagination.constructPaginationQueryObject(),
+      include: {
+        ngo: {
+          select: {
+            name: true,
+            id: true,
+          },
+        }
+      },
       orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
     });
     return { projects, pagination };

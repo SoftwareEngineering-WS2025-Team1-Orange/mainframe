@@ -10,6 +10,7 @@ import {
 } from '@/api-donator/donator/dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { DonatorWithScope } from '@/api-donator/auth/types';
+import {DonatorFilter} from "@/shared/filters/donator.filter.interface";
 
 @Injectable()
 export class DonatorService {
@@ -44,21 +45,20 @@ export class DonatorService {
   }
 
   async findFilteredDonator(
-    filterId?: number,
-    // filterIsFavorite: boolean = false,
-    filterMail?: string,
-    // filterDonatedTo: boolean = false,
-    paginationPage: number = 1,
-    paginationResultsPerPage: number = 10,
-    sortType?: string,
-    sortFor?: string,
+    filters: DonatorFilter
   ): Promise<{ donators: DonatorWithScope[]; pagination: Pagination }> {
     const whereInputObject: Prisma.DonatorWhereInput = {
       AND: [
-        filterId ? { id: filterId } : {},
-        filterMail
-          ? { email: { contains: filterMail, mode: 'insensitive' } }
+        filters.filterId != null ? { id: filters.filterId } : {},
+        filters.filterMail
+          ? { email: { contains: filters.filterMail, mode: 'insensitive' } }
           : {},
+        filters.filterFirstName
+          ? { firstName: { contains: filters.filterFirstName, mode: 'insensitive' } }
+          : {},
+        filters.filterLastName
+          ? { lastName: { contains: filters.filterLastName, mode: 'insensitive' } }
+          : {}
       ],
     };
 
@@ -69,8 +69,8 @@ export class DonatorService {
     const pagination = new Pagination(
       numTotalResults,
       numFilteredResults,
-      paginationResultsPerPage,
-      paginationPage,
+      filters.paginationPageSize,
+      filters.paginationPage,
     );
     const donators = await this.prismaService.donator.findMany({
       where: { ...whereInputObject },
@@ -78,7 +78,7 @@ export class DonatorService {
         scope: true,
       },
       ...pagination.constructPaginationQueryObject(),
-      orderBy: { [this.getSortField(sortFor)]: sortType },
+      orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
     });
     return {
       donators,

@@ -74,7 +74,7 @@ export class AuthService {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
     });
     const donatorPaginationObject =
-      await this.donatorService.findFilteredDonator(donatorId);
+      await this.donatorService.findFilteredDonator({filterId: donatorId});
     const donator = donatorPaginationObject.donators[0];
     if (!donator || !donator.refreshToken) {
       throw new ForbiddenException('Access Denied');
@@ -99,7 +99,7 @@ export class AuthService {
     pass: string,
   ): Promise<DonatorWithScope | null> {
     const donatorPaginationObject =
-      await this.donatorService.findFilteredDonator(null, mail);
+      await this.donatorService.findFilteredDonator({filterMail: mail});
     const donator = donatorPaginationObject.donators[0];
     if (
       !donator ||

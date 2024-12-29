@@ -41,7 +41,7 @@ export class DonatorController {
   }
 
   @Version('1')
-  @Post('/:donator_id/api-donationbox')
+  @Post('/:donator_id/donationbox')
   postDonationBoxToDonator(
     @Param('donator_id', ParseIntPipe) donatorId: number,
     @Body() donationBox: RegisterDonationBoxDto,
@@ -54,7 +54,7 @@ export class DonatorController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: DonationBoxDto })
-  @Get('/:donator_id/api-donationbox')
+  @Get('/:donator_id/donationbox')
   getDonationboxesOfDonator(
     @Param('donator_id', ParseIntPipe) donatorId: number,
   ) {

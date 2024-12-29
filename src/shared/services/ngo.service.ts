@@ -64,35 +64,35 @@ export class NgoService {
   ): Promise<{ ngos: NGOWithScope[]; pagination: Pagination }> {
     const whereInputObject: Prisma.NGOWhereInput = {
       AND: [
-        filters.filterId ? { id: filters.filterId } : {},
+        filters.filterId != null ? { id: filters.filterId } : {},
         filters.filterName
           ? { name: { contains: filters.filterName, mode: 'insensitive' } }
           : {},
         filters.filterMail
           ? { email: { contains: filters.filterMail, mode: 'insensitive' } }
           : {},
-        filters.filterFavorizedByDonatorId
+        filters.filterFavorizedByDonatorId != null
           ? {
               favouritedByDonators: {
                 some: { id: filters.filterFavorizedByDonatorId },
               },
             }
           : {},
-        filters.filterNotFavorizedByDonatorId
+        filters.filterNotFavorizedByDonatorId != null
           ? {
               favouritedByDonators: {
                 none: { id: filters.filterNotFavorizedByDonatorId },
               },
             }
           : {},
-        filters.filterDonatedToByDonatorId
+        filters.filterDonatedToByDonatorId != null
           ? {
               donations: {
                 some: { donatorId: filters.filterDonatedToByDonatorId },
               },
             }
           : {},
-        filters.filterNotDonatedToByDonatorId
+        filters.filterNotDonatedToByDonatorId != null
           ? {
               donations: {
                 none: { donatorId: filters.filterNotDonatedToByDonatorId },

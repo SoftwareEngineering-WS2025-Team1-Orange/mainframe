@@ -1,7 +1,7 @@
 import {
   ClassSerializerInterceptor,
   Controller,
-  Get,
+  Get, Param,
   ParseIntPipe,
   Query,
   SerializeOptions,
@@ -15,7 +15,7 @@ import { getSortType, SortType } from '@/utils/sort_filter.helper';
 import { DonationFilter } from '@/shared/filters/donation.filter.interface';
 import { prefix } from '@/api-donator/prefix';
 
-@Controller(`${prefix}/donation`)
+@Controller(`${prefix}/:donatorid/donation`)
 export class DonationController {
   constructor(private donationService: DonationService) {}
 
@@ -24,7 +24,7 @@ export class DonationController {
   @SerializeOptions({ type: ReturnPaginatedDonationsDto })
   @Get('/')
   getDonatorsDonations(
-    @Query('donator_id', new ParseIntPipe({ optional: true }))
+    @Param('donatorid', ParseIntPipe)
     donatorId: number,
     @Query('filter_id', new ParseIntPipe({ optional: true })) filterId?: number,
     @Query('filter_ngo_id', new ParseIntPipe({ optional: true }))
