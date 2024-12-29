@@ -11,6 +11,7 @@ export class DonationService {
 
   async findFilteredDonations(
     filters: DonationFilter,
+    paginate: boolean = true,
   ): Promise<{ donations: Donation[]; pagination: Pagination }> {
     const whereInputObject: Prisma.DonationWhereInput = {
       AND: [
@@ -90,14 +91,14 @@ export class DonationService {
     const pagination = new Pagination(
       numTotalResults,
       numFilteredResults,
-      filters.paginationPageSize,
-      filters.paginationPage,
+      paginate ? filters.paginationPageSize : numFilteredResults,
+      paginate ? filters.paginationPage : 1,
     );
     const donations = await this.prismaService.donation.findMany({
       where: {
         ...whereInputObject,
       },
-      ...pagination.constructPaginationQueryObject(),
+      ...(paginate ? pagination.constructPaginationQueryObject() : {}),
       include: {
         project: {
           select: {

@@ -63,6 +63,7 @@ model DonationBox {
   powerSupplyId Int?
   donator       Donator?     @relation(fields: [donatorId], references: [id])
   powerSupply   PowerSupply? @relation(fields: [powerSupplyId], references: [id])
+  earnings      Earning[]
 }
 
 model PowerSupply {
@@ -161,4 +162,29 @@ model Donation {
   donator   Donator  @relation(fields: [donatorId], references: [id])
   project   Project? @relation(fields: [projectId], references: [id])
   ngo       NGO      @relation(fields: [ngoId], references: [id])
+}
+
+model Earning {
+  id                 Int      @id @default(autoincrement())
+  amount             Float
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  activeTimeInPeriod Float
+
+  donationBoxId Int
+  donationBox   DonationBox @relation(fields: [donationBoxId], references: [id])
+  payoutId      Int
+  payout        Payout      @relation(fields: [payoutId], references: [id])
+}
+
+model Payout {
+  id              Int      @id @default(autoincrement())
+  amount          Float
+  periodStart     DateTime
+  periodEnd       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  transactionHash String   @unique
+
+  earnings Earning[]
 }
