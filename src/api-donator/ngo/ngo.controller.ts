@@ -19,7 +19,7 @@ import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { prefix } from '@/api-donator/prefix';
 import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
 
-@Controller(`${prefix}/:donatorid/ngo`)
+@Controller(`${prefix}/:donator_id/ngo`)
 export class NgoController {
   constructor(private ngoService: NgoService) {}
 
