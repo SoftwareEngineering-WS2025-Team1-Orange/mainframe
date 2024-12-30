@@ -1,13 +1,13 @@
-import {Injectable} from '@nestjs/common';
-import {Donation, Earning} from '@prisma/client';
-import {PrismaService} from '@/shared/prisma/prisma.service';
-import {Pagination} from '@/utils/pagination/pagination.helper';
-import {getSortType, SortType} from '@/utils/sort_filter.helper';
-import {EarningFilter} from '@/shared/filters/earning.filter.interface';
-import {DonationFilter} from '@/shared/filters/donation.filter.interface';
-import {DonationService} from '@/shared/services/donation.service';
-import {EarningService} from '@/shared/services/earning.service';
-import {BaseFilter} from '@/shared/filters/base.filter.interface';
+import { Injectable } from '@nestjs/common';
+import { Donation, Earning } from '@prisma/client';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import { Pagination } from '@/utils/pagination/pagination.helper';
+import { getSortType, SortType } from '@/utils/sort_filter.helper';
+import { EarningFilter } from '@/shared/filters/earning.filter.interface';
+import { DonationFilter } from '@/shared/filters/donation.filter.interface';
+import { DonationService } from '@/shared/services/donation.service';
+import { EarningService } from '@/shared/services/earning.service';
+import { BaseFilter } from '@/shared/filters/base.filter.interface';
 
 @Injectable()
 export class TransactionService {
@@ -15,8 +15,7 @@ export class TransactionService {
     private prismaService: PrismaService,
     private donationService: DonationService,
     private earningsService: EarningService,
-  ) {
-  }
+  ) {}
 
   private transactionType = {
     Earning: 'E',
@@ -44,11 +43,11 @@ export class TransactionService {
     pagination: Pagination;
   }> {
     const donationsResult = await this.donationService.findFilteredDonations(
-      {...donationFilters, ...baseFilter}, //Use pagination and sort from baseFilter
+      { ...donationFilters, ...baseFilter }, // Use pagination and sort from baseFilter
       false,
     );
     const earningsResult = await this.earningsService.findFilteredEarnings(
-      {...earningFilters, ...baseFilter}, //Use pagination and sort from baseFilter
+      { ...earningFilters, ...baseFilter }, // Use pagination and sort from baseFilter
       false,
     );
 
@@ -70,9 +69,9 @@ export class TransactionService {
 
     const pagination = new Pagination(
       donationsResult.pagination.totalResults +
-      earningsResult.pagination.totalResults,
+        earningsResult.pagination.totalResults,
       donationsResult.pagination.filteredResults +
-      earningsResult.pagination.filteredResults,
+        earningsResult.pagination.filteredResults,
       baseFilter.paginationPageSize,
       baseFilter.paginationPage,
     );
@@ -83,10 +82,10 @@ export class TransactionService {
 
     const paginatedDonations: Donation[] = paginatedResults
       .filter((result) => result.type === 'D')
-      .map(({type, ...rest}) => rest as Donation);
+      .map(({ type, ...rest }) => rest as Donation);
     const paginatedEarnings: Earning[] = paginatedResults
       .filter((result) => result.type === 'E')
-      .map(({type, ...rest}) => rest as Earning);
+      .map(({ type, ...rest }) => rest as Earning);
 
     return {
       earnings: paginatedEarnings,
