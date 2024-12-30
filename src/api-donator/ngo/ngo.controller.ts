@@ -28,7 +28,7 @@ export class NgoController {
   @SerializeOptions({ type: ReturnPaginatedNgosDto })
   @Get('/')
   getFilteredNgos(
-    @Param('donatorid', ParseIntPipe) donatorId: number,
+    @Param('donator_id', ParseIntPipe) donatorId: number,
     @Query('filter_ngo_id', new ParseIntPipe({ optional: true }))
     filterId?: number,
     @Query('filter_is_favorite', new ParseBoolPipe({ optional: true }))
