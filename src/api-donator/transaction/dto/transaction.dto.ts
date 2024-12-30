@@ -11,7 +11,7 @@ class ReturnDonationDonatorDto {
   @Expose()
   lastName: string;
 
-  Constructor(partial: Partial<ReturnDonationDonatorDto>) {
+  constructor(partial: Partial<ReturnDonationDonatorDto>) {
     Object.assign(this, partial);
   }
 }
@@ -23,7 +23,7 @@ class ReturnDonationNgoDto {
   @Expose()
   name: string;
 
-  Constructor(partial: Partial<ReturnDonationNgoDto>) {
+  constructor(partial: Partial<ReturnDonationNgoDto>) {
     Object.assign(this, partial);
   }
 }
@@ -35,7 +35,7 @@ class ReturnDonationProjectDto {
   @Expose()
   name: string;
 
-  Constructor(partial: Partial<ReturnDonationProjectDto>) {
+  constructor(partial: Partial<ReturnDonationProjectDto>) {
     Object.assign(this, partial);
   }
 }
@@ -71,7 +71,7 @@ export class ReturnTransactionDonationDto {
   @Exclude()
   projectId: number;
 
-  Constructor(partial: Partial<ReturnTransactionDonationDto>) {
+  constructor(partial: Partial<ReturnTransactionDonationDto>) {
     Object.assign(this, partial);
   }
 }
@@ -92,7 +92,7 @@ export class ReturnEarningsPayoutDto {
   @Expose()
   periodEnd: Date;
 
-  Constructor(partial: Partial<ReturnEarningsPayoutDto>) {
+  constructor(partial: Partial<ReturnEarningsPayoutDto>) {
     Object.assign(this, partial);
   }
 }
@@ -119,7 +119,10 @@ export class ReturnTransactionEarningDto {
   @Exclude()
   payoutId: number;
 
-  Constructor(partial: Partial<ReturnTransactionEarningDto>) {
+  @Expose()
+  payout: ReturnEarningsPayoutDto;
+
+  constructor(partial: Partial<ReturnTransactionEarningDto>) {
     Object.assign(this, partial);
   }
 }
