@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { NgoService } from '@/shared/services/ngo.service';
 import {
-  ReturnNgoDto,
   ReturnPaginatedNgosDto,
 } from '@/api-donator/ngo/dto/ngo.dto';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
@@ -63,13 +62,5 @@ export class NgoController {
       sortType,
     };
     return this.ngoService.findFilteredNgosWithFavourite(filters, donatorId);
-  }
-
-  @Version('1')
-  @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnNgoDto })
-  @Get('/:id')
-  getNgoById(@Param('id', ParseIntPipe) id: number) {
-    return this.ngoService.findNgoById(id);
   }
 }

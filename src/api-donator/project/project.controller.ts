@@ -13,14 +13,13 @@ import {
 import { ProjectService } from '@/shared/services/project.service';
 import {
   ReturnPaginatedProjectsDto,
-  ReturnProjectDto,
 } from '@/api-donator/project/dto/project.dto';
 import { parseEnumCategory } from '@/utils/sort_filter.helper';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
 import { prefix } from '@/api-donator/prefix';
 
-@Controller(`${prefix}/:donatorid/project`)
+@Controller(`${prefix}/:donator_id/project`)
 export class ProjectController {
   constructor(private projectService: ProjectService) {}
 
@@ -29,7 +28,7 @@ export class ProjectController {
   @SerializeOptions({ type: ReturnPaginatedProjectsDto })
   @Get('/')
   getFilteredProjects(
-    @Param('donatorid', ParseIntPipe) donatorId: number,
+    @Param('donator_id', ParseIntPipe) donatorId: number,
     @Query('filter_project_id', new ParseIntPipe({ optional: true }))
     filterId?: number,
     @Query('filter_category') filterCategory?: string,
@@ -77,13 +76,5 @@ export class ProjectController {
       filters,
       donatorId,
     );
-  }
-
-  @Version('1')
-  @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnProjectDto }) // Problem: Progress is interpreted as decimal/undefined
-  @Get('/:id')
-  getProjectById(@Param('id', ParseIntPipe) id: number) {
-    return this.projectService.findProjectById(id);
   }
 }
