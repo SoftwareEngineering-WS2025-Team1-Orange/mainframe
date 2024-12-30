@@ -11,9 +11,7 @@ import {
   Version,
 } from '@nestjs/common';
 import { NgoService } from '@/shared/services/ngo.service';
-import {
-  ReturnPaginatedNgosDto,
-} from '@/api-donator/ngo/dto/ngo.dto';
+import { ReturnPaginatedNgosDto } from '@/api-donator/ngo/dto/ngo.dto';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { prefix } from '@/api-donator/prefix';
 import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
