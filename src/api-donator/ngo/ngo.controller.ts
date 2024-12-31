@@ -11,15 +11,12 @@ import {
   Version,
 } from '@nestjs/common';
 import { NgoService } from '@/shared/services/ngo.service';
-import {
-  ReturnNgoDto,
-  ReturnPaginatedNgosDto,
-} from '@/api-donator/ngo/dto/ngo.dto';
+import { ReturnPaginatedNgosDto } from '@/api-donator/ngo/dto/ngo.dto';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { prefix } from '@/api-donator/prefix';
 import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
 
-@Controller(`${prefix}/:donatorid/ngo`)
+@Controller(`${prefix}/:donator_id/ngo`)
 export class NgoController {
   constructor(private ngoService: NgoService) {}
 
@@ -28,7 +25,7 @@ export class NgoController {
   @SerializeOptions({ type: ReturnPaginatedNgosDto })
   @Get('/')
   getFilteredNgos(
-    @Param('donatorid', ParseIntPipe) donatorId: number,
+    @Param('donator_id', ParseIntPipe) donatorId: number,
     @Query('filter_ngo_id', new ParseIntPipe({ optional: true }))
     filterId?: number,
     @Query('filter_is_favorite', new ParseBoolPipe({ optional: true }))
@@ -63,13 +60,5 @@ export class NgoController {
       sortType,
     };
     return this.ngoService.findFilteredNgosWithFavourite(filters, donatorId);
-  }
-
-  @Version('1')
-  @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnNgoDto })
-  @Get('/:id')
-  getNgoById(@Param('id', ParseIntPipe) id: number) {
-    return this.ngoService.findNgoByIdWithProjectFilter(id);
   }
 }
