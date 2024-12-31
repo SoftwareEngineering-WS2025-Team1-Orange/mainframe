@@ -20,7 +20,7 @@ import {
 
 import { prefix } from '@/api-donator/prefix';
 
-@Controller(`${prefix}/donator`)
+@Controller(`${prefix}`)
 export class DonatorController {
   constructor(private donatorService: DonatorService) {}
 

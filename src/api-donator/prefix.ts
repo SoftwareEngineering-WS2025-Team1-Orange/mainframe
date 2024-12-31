@@ -1,1 +1,1 @@
-export const prefix = 'api-donator';
+export const prefix = 'donator';
