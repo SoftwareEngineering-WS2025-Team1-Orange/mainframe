@@ -143,7 +143,7 @@ export class NgoController {
   @UseInterceptors(ClassSerializerInterceptor)
   @UseInterceptors(FileInterceptor('banner'))
   @SerializeOptions({ type: ReturnNgoDto })
-  @Patch('/:ngo_id')
+  @Patch('/:ngo_id/banner_uri')
   @UseGuards(AccessTokenGuard)
   patchNgoBanner(
     @Param('ngo_id', ParseIntPipe)
@@ -170,7 +170,6 @@ export class NgoController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @UseInterceptors(FileInterceptor('banner'))
   @SerializeOptions({ type: ReturnNgoDto })
   @Put('/:ngo_id')
   @UseGuards(AccessTokenGuard)

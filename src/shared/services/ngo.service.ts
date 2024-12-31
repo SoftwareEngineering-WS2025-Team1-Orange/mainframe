@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
 import { Client } from 'minio';
 import { InjectMinio } from 'nestjs-minio';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { CreateNgoDto, UpdateNgoDto } from '@/api-ngo/ngo/dto/ngo.dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
@@ -13,19 +14,23 @@ import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
 import { ProjectService } from '@/shared/services/project.service';
 
+const BUCKET_NAME = 'public';
+
 @Injectable()
 export class NgoService {
   constructor(
     private prismaService: PrismaService,
     private projectService: ProjectService,
+    private configService: ConfigService,
     @InjectMinio() private minioClient: Client,
   ) {
     // eslint-disable-next-line unicorn/consistent-function-scoping
     const initMinio = async () => {
-      const isBucketAvailable = await this.minioClient.bucketExists('public');
+      const isBucketAvailable =
+        await this.minioClient.bucketExists(BUCKET_NAME);
       if (!isBucketAvailable) {
         const settings = JSON.stringify({
-          Version: '2012-10-17',
+          Version: new Date().toISOString(),
           Statement: [
             {
               Effect: 'Allow',
@@ -38,8 +43,8 @@ export class NgoService {
           ],
         });
         // Settings for public minio bucket that is accessible from the outside
-        await this.minioClient.makeBucket('public', 'us-east-1', {});
-        await this.minioClient.setBucketPolicy('public', settings);
+        await this.minioClient.makeBucket(BUCKET_NAME, 'us-east-1', {});
+        await this.minioClient.setBucketPolicy(BUCKET_NAME, settings);
       }
     };
 
@@ -231,8 +236,8 @@ export class NgoService {
       if (!ngo) {
         throw new NotFoundException('NGO not found');
       }
-      const bannerUri = ngo.banner_uri.split('public')[1];
-      await this.minioClient.removeObject('public/', bannerUri);
+      const bannerUri = ngo.banner_uri.split(BUCKET_NAME)[1];
+      await this.minioClient.removeObject(`${BUCKET_NAME}/`, bannerUri);
       return this.prismaService.nGO.update({
         where: {
           id,
@@ -241,21 +246,38 @@ export class NgoService {
       });
     }
 
-    const uploadedObjectInfo = await this.minioClient.putObject(
-      'public',
-      `ngo/${id}/banner.${banner.mimetype.split('/')[1]}`,
+    const storagePath = `ngo/${id}/banner.${banner.mimetype.split('/')[1]}`;
+    await this.minioClient.putObject(
+      BUCKET_NAME,
+      storagePath,
       banner.buffer,
       banner.size,
       {
         'Content-Type': banner.mimetype,
       },
     );
+
     return this.prismaService.nGO.update({
       where: {
         id,
       },
-      data: { banner_uri: uploadedObjectInfo.etag },
+      data: {
+        banner_uri: this.createBannerUri(storagePath),
+      },
     });
+  }
+
+  private createBannerUri(banner_address: string) {
+    const protocol = (JSON.parse(
+      this.configService.get('MINIO_USE_SSL'),
+    ) as boolean)
+      ? 'https://'
+      : 'http://';
+
+    const address = this.configService.get<string>('MINIO_ENDPOINT');
+    const port = this.configService.get<string>('MINIO_PORT');
+
+    return `${protocol}${address}:${port}/${BUCKET_NAME}/${banner_address}`;
   }
 
   async updateNgo(id: number, ngo: UpdateNgoDto): Promise<NGO> {

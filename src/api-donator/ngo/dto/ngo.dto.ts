@@ -13,6 +13,9 @@ export class ReturnNgoDto {
   website_url: string;
 
   @Expose()
+  banner_uri: string;
+
+  @Expose()
   description: string;
 
   @Expose()

@@ -10,7 +10,10 @@ import { ApiNgoModule } from '@/api-ngo/api-ngo.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     NestMinioModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

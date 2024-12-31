@@ -4,9 +4,9 @@ import {
   IsNotEmpty,
   IsString,
   IsStrongPassword,
+  IsOptional,
 } from 'class-validator';
 import { DonatorScope, Project } from '@prisma/client';
-import { Optional } from '@nestjs/common';
 import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
 import { ReturnProjectDto } from '@/api-donator/project/dto/project.dto';
 
@@ -32,6 +32,9 @@ export class ReturnNgoDto {
 
   @Expose()
   description: string;
+
+  @Expose()
+  banner_uri: string;
 
   @Expose()
   address: string;
@@ -71,27 +74,27 @@ export class ReturnNgoDto {
 
 export class UpdateNgoDto {
   @IsString()
-  @Optional()
+  @IsOptional()
   name?: string;
 
   @IsString()
-  @Optional()
+  @IsOptional()
   website_url?: string;
 
   @IsString()
-  @Optional()
+  @IsOptional()
   description?: string;
 
   @IsString()
-  @Optional()
+  @IsOptional()
   address?: string;
 
   @IsString()
-  @Optional()
+  @IsOptional()
   contact?: string;
 
   @IsEmail()
-  @Optional()
+  @IsOptional()
   email?: string;
 }
 
