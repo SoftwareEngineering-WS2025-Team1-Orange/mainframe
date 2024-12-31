@@ -1,6 +1,6 @@
 # Based on https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile
 
-FROM node:22.11.0-alpine AS base
+FROM node:22.12.0-alpine AS base
 
 # NEW enable yarn 4.0.2 version and copy yarnrc.yml
 RUN corepack enable
