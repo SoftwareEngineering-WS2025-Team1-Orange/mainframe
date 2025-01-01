@@ -1,1 +1,1 @@
-export * from '../../donationbox/dto/donationbox.dto';
+export * from './donationbox.dto';

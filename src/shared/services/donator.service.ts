@@ -4,9 +4,7 @@ import { Donator, DonatorScopeEnum, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/shared/prisma/prisma.service';
-import {
-  CreateDonatorDto,
-} from '@/api-donator/donator/dto';
+import { CreateDonatorDto } from '@/api-donator/donator/dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { DonatorWithScope } from '@/api-donator/auth/types';
 import { DonatorFilter } from '@/shared/filters/donator.filter.interface';
