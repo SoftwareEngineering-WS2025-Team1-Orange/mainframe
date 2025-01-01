@@ -6,7 +6,6 @@ import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import {
   CreateDonatorDto,
-  RegisterDonationBoxDto,
 } from '@/api-donator/donator/dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { DonatorWithScope } from '@/api-donator/auth/types';
@@ -120,29 +119,6 @@ export class DonatorService {
     });
 
     return newDonator;
-  }
-
-  async registerDonationBox(
-    donatorId: number,
-    donationBox: RegisterDonationBoxDto,
-  ) {
-    await this.prismaService.donationBox.update({
-      where: {
-        CUID: donationBox.cuid,
-      },
-      data: {
-        last_status: 'AVAILABLE',
-        donatorId,
-      },
-    });
-  }
-
-  async findDonatorsDonationboxes(donatorId: number) {
-    return this.prismaService.donationBox.findMany({
-      where: {
-        donatorId,
-      },
-    });
   }
 
   private getSortField(sortFor?: string): string {

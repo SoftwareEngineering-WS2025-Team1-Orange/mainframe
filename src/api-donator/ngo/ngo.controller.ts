@@ -16,14 +16,14 @@ import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { prefix } from '@/api-donator/prefix';
 import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
 
-@Controller(`${prefix}/:donator_id/ngo`)
+@Controller(`${prefix}/ngo`)
 export class NgoController {
   constructor(private ngoService: NgoService) {}
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnPaginatedNgosDto })
-  @Get('/')
+  @Get('donator/:donator_id')
   getFilteredNgos(
     @Param('donator_id', ParseIntPipe) donatorId: number,
     @Query('filter_ngo_id', new ParseIntPipe({ optional: true }))
