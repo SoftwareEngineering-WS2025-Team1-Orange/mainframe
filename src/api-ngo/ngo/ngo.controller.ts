@@ -2,6 +2,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
   Get,
   MaxFileSizeValidator,
   Optional,
@@ -23,7 +24,12 @@ import {
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { NgoService } from '@/shared/services/ngo.service';
-import { CreateNgoDto, ReturnNgoDto, UpdateNgoDto } from './dto/ngo.dto';
+import {
+  CreateNgoDto,
+  ReturnNgoDto,
+  ReturnNgoWithoutProjectsDto,
+  UpdateNgoDto,
+} from './dto/ngo.dto';
 import { prefix } from '@/api-ngo/prefix';
 import { rejectOnNotOwnedResource } from '@/utils/auth.helper';
 import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
@@ -133,7 +139,7 @@ export class NgoController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnNgoDto })
+  @SerializeOptions({ type: ReturnNgoWithoutProjectsDto })
   @Post('/')
   postNgo(@Body() createNgoDto: CreateNgoDto) {
     return this.ngoService.createNgo(createNgoDto);
@@ -142,7 +148,7 @@ export class NgoController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @UseInterceptors(FileInterceptor('banner'))
-  @SerializeOptions({ type: ReturnNgoDto })
+  @SerializeOptions({ type: ReturnNgoWithoutProjectsDto })
   @Patch('/:ngo_id/banner_uri')
   @UseGuards(AccessTokenGuard)
   patchNgoBanner(
@@ -170,7 +176,7 @@ export class NgoController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnNgoDto })
+  @SerializeOptions({ type: ReturnNgoWithoutProjectsDto })
   @Put('/:ngo_id')
   @UseGuards(AccessTokenGuard)
   putNgo(
@@ -181,5 +187,19 @@ export class NgoController {
   ) {
     rejectOnNotOwnedResource(req, ngoId);
     return this.ngoService.updateNgo(ngoId, updateNgoDto);
+  }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({ type: ReturnNgoWithoutProjectsDto })
+  @Delete('/:ngo_id')
+  @UseGuards(AccessTokenGuard)
+  deleteNgo(
+    @Param('ngo_id', ParseIntPipe)
+    ngoId: number,
+    @Req() req: Request,
+  ) {
+    rejectOnNotOwnedResource(req, ngoId);
+    return this.ngoService.deleteNgo(ngoId);
   }
 }

@@ -20,6 +20,57 @@ class PaginatedProjects {
   projects: Project[];
 }
 
+export class ReturnNgoWithoutProjectsDto {
+  @Expose()
+  id: number;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  website_url: string;
+
+  @Expose()
+  description: string;
+
+  @Expose()
+  banner_uri: string;
+
+  @Expose()
+  address: string;
+
+  @Expose()
+  contact: string;
+
+  @Exclude()
+  password: string;
+
+  @Exclude()
+  email: string;
+
+  @Exclude()
+  salt: string;
+
+  @Exclude()
+  refreshToken: string | null;
+
+  @Expose()
+  scope: DonatorScope[];
+
+  @Exclude()
+  createdAt: Date;
+
+  @Exclude()
+  updatedAt: Date;
+
+  @Exclude()
+  deletedAt: Date;
+
+  constructor(partial: Partial<ReturnNgoWithoutProjectsDto>) {
+    Object.assign(this, partial);
+  }
+}
+
 export class ReturnNgoDto {
   @Expose()
   id: number;
@@ -54,7 +105,7 @@ export class ReturnNgoDto {
   @Exclude()
   refreshToken: string | null;
 
-  @Exclude()
+  @Expose()
   scope: DonatorScope[];
 
   @Exclude()
@@ -62,6 +113,9 @@ export class ReturnNgoDto {
 
   @Exclude()
   updatedAt: Date;
+
+  @Exclude()
+  deletedAt: Date;
 
   @Expose()
   @Type(() => PaginatedProjects)

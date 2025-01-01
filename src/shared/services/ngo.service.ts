@@ -1,4 +1,9 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { NGO, NGOScopeEnum, Prisma, Project } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { randomBytes } from 'node:crypto';
@@ -55,11 +60,19 @@ export class NgoService {
     id: number,
     projectFilter?: ProjectFilter,
   ): Promise<
-    (NGO & { projects: { projects: Project[]; pagination: Pagination } }) | NGO
+    | (NGO & {
+        scope: NGOScopeEnum[];
+        projects: { projects: Project[]; pagination: Pagination };
+      })
+    | (NGO & { scope: NGOScopeEnum[] })
   > {
     const ngo = await this.prismaService.nGO.findFirst({
       where: {
         id,
+        deletedAt: null,
+      },
+      include: {
+        scope: true,
       },
     });
 
@@ -75,6 +88,7 @@ export class NgoService {
         });
       return {
         ...ngo,
+        scope: ngo.scope.map((scope) => scope.name as NGOScopeEnum),
         projects: {
           projects,
           pagination,
@@ -82,7 +96,10 @@ export class NgoService {
       };
     }
 
-    return ngo;
+    return {
+      ...ngo,
+      scope: ngo.scope.map((scope) => scope.name as NGOScopeEnum),
+    };
   }
 
   async findFilteredNgosWithFavourite(
@@ -104,6 +121,7 @@ export class NgoService {
       },
       where: {
         favouritedByDonators: { some: { id: favourizedByDonatorId } },
+        deletedAt: null,
       },
     });
 
@@ -163,7 +181,7 @@ export class NgoService {
 
     const numTotalResults = await this.prismaService.nGO.count();
     const numFilteredResults = await this.prismaService.nGO.count({
-      where: { ...whereInputObject },
+      where: { ...whereInputObject, deletedAt: null },
     });
     const pagination = new Pagination(
       numTotalResults,
@@ -172,7 +190,7 @@ export class NgoService {
       filters.paginationPage,
     );
     const ngos = await this.prismaService.nGO.findMany({
-      where: { ...whereInputObject },
+      where: { ...whereInputObject, deletedAt: null },
       ...pagination.constructPaginationQueryObject(),
       orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
       include: {
@@ -192,6 +210,7 @@ export class NgoService {
     await this.prismaService.nGO.update({
       where: {
         id,
+        deletedAt: null,
       },
       data: {
         refreshToken: hashedRefreshToken,
@@ -199,7 +218,7 @@ export class NgoService {
     });
   }
 
-  async createNgo(ngo: CreateNgoDto): Promise<NGO> {
+  async createNgo(ngo: CreateNgoDto): Promise<NGO & { scope: NGOScopeEnum[] }> {
     const salt = randomBytes(16).toString('hex');
     const ngoWithHash = {
       ...ngo,
@@ -220,51 +239,18 @@ export class NgoService {
         },
       },
     });
-    return newNgo;
-  }
 
-  async updateNgoBanner(
-    id: number,
-    banner?: Express.Multer.File,
-  ): Promise<NGO> {
-    if (!banner) {
-      const ngo = await this.prismaService.nGO.findFirst({
-        where: {
-          id,
-        },
-      });
-      if (!ngo) {
-        throw new NotFoundException('NGO not found');
-      }
-      const bannerUri = ngo.banner_uri.split(BUCKET_NAME)[1];
-      await this.minioClient.removeObject(`${BUCKET_NAME}/`, bannerUri);
-      return this.prismaService.nGO.update({
-        where: {
-          id,
-        },
-        data: { banner_uri: null },
-      });
+    if (!newNgo) {
+      throw new HttpException(
+        'NGO could not be created',
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
     }
 
-    const storagePath = `ngo/${id}/banner.${banner.mimetype.split('/')[1]}`;
-    await this.minioClient.putObject(
-      BUCKET_NAME,
-      storagePath,
-      banner.buffer,
-      banner.size,
-      {
-        'Content-Type': banner.mimetype,
-      },
-    );
-
-    return this.prismaService.nGO.update({
-      where: {
-        id,
-      },
-      data: {
-        banner_uri: this.createBannerUri(storagePath),
-      },
-    });
+    return {
+      ...newNgo,
+      scope: defaultRoles,
+    };
   }
 
   private createBannerUri(banner_address: string) {
@@ -280,13 +266,142 @@ export class NgoService {
     return `${protocol}${address}:${port}/${BUCKET_NAME}/${banner_address}`;
   }
 
-  async updateNgo(id: number, ngo: UpdateNgoDto): Promise<NGO> {
-    return this.prismaService.nGO.update({
-      where: {
-        id,
+  private async getBannerUriForDb(
+    id: number,
+    banner: Express.Multer.File,
+  ): Promise<string | null> {
+    if (!banner) {
+      const ngo = await this.prismaService.nGO.findFirst({
+        where: {
+          id,
+          deletedAt: null,
+        },
+      });
+      if (!ngo) {
+        throw new NotFoundException('NGO not found');
+      }
+      const bannerUri = ngo.banner_uri.split(BUCKET_NAME)[1];
+      await this.minioClient.removeObject(`${BUCKET_NAME}/`, bannerUri);
+      return null;
+    }
+    const storagePath = `ngo/${id}/banner.${banner.mimetype.split('/')[1]}`;
+    await this.minioClient.putObject(
+      BUCKET_NAME,
+      storagePath,
+      banner.buffer,
+      banner.size,
+      {
+        'Content-Type': banner.mimetype,
       },
-      data: ngo,
-    });
+    );
+    return this.createBannerUri(storagePath);
+  }
+
+  async updateNgoBanner(
+    id: number,
+    banner?: Express.Multer.File,
+  ): Promise<NGO & { scope: NGOScopeEnum[] }> {
+    const bannerUriForDB = await this.getBannerUriForDb(id, banner);
+
+    const updatedNgo = await this.prismaService.nGO
+      .update({
+        where: {
+          id,
+          deletedAt: null,
+        },
+        data: {
+          banner_uri: bannerUriForDB,
+        },
+        include: {
+          scope: true,
+        },
+      })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new NotFoundException('NGO not found.');
+        }
+        throw new InternalServerErrorException(
+          'Something went wrong updating the NGO.',
+        );
+      });
+
+    return {
+      ...updatedNgo,
+      scope: updatedNgo.scope.map((scope) => scope.name as NGOScopeEnum),
+    };
+  }
+
+  async updateNgo(
+    id: number,
+    ngo: UpdateNgoDto,
+  ): Promise<NGO & { scope: NGOScopeEnum[] }> {
+    const updatedNgo = await this.prismaService.nGO
+      .update({
+        where: {
+          id,
+          deletedAt: null,
+        },
+        data: ngo,
+        include: {
+          scope: true,
+        },
+      })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new NotFoundException('NGO not found.');
+        }
+        throw new InternalServerErrorException(
+          'Something went wrong updating the NGO.',
+        );
+      });
+
+    return {
+      ...updatedNgo,
+      scope: updatedNgo.scope.map((scope) => scope.name as NGOScopeEnum),
+    };
+  }
+
+  async deleteNgo(id: number): Promise<NGO & { scope: NGOScopeEnum[] }> {
+    // Allow only soft delete if all projects associated with the NGO are archived
+    const ngo = await this.prismaService.nGO
+      .update({
+        where: {
+          id,
+          deletedAt: null,
+          projects: {
+            every: {
+              archived: true,
+            },
+          },
+        },
+        data: {
+          deletedAt: new Date(),
+          refreshToken: null,
+        },
+        include: {
+          scope: true,
+        },
+      })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new NotFoundException(
+            'NGO not found for deletion. ' +
+              'Please check if the NGO exists, that all open projects ' +
+              'are archived and the NGO is not deleted already.',
+          );
+        }
+        throw new InternalServerErrorException(
+          'Something went wrong deleting the NGO.',
+        );
+      });
+    if (!ngo) {
+      throw new HttpException('NGO not found', StatusCodes.NOT_FOUND);
+    }
+
+    return {
+      ...ngo,
+      scope: ngo.scope.map((scope) => scope.name as NGOScopeEnum),
+    };
   }
 
   private getSortField(sortFor?: string): string {
