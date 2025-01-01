@@ -13,14 +13,12 @@ import {
 import { DonatorService } from '@/shared/services/donator.service';
 import {
   CreateDonatorDto,
-  DonationBoxDto,
-  RegisterDonationBoxDto,
   ReturnDonatorDto,
 } from './dto';
 
 import { prefix } from '@/api-donator/prefix';
 
-@Controller(`${prefix}`)
+@Controller(`${prefix}/donator`)
 export class DonatorController {
   constructor(private donatorService: DonatorService) {}
 
@@ -38,26 +36,5 @@ export class DonatorController {
   @Get('/:donator_id')
   getDonatorById(@Param('donator_id', ParseIntPipe) donatorId: number) {
     return this.donatorService.findDonatorById(donatorId);
-  }
-
-  @Version('1')
-  @Post('/:donator_id/donationbox')
-  postDonationBoxToDonator(
-    @Param('donator_id', ParseIntPipe) donatorId: number,
-    @Body() donationBox: RegisterDonationBoxDto,
-  ) {
-    this.donatorService
-      .registerDonationBox(donatorId, donationBox)
-      .catch(() => {});
-  }
-
-  @Version('1')
-  @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: DonationBoxDto })
-  @Get('/:donator_id/donationbox')
-  getDonationboxesOfDonator(
-    @Param('donator_id', ParseIntPipe) donatorId: number,
-  ) {
-    return this.donatorService.findDonatorsDonationboxes(donatorId);
   }
 }

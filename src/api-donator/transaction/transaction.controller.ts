@@ -17,16 +17,16 @@ import { EarningFilter } from '@/shared/filters/earning.filter.interface';
 import { TransactionService } from '@/api-donator/transaction/transaction.service';
 import { ReturnPaginatedTransactionsDto } from '@/api-donator/transaction/dto/transaction.dto';
 
-@Controller(`${prefix}/:donatorid/transaction`)
+@Controller(`${prefix}/transaction`)
 export class TransactionController {
   constructor(private transactionService: TransactionService) {}
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnPaginatedTransactionsDto })
-  @Get('/')
+  @Get('donator/:donator_id')
   getDonatorsTransactions(
-    @Param('donatorid', ParseIntPipe)
+    @Param('donator_id', ParseIntPipe)
     donatorId: number,
     @Query('filter_donation_ngo_id', new ParseIntPipe({ optional: true }))
     filterNgoId?: number,

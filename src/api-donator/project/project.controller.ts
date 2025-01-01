@@ -17,14 +17,14 @@ import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
 import { prefix } from '@/api-donator/prefix';
 
-@Controller(`${prefix}/:donator_id/project`)
+@Controller(`${prefix}/project`)
 export class ProjectController {
   constructor(private projectService: ProjectService) {}
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnPaginatedProjectsDto })
-  @Get('/')
+  @Get('donator/:donator_id')
   getFilteredProjects(
     @Param('donator_id', ParseIntPipe) donatorId: number,
     @Query('filter_project_id', new ParseIntPipe({ optional: true }))
