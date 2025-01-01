@@ -1,12 +1,10 @@
-import {Injectable} from "@nestjs/common";
-import {PrismaService} from "@/shared/prisma/prisma.service";
-import {RegisterDonationBoxDto} from "@/api-donator/donationbox/dto";
-
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import { RegisterDonationBoxDto } from '@/api-donator/donationbox/dto';
 
 @Injectable()
 export class DonationboxService {
-  constructor(private prismaService: PrismaService) {
-  }
+  constructor(private prismaService: PrismaService) {}
 
   async registerDonationBox(
     donatorId: number,

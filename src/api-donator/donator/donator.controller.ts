@@ -11,10 +11,7 @@ import {
   Version,
 } from '@nestjs/common';
 import { DonatorService } from '@/shared/services/donator.service';
-import {
-  CreateDonatorDto,
-  ReturnDonatorDto,
-} from './dto';
+import { CreateDonatorDto, ReturnDonatorDto } from './dto';
 
 import { prefix } from '@/api-donator/prefix';
 

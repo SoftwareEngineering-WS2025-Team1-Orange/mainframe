@@ -11,10 +11,7 @@ import {
   Version,
 } from '@nestjs/common';
 import { DonationboxService } from '@/shared/services/donationbox.service';
-import {
-  DonationBoxDto,
-  RegisterDonationBoxDto,
-} from './dto';
+import { DonationBoxDto, RegisterDonationBoxDto } from './dto';
 
 import { prefix } from '@/api-donator/prefix';
 
