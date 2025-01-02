@@ -97,6 +97,18 @@ export class ReturnEarningsPayoutDto {
   }
 }
 
+export class ReturnEarningsDonationBoxDto {
+  @Expose()
+  id: number;
+
+  @Expose()
+  name: string;
+
+  constructor(partial: Partial<ReturnEarningsDonationBoxDto>) {
+    Object.assign(this, partial);
+  }
+}
+
 export class ReturnTransactionEarningDto {
   @Expose()
   id: number;
@@ -113,7 +125,7 @@ export class ReturnTransactionEarningDto {
   @Expose()
   activeInTimePeriod: number;
 
-  @Expose()
+  @Exclude()
   donationBoxId: number;
 
   @Exclude()
@@ -139,4 +151,8 @@ export class ReturnPaginatedTransactionsDto {
   @Expose()
   @Type(() => ReturnTransactionEarningDto)
   earnings: ReturnTransactionEarningDto[];
+
+  @Expose()
+  @Type(() => ReturnEarningsDonationBoxDto)
+  donationBox: ReturnEarningsDonationBoxDto;
 }

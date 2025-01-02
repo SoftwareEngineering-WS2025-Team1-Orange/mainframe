@@ -176,6 +176,7 @@ export class NgoService {
               },
             }
           : {},
+        filters.filterIncludeDeleted ? {} : { deletedAt: null },
       ],
     };
 

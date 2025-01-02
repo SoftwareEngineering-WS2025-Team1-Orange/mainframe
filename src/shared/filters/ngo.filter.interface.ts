@@ -4,6 +4,7 @@ export interface NgoFilter extends BaseFilter {
   filterId?: number;
   filterName?: string;
   filterMail?: string;
+  filterIncludeDeleted?: boolean;
   filterFavorizedByDonatorId?: number;
   filterNotFavorizedByDonatorId?: number;
   filterDonatedToByDonatorId?: number;

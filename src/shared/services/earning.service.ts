@@ -61,6 +61,12 @@ export class EarningService {
             periodEnd: true,
           },
         },
+        donationBox: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: {
         [this.getSortField(filters.sortFor)]: getSortType(

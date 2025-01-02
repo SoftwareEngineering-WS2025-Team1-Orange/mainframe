@@ -32,7 +32,7 @@ export class ReturnProjectDto {
   @Expose()
   progress: number;
 
-  @Expose()
+  @Exclude()
   archived: boolean;
 
   @Expose()

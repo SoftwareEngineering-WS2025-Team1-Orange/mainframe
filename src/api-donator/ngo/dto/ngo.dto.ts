@@ -43,6 +43,9 @@ export class ReturnNgoDto {
   scope: DonatorScope[];
 
   @Exclude()
+  deletedAt: Date;
+
+  @Exclude()
   createdAt: Date;
 
   @Exclude()
