@@ -54,7 +54,7 @@ export class ProjectService {
     filters: ProjectFilter,
     favourizedByDonatorId?: number,
   ): Promise<{
-    projects: (Project & { isFavorite: boolean })[];
+    projects: (Project & { is_favorite: boolean })[];
     pagination: Pagination;
   }> {
     const {
@@ -80,7 +80,7 @@ export class ProjectService {
 
     const projectsWithIsFavorite = projects.map((project) => ({
       ...project,
-      isFavorite: favorizedProjectIDs.has(project.id),
+      is_favorite: favorizedProjectIDs.has(project.id),
     }));
     return { projects: projectsWithIsFavorite, pagination };
   }

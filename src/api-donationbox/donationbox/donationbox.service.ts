@@ -26,6 +26,7 @@ export class DonationboxService {
       data: {
         CUID: cuid,
         last_status: 'UNINITIALIZED',
+        name: null,
       },
     });
     return { cuid };

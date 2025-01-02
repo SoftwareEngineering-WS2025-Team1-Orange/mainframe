@@ -6,11 +6,18 @@ export class RegisterDonationBoxDto {
   @IsString()
   @IsNotEmpty()
   cuid: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Name must have a value (can be empty string)' })
+  name: string;
 }
 
 export class DonationBoxDto {
   @Expose()
   readonly id: number;
+
+  @Expose()
+  name: string;
 
   @Expose()
   readonly cuid: string;

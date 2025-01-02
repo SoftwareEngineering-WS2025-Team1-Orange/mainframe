@@ -17,6 +17,7 @@ export class DonationboxService {
       data: {
         last_status: 'AVAILABLE',
         donatorId,
+        name: donationBox.name,
       },
     });
   }

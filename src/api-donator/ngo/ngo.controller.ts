@@ -51,6 +51,7 @@ export class NgoController {
         filterIsFavorite === false ? donatorId : null,
       filterName,
       filterMail,
+      filterIncludeDeleted: false,
       filterDonatedToByDonatorId: filterDonatedTo ? donatorId : null,
       filterNotDonatedToByDonatorId:
         filterDonatedTo === false ? donatorId : null,
