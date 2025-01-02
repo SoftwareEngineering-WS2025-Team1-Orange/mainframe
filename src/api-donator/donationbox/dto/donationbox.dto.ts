@@ -1,8 +1,4 @@
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 import { Expose, Exclude } from 'class-transformer';
 import { Status } from '@prisma/client';
 
