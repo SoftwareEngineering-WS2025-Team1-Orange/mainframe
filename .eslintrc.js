@@ -69,7 +69,10 @@ module.exports = {
     // Next uses default exports
     'import/no-default-export': 'off',
 
-    'import/extensions': 'off'
+    'import/extensions': 'off',
+    // Allow unused variables that start with an underscore
+    'no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
+    '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }]
   },
   overrides: [
     {

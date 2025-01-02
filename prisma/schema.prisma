@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -137,18 +138,18 @@ model Project {
   name                String
   description         String
   fundraising_goal    Float
-  fundraising_current Float
-  fundraising_closed  Boolean
-  progress            Float
-  archived            Boolean
+  fundraising_current Float    @default(0)
+  fundraising_closed  Boolean  @default(false)
+  progress            Float    @default(0)
+  archived            Boolean  @default(false)
   banner_uri          String?
   target_date         DateTime
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   category            Category
 
-  ngoId                Int?
-  ngo                  NGO?       @relation(fields: [ngoId], references: [id])
+  ngoId                Int
+  ngo                  NGO        @relation(fields: [ngoId], references: [id])
   FavouritedByDonators Donator[]
   donations            Donation[]
 }

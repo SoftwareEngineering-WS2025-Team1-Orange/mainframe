@@ -1,18 +1,32 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { Prisma, Project } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
+import { ReturnProjectWithoutFavDto } from '@/api-donator/project/dto/project.dto';
+import {
+  CreateProjectDto,
+  UpdateProjectDto,
+} from '@/api-ngo/project/dto/project.dto';
+import { ProjectWithDonations } from '@/api-ngo/project/types';
+import { Rule } from '@/utils/validaton/types';
+import { validateRules } from '@/utils/validaton/validation.helper';
 
 @Injectable()
 export class ProjectService {
   constructor(private prismaService: PrismaService) {}
 
-  async findProjectById(id: number): Promise<Project> {
+  async findProjectById(
+    id: number,
+    includeDonations: boolean = false,
+  ): Promise<Project | ProjectWithDonations> {
     const project = await this.prismaService.project.findFirst({
       where: {
         id,
+      },
+      include: {
+        donations: includeDonations,
       },
     });
 
@@ -24,7 +38,7 @@ export class ProjectService {
 
   async findFilteredProjectsWithFavourite(
     filters: ProjectFilter,
-    favourizedByDonatorId: number,
+    favourizedByDonatorId?: number,
   ): Promise<{
     projects: (Project & { isFavorite: boolean })[];
     pagination: Pagination;
@@ -40,7 +54,9 @@ export class ProjectService {
         id: true,
       },
       where: {
-        FavouritedByDonators: { some: { id: favourizedByDonatorId } },
+        FavouritedByDonators: favourizedByDonatorId
+          ? { some: { id: favourizedByDonatorId } }
+          : {},
       },
     });
 
@@ -133,6 +149,73 @@ export class ProjectService {
       orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
     });
     return { projects, pagination };
+  }
+
+  async createProject(
+    ngoId: number,
+    project: CreateProjectDto,
+  ): Promise<ReturnProjectWithoutFavDto> {
+    const dateIsNotBeforeOneWeek: Rule<undefined, CreateProjectDto> = {
+      condition: (_previous: undefined, future: CreateProjectDto) =>
+        new Date(future.target_date) >
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      onFailure: new BadRequestException(
+        'Target date must be at least one week in the future',
+      ),
+    };
+    await validateRules(undefined, project, [dateIsNotBeforeOneWeek]);
+
+    const createdProject = await this.prismaService.project.create({
+      data: {
+        ...project,
+        ngo: {
+          connect: {
+            id: ngoId,
+          },
+        },
+      },
+    });
+    return createdProject;
+  }
+
+  async updateProject(
+    id: number,
+    project: UpdateProjectDto,
+  ): Promise<ReturnProjectWithoutFavDto> {
+    const isNotArchived: Rule<ProjectWithDonations, UpdateProjectDto> = {
+      condition: (previous: ProjectWithDonations, _future: UpdateProjectDto) =>
+        !previous.archived,
+      onFailure: new BadRequestException('Archived projects cannot be updated'),
+    };
+
+    const hasNoDonations: Rule<ProjectWithDonations, UpdateProjectDto> = {
+      condition: (previous: ProjectWithDonations, future: UpdateProjectDto) =>
+        previous.donations.length === 0 &&
+        (future.description === undefined ||
+          future.fundraising_goal === undefined),
+      onFailure: new BadRequestException(
+        'Only the name and category can be updated for projects with donations',
+      ),
+    };
+
+    const projectToUpdate = (await this.findProjectById(
+      id,
+      true,
+    )) as ProjectWithDonations;
+
+    await validateRules(projectToUpdate, project, [
+      isNotArchived,
+      hasNoDonations,
+    ]);
+
+    const updatedProject = await this.prismaService.project.update({
+      where: {
+        id,
+      },
+      data: project,
+    });
+
+    return updatedProject;
   }
 
   private getSortField(sortFor?: string): string {
