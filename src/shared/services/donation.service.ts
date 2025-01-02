@@ -3,7 +3,7 @@ import { Donation, Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
-import { DonationFilter } from '@/utils/donation.filter.interface';
+import { DonationFilter } from '@/shared/filters/donation.filter.interface';
 
 @Injectable()
 export class DonationService {
@@ -11,11 +11,14 @@ export class DonationService {
 
   async findFilteredDonations(
     filters: DonationFilter,
+    paginate: boolean = true,
   ): Promise<{ donations: Donation[]; pagination: Pagination }> {
     const whereInputObject: Prisma.DonationWhereInput = {
       AND: [
-        filters.filterId ? { id: filters.filterId } : {},
-        filters.filterDonatorId ? { donatorId: filters.filterDonatorId } : {},
+        filters.filterId != null ? { id: filters.filterId } : {},
+        filters.filterDonatorId != null
+          ? { donatorId: filters.filterDonatorId }
+          : {},
         filters.filterDonatorFirstName
           ? {
               donator: {
@@ -36,7 +39,9 @@ export class DonationService {
               },
             }
           : {},
-        filters.filterProjectId ? { projectId: filters.filterProjectId } : {},
+        filters.filterProjectId != null
+          ? { projectId: filters.filterProjectId }
+          : {},
         filters.filterProjectName
           ? {
               project: {
@@ -47,7 +52,9 @@ export class DonationService {
               },
             }
           : {},
-        filters.filterNgoId ? { project: { ngoId: filters.filterNgoId } } : {},
+        filters.filterNgoId != null
+          ? { project: { ngoId: filters.filterNgoId } }
+          : {},
         filters.filterNgoName
           ? {
               project: {
@@ -84,14 +91,14 @@ export class DonationService {
     const pagination = new Pagination(
       numTotalResults,
       numFilteredResults,
-      filters.paginationPageSize,
-      filters.paginationPage,
+      paginate ? filters.paginationPageSize : numFilteredResults,
+      paginate ? filters.paginationPage : 1,
     );
     const donations = await this.prismaService.donation.findMany({
       where: {
         ...whereInputObject,
       },
-      ...pagination.constructPaginationQueryObject(),
+      ...(paginate ? pagination.constructPaginationQueryObject() : {}),
       include: {
         project: {
           select: {

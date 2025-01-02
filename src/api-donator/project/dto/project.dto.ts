@@ -1,6 +1,14 @@
-import { Expose, Type } from 'class-transformer';
+import { Expose, Type, Exclude } from 'class-transformer';
 import { Project } from '@prisma/client';
 import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
+
+export class ReturnProjectNgoDto {
+  @Expose()
+  id: number;
+
+  @Expose()
+  name: string;
+}
 
 export class ReturnProjectDto {
   @Expose()
@@ -39,8 +47,14 @@ export class ReturnProjectDto {
   @Expose()
   category: string;
 
-  @Expose()
+  @Exclude()
   ngoId?: number;
+
+  @Expose()
+  ngo?: ReturnProjectNgoDto;
+
+  @Expose()
+  isFavorite: boolean;
 
   constructor(partial: Partial<ReturnProjectDto>) {
     Object.assign(this, partial);

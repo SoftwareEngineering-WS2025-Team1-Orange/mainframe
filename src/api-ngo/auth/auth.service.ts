@@ -70,7 +70,9 @@ export class AuthService {
     }>(refreshToken, {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
     });
-    const ngoPaginationObject = await this.ngoService.findFilteredNgos(ngoId);
+    const ngoPaginationObject = await this.ngoService.findFilteredNgos({
+      filterId: ngoId,
+    });
     const ngo = ngoPaginationObject.ngos[0];
     if (!ngo || !ngo.refreshToken) {
       throw new ForbiddenException('Access Denied');
@@ -91,11 +93,9 @@ export class AuthService {
     mail: string,
     pass: string,
   ): Promise<NGOWithScope | null> {
-    const ngoPaginationObject = await this.ngoService.findFilteredNgos(
-      null,
-      null,
-      mail,
-    );
+    const ngoPaginationObject = await this.ngoService.findFilteredNgos({
+      filterMail: mail,
+    });
     const ngo = ngoPaginationObject.ngos[0];
     if (!ngo || !(await argon2.verify(ngo.password, pass + ngo.salt))) {
       return null;

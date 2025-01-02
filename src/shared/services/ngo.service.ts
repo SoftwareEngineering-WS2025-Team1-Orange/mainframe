@@ -7,6 +7,7 @@ import { PrismaService } from '@/shared/prisma/prisma.service';
 import { CreateNgoDto } from '@/api-ngo/ngo/dto/ngo.dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { NGOWithScope } from '@/api-ngo/auth/types';
+import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
 
 @Injectable()
 export class NgoService {
@@ -25,25 +26,78 @@ export class NgoService {
     return ngo;
   }
 
+  async findFilteredNgosWithFavourite(
+    filters: NgoFilter,
+    favourizedByDonatorId: number,
+  ): Promise<{
+    ngos: (NGOWithScope & { isFavorite: boolean })[];
+    pagination: Pagination;
+  }> {
+    const {
+      ngos,
+      pagination,
+    }: { ngos: NGOWithScope[]; pagination: Pagination } =
+      await this.findFilteredNgos(filters);
+
+    const favorizedNgos = await this.prismaService.nGO.findMany({
+      select: {
+        id: true,
+      },
+      where: {
+        favouritedByDonators: { some: { id: favourizedByDonatorId } },
+      },
+    });
+
+    const favorizedNgoIDs: Set<number> = new Set(
+      favorizedNgos.map((ngo) => ngo.id),
+    );
+
+    const ngosWithIsFavorite = ngos.map((ngo) => ({
+      ...ngo,
+      isFavorite: favorizedNgoIDs.has(ngo.id),
+    }));
+    return { ngos: ngosWithIsFavorite, pagination };
+  }
+
   async findFilteredNgos(
-    filterId?: number,
-    // filterIsFavorite: boolean = false,
-    filterName?: string,
-    filterMail?: string,
-    // filterDonatedTo: boolean = false,
-    paginationPage: number = 1,
-    paginationResultsPerPage: number = 10,
-    sortType?: string,
-    sortFor?: string,
+    filters: NgoFilter,
   ): Promise<{ ngos: NGOWithScope[]; pagination: Pagination }> {
     const whereInputObject: Prisma.NGOWhereInput = {
       AND: [
-        filterId ? { id: filterId } : {},
-        filterName
-          ? { name: { contains: filterName, mode: 'insensitive' } }
+        filters.filterId != null ? { id: filters.filterId } : {},
+        filters.filterName
+          ? { name: { contains: filters.filterName, mode: 'insensitive' } }
           : {},
-        filterMail
-          ? { email: { contains: filterMail, mode: 'insensitive' } }
+        filters.filterMail
+          ? { email: { contains: filters.filterMail, mode: 'insensitive' } }
+          : {},
+        filters.filterFavorizedByDonatorId != null
+          ? {
+              favouritedByDonators: {
+                some: { id: filters.filterFavorizedByDonatorId },
+              },
+            }
+          : {},
+        filters.filterNotFavorizedByDonatorId != null
+          ? {
+              favouritedByDonators: {
+                none: { id: filters.filterNotFavorizedByDonatorId },
+              },
+            }
+          : {},
+        filters.filterDonatedToByDonatorId != null
+          ? {
+              donations: {
+                some: { donatorId: filters.filterDonatedToByDonatorId },
+              },
+            }
+          : {},
+        filters.filterNotDonatedToByDonatorId != null
+          ? {
+              donations: {
+                none: { donatorId: filters.filterNotDonatedToByDonatorId },
+              },
+            }
           : {},
       ],
     };
@@ -55,13 +109,13 @@ export class NgoService {
     const pagination = new Pagination(
       numTotalResults,
       numFilteredResults,
-      paginationResultsPerPage,
-      paginationPage,
+      filters.paginationPageSize,
+      filters.paginationPage,
     );
     const ngos = await this.prismaService.nGO.findMany({
       where: { ...whereInputObject },
       ...pagination.constructPaginationQueryObject(),
-      orderBy: { [this.getSortField(sortFor)]: sortType },
+      orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
       include: {
         scope: true,
       },
