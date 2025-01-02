@@ -72,7 +72,7 @@ export async function handleOAuthFlow(
   throw new BadRequestException('Invalid grant type');
 }
 
-export function rejectOnNotOwnedResource(req: Request, id: number): number {
+export function rejectOnNotOwnedResource(id: number, req: Request): number {
   const ident = req.user as { sub: number };
   if (ident.sub !== id) {
     throw new BadRequestException('Not authorized');

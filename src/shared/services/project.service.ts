@@ -1,6 +1,15 @@
-import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, Project } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
+import { Client } from 'minio';
+import { InjectMinio } from 'nestjs-minio';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
@@ -12,10 +21,15 @@ import {
 import { ProjectWithDonations } from '@/api-ngo/project/types';
 import { Rule } from '@/utils/validaton/types';
 import { validateRules } from '@/utils/validaton/validation.helper';
+import { BUCKET_NAME, createBannerUri } from '@/utils/minio.helper';
 
 @Injectable()
 export class ProjectService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private configService: ConfigService,
+    @InjectMinio() private minioClient: Client,
+  ) {}
 
   async findProjectById(
     id: number,
@@ -216,6 +230,107 @@ export class ProjectService {
     });
 
     return updatedProject;
+  }
+
+  private async getBannerUriForDb(
+    id: number,
+    banner: Express.Multer.File,
+  ): Promise<string | null> {
+    if (!banner) {
+      const project = await this.prismaService.project.findFirst({
+        where: {
+          id,
+          archived: false,
+        },
+      });
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+      const bannerUri = project.banner_uri.split(BUCKET_NAME)[1];
+      await this.minioClient.removeObject(`${BUCKET_NAME}/`, bannerUri);
+      return null;
+    }
+    const storagePath = `project/${id}/banner.${banner.mimetype.split('/')[1]}`;
+    await this.minioClient.putObject(
+      BUCKET_NAME,
+      storagePath,
+      banner.buffer,
+      banner.size,
+      {
+        'Content-Type': banner.mimetype,
+      },
+    );
+    return createBannerUri(storagePath, this.configService);
+  }
+
+  async updateProjectBanner(
+    id: number,
+    banner?: Express.Multer.File,
+  ): Promise<ReturnProjectWithoutFavDto> {
+    const bannerUriForDB = await this.getBannerUriForDb(id, banner);
+
+    const updatedProject = await this.prismaService.project
+      .update({
+        where: {
+          id,
+          archived: null,
+        },
+        data: {
+          banner_uri: bannerUriForDB,
+        },
+      })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new NotFoundException('Project not found.');
+        }
+        throw new InternalServerErrorException(
+          'Something went wrong updating the project.',
+        );
+      });
+
+    return updatedProject;
+  }
+
+  async deleteProject(id: number): Promise<ReturnProjectWithoutFavDto> {
+    // A project can only be deleted if it has no donations or if progress is at 100
+    const project = await this.prismaService.project
+      .update({
+        where: {
+          id,
+          archived: false,
+          OR: [
+            {
+              donations: {
+                none: {},
+              },
+            },
+            {
+              progress: 100,
+            },
+          ],
+        },
+        data: {
+          archived: true,
+        },
+      })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new NotFoundException(
+            'Project could not be archived. ' +
+              'Please check if the project exists and that no donation were already made ' +
+              'or the progress is not by 100. Also check if the project is not archived.',
+          );
+        }
+        throw new InternalServerErrorException(
+          'Something went wrong archiving the Project.',
+        );
+      });
+
+    if (!project) {
+      throw new HttpException('Project not found.', StatusCodes.NOT_FOUND);
+    }
+
+    return project;
   }
 
   private getSortField(sortFor?: string): string {
