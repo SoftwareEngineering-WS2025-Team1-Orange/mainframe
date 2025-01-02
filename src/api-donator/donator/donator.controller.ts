@@ -6,7 +6,9 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Req,
   SerializeOptions,
+  UseGuards,
   UseInterceptors,
   Version,
 } from '@nestjs/common';
@@ -14,6 +16,8 @@ import { DonatorService } from '@/shared/services/donator.service';
 import { CreateDonatorDto, ReturnDonatorDto } from './dto';
 
 import { prefix } from '@/api-donator/prefix';
+import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
+import { Request } from 'express';
 
 @Controller(`${prefix}/donator`)
 export class DonatorController {
@@ -25,6 +29,16 @@ export class DonatorController {
   @Post('/')
   postDonator(@Body() createDonatorDto: CreateDonatorDto) {
     return this.donatorService.createDonator(createDonatorDto);
+  }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({ type: ReturnDonatorDto })
+  @Get('/me')
+  @UseGuards(AccessTokenGuard)
+  getDonatorByToken(@Req() req: Request) {
+    const donator = req.user as { sub: number };
+    return this.donatorService.findDonatorById(donator.sub);
   }
 
   @Version('1')
