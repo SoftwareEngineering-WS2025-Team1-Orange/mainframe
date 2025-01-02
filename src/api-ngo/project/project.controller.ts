@@ -31,7 +31,7 @@ import {
 import { parseEnumCategory } from '@/utils/sort_filter.helper';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
-import { prefix } from '@/api-donator/prefix';
+import { prefix } from '@/api-ngo/prefix';
 import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
 import { rejectOnNotOwnedResource } from '@/utils/auth.helper';
 import {
