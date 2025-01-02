@@ -25,7 +25,7 @@ export class ReturnNgoDto {
   contact: string;
 
   @Expose()
-  isFavorite: boolean;
+  is_favorite: boolean;
 
   @Exclude()
   password: string;

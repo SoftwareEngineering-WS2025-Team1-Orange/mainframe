@@ -54,7 +54,7 @@ export class ReturnProjectDto {
   ngo?: ReturnProjectNgoDto;
 
   @Expose()
-  isFavorite: boolean;
+  is_favorite: boolean;
 
   constructor(partial: Partial<ReturnProjectDto>) {
     Object.assign(this, partial);

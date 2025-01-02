@@ -106,7 +106,7 @@ export class NgoService {
     filters: NgoFilter,
     favourizedByDonatorId: number,
   ): Promise<{
-    ngos: (NGOWithScope & { isFavorite: boolean })[];
+    ngos: (NGOWithScope & { is_favorite: boolean })[];
     pagination: Pagination;
   }> {
     const {
@@ -131,7 +131,7 @@ export class NgoService {
 
     const ngosWithIsFavorite = ngos.map((ngo) => ({
       ...ngo,
-      isFavorite: favorizedNgoIDs.has(ngo.id),
+      is_favorite: favorizedNgoIDs.has(ngo.id),
     }));
     return { ngos: ngosWithIsFavorite, pagination };
   }
