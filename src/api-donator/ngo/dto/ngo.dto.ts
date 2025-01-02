@@ -13,6 +13,9 @@ export class ReturnNgoDto {
   website_url: string;
 
   @Expose()
+  banner_uri: string;
+
+  @Expose()
   description: string;
 
   @Expose()
@@ -22,7 +25,7 @@ export class ReturnNgoDto {
   contact: string;
 
   @Expose()
-  isFavorite: boolean;
+  is_favorite: boolean;
 
   @Exclude()
   password: string;
@@ -38,6 +41,9 @@ export class ReturnNgoDto {
 
   @Exclude()
   scope: DonatorScope[];
+
+  @Exclude()
+  deletedAt: Date;
 
   @Exclude()
   createdAt: Date;

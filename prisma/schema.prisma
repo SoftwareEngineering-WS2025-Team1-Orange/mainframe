@@ -55,6 +55,7 @@ enum Status {
 model DonationBox {
   id          Int      @id @default(autoincrement())
   CUID        String   @unique @default(cuid())
+  name        String?
   last_status Status
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -90,18 +91,20 @@ model SupportedPowerSupply {
 }
 
 model NGO {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   name         String
-  email        String   @unique
+  email        String    @unique
   contact      String
   website_url  String
   description  String
+  banner_uri   String?
   address      String
   password     String
   refreshToken String?
   salt         String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
   projects             Project[]
   favouritedByDonators Donator[]
@@ -139,6 +142,7 @@ model Project {
   fundraising_closed  Boolean
   progress            Float
   archived            Boolean
+  banner_uri          String?
   target_date         DateTime
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

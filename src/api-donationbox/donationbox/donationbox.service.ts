@@ -26,6 +26,7 @@ export class DonationboxService {
       data: {
         CUID: cuid,
         last_status: 'UNINITIALIZED',
+        name: null,
       },
     });
     return { cuid };
@@ -35,7 +36,7 @@ export class DonationboxService {
     const token = await this.jwtService.signAsync(
       { cuid },
       {
-        secret: this.configService.get('JWT_SECRET'),
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
       },
     );
     return { token };
@@ -68,7 +69,7 @@ export class DonationboxService {
     try {
       // Verify JWT token
       await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get('JWT_SECRET'),
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
       });
       return token;
     } catch {

@@ -33,11 +33,8 @@ export class ProjectController {
     @Query('filter_is_favorite', new ParseBoolPipe({ optional: true }))
     filterIsFavorite?: boolean,
     @Query('filter_name_contains') filterName?: string,
-    @Query('filter_include_archived', new ParseBoolPipe({ optional: true }))
-    filterIncludeArchived?: boolean,
     @Query('filter_donated_to', new ParseBoolPipe({ optional: true }))
     filterDonatedTo?: boolean,
-    paginationPageSize?: number,
     @Query('filter_ngo_id', new ParseIntPipe({ optional: true }))
     filterNgoId?: number,
     @Query('filter_ngo_name_contains')
@@ -48,6 +45,7 @@ export class ProjectController {
       PaginationQueryArguments.pageSize,
       new ParseIntPipe({ optional: true }),
     )
+    paginationPageSize?: number,
     @Query('sort_for')
     sortFor?: string,
     @Query('sort_type') sortType?: string,
@@ -56,7 +54,7 @@ export class ProjectController {
       filterId,
       filterCategory: parseEnumCategory(filterCategory),
       filterName,
-      filterIncludeArchived,
+      filterIncludeArchived: false,
       filterNgoId,
       filterNgoName,
       filterFavoriteByDonatorId: filterIsFavorite ? donatorId : null,
