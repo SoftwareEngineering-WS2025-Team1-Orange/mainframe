@@ -68,8 +68,6 @@ export class ProjectController {
       paginationPage,
       paginationPageSize,
     };
-    console.log(sortFor);
-    console.log(filters);
     return this.projectService.findFilteredProjectsWithFavourite(
       filters,
       donatorId,

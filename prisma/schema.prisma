@@ -55,7 +55,7 @@ enum Status {
 model DonationBox {
   id          Int      @id @default(autoincrement())
   CUID        String   @unique @default(cuid())
-  name        String   @default("")
+  name        String?
   last_status Status
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
