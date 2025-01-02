@@ -82,10 +82,10 @@ export class TransactionService {
 
     const paginatedDonations: Donation[] = paginatedResults
       .filter((result) => result.type === 'D')
-      .map(({ type, ...rest }) => rest as Donation);
+      .map(({ type: _type, ...rest }) => rest as Donation);
     const paginatedEarnings: Earning[] = paginatedResults
       .filter((result) => result.type === 'E')
-      .map(({ type, ...rest }) => rest as Earning);
+      .map(({ type: _type, ...rest }) => rest as Earning);
 
     return {
       earnings: paginatedEarnings,
