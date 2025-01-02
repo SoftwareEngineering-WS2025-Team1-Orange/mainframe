@@ -12,12 +12,11 @@ import {
   UseInterceptors,
   Version,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { DonatorService } from '@/shared/services/donator.service';
 import { CreateDonatorDto, ReturnDonatorDto } from './dto';
-
 import { prefix } from '@/api-donator/prefix';
 import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
-import { Request } from 'express';
 
 @Controller(`${prefix}/donator`)
 export class DonatorController {
