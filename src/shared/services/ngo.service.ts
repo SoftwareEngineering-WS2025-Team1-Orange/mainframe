@@ -4,20 +4,20 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import {NGO, NGOScopeEnum, Prisma, Project} from '@prisma/client';
-import {StatusCodes} from 'http-status-codes';
-import {randomBytes} from 'node:crypto';
+import { NGO, NGOScopeEnum, Prisma, Project } from '@prisma/client';
+import { StatusCodes } from 'http-status-codes';
+import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
-import {Client} from 'minio';
-import {InjectMinio} from 'nestjs-minio';
-import {ConfigService} from '@nestjs/config';
-import {PrismaService} from '@/shared/prisma/prisma.service';
-import {CreateNgoDto, UpdateNgoDto} from '@/api-ngo/ngo/dto/ngo.dto';
-import {Pagination} from '@/utils/pagination/pagination.helper';
-import {NGOWithScope} from '@/api-ngo/auth/types';
-import {NgoFilter} from '@/shared/filters/ngo.filter.interface';
-import {ProjectFilter} from '@/shared/filters/project.filter.interface';
-import {ProjectService} from '@/shared/services/project.service';
+import { Client } from 'minio';
+import { InjectMinio } from 'nestjs-minio';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import { CreateNgoDto, UpdateNgoDto } from '@/api-ngo/ngo/dto/ngo.dto';
+import { Pagination } from '@/utils/pagination/pagination.helper';
+import { NGOWithScope } from '@/api-ngo/auth/types';
+import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
+import { ProjectFilter } from '@/shared/filters/project.filter.interface';
+import { ProjectService } from '@/shared/services/project.service';
 
 const BUCKET_NAME = 'public';
 
@@ -53,8 +53,7 @@ export class NgoService {
       }
     };
 
-    initMinio().catch(() => {
-    });
+    initMinio().catch(() => {});
   }
 
   async findNgoByIdWithProjectFilter(
@@ -62,9 +61,9 @@ export class NgoService {
     projectFilter?: ProjectFilter,
   ): Promise<
     | (NGO & {
-    scope: NGOScopeEnum[];
-    projects: { projects: Project[]; pagination: Pagination };
-  })
+        scope: NGOScopeEnum[];
+        projects: { projects: Project[]; pagination: Pagination };
+      })
     | (NGO & { scope: NGOScopeEnum[] })
   > {
     const ngo = await this.prismaService.nGO.findFirst({
@@ -82,7 +81,7 @@ export class NgoService {
     }
 
     if (projectFilter) {
-      const {projects, pagination} =
+      const { projects, pagination } =
         await this.projectService.findFilteredProjects({
           ...projectFilter,
           filterNgoId: id,
@@ -121,7 +120,7 @@ export class NgoService {
         id: true,
       },
       where: {
-        favouritedByDonators: {some: {id: favourizedByDonatorId}},
+        favouritedByDonators: { some: { id: favourizedByDonatorId } },
         deletedAt: null,
       },
     });
@@ -134,7 +133,7 @@ export class NgoService {
       ...ngo,
       is_favorite: favorizedNgoIDs.has(ngo.id),
     }));
-    return {ngos: ngosWithIsFavorite, pagination};
+    return { ngos: ngosWithIsFavorite, pagination };
   }
 
   async findFilteredNgos(
@@ -142,48 +141,48 @@ export class NgoService {
   ): Promise<{ ngos: NGOWithScope[]; pagination: Pagination }> {
     const whereInputObject: Prisma.NGOWhereInput = {
       AND: [
-        filters.filterId != null ? {id: filters.filterId} : {},
+        filters.filterId != null ? { id: filters.filterId } : {},
         filters.filterName
-          ? {name: {contains: filters.filterName, mode: 'insensitive'}}
+          ? { name: { contains: filters.filterName, mode: 'insensitive' } }
           : {},
         filters.filterMail
-          ? {email: {contains: filters.filterMail, mode: 'insensitive'}}
+          ? { email: { contains: filters.filterMail, mode: 'insensitive' } }
           : {},
         filters.filterFavorizedByDonatorId != null
           ? {
-            favouritedByDonators: {
-              some: {id: filters.filterFavorizedByDonatorId},
-            },
-          }
+              favouritedByDonators: {
+                some: { id: filters.filterFavorizedByDonatorId },
+              },
+            }
           : {},
         filters.filterNotFavorizedByDonatorId != null
           ? {
-            favouritedByDonators: {
-              none: {id: filters.filterNotFavorizedByDonatorId},
-            },
-          }
+              favouritedByDonators: {
+                none: { id: filters.filterNotFavorizedByDonatorId },
+              },
+            }
           : {},
         filters.filterDonatedToByDonatorId != null
           ? {
-            donations: {
-              some: {donatorId: filters.filterDonatedToByDonatorId},
-            },
-          }
+              donations: {
+                some: { donatorId: filters.filterDonatedToByDonatorId },
+              },
+            }
           : {},
         filters.filterNotDonatedToByDonatorId != null
           ? {
-            donations: {
-              none: {donatorId: filters.filterNotDonatedToByDonatorId},
-            },
-          }
+              donations: {
+                none: { donatorId: filters.filterNotDonatedToByDonatorId },
+              },
+            }
           : {},
-        filters.filterIncludeDeleted ? {} : {deletedAt: null},
+        filters.filterIncludeDeleted ? {} : { deletedAt: null },
       ],
     };
 
     const numTotalResults = await this.prismaService.nGO.count();
     const numFilteredResults = await this.prismaService.nGO.count({
-      where: {...whereInputObject, deletedAt: null},
+      where: { ...whereInputObject, deletedAt: null },
     });
     const pagination = new Pagination(
       numTotalResults,
@@ -192,9 +191,9 @@ export class NgoService {
       filters.paginationPage,
     );
     const ngos = await this.prismaService.nGO.findMany({
-      where: {...whereInputObject, deletedAt: null},
+      where: { ...whereInputObject, deletedAt: null },
       ...pagination.constructPaginationQueryObject(),
-      orderBy: {[this.getSortField(filters.sortFor)]: filters.sortType},
+      orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
       include: {
         scope: true,
       },
@@ -235,8 +234,8 @@ export class NgoService {
         salt,
         scope: {
           connectOrCreate: defaultRoles.map((scope) => ({
-            where: {name: scope},
-            create: {name: scope},
+            where: { name: scope },
+            create: { name: scope },
           })),
         },
       },
@@ -388,8 +387,8 @@ export class NgoService {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           throw new NotFoundException(
             'NGO not found or not ready for deletion. ' +
-            'Please check if the NGO exists, that all open projects ' +
-            'are archived and the NGO is not deleted already.',
+              'Please check if the NGO exists, that all open projects ' +
+              'are archived and the NGO is not deleted already.',
           );
         }
         throw new InternalServerErrorException(
@@ -406,12 +405,16 @@ export class NgoService {
     };
   }
 
-  async favoriteNgo(donatorId: number, ngoId: number, favorite: boolean): Promise<NGO & {is_favorite: boolean }> {
+  async favoriteNgo(
+    donatorId: number,
+    ngoId: number,
+    favorite: boolean,
+  ): Promise<NGO & { is_favorite: boolean }> {
     try {
       const donator = await this.prismaService.donator.findFirstOrThrow({
         where: {
-          id: donatorId
-        }
+          id: donatorId,
+        },
       });
       const ngo = await this.prismaService.nGO.update({
         where: { id: ngoId, deletedAt: null },
@@ -421,12 +424,10 @@ export class NgoService {
             : { disconnect: { id: donator.id } },
         },
       });
-      return {...ngo, is_favorite: favorite};
+      return { ...ngo, is_favorite: favorite };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        throw new NotFoundException(
-          'NGO or Donator not found.',
-        );
+        throw new NotFoundException('NGO or Donator not found.');
       }
       throw new InternalServerErrorException(
         'Something went wrong favoriting the NGO.',
@@ -434,9 +435,7 @@ export class NgoService {
     }
   }
 
-  getSortField(sortFor ?: string)
-    :
-    string {
+  getSortField(sortFor?: string): string {
     switch (sortFor) {
       case 'created_at':
         return 'createdAt';

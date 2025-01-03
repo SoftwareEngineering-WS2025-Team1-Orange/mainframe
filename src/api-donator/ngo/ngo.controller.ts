@@ -5,14 +5,18 @@ import {
   Get,
   Param,
   ParseBoolPipe,
-  ParseIntPipe, Post,
+  ParseIntPipe,
+  Post,
   Query,
   SerializeOptions,
   UseInterceptors,
   Version,
 } from '@nestjs/common';
 import { NgoService } from '@/shared/services/ngo.service';
-import {ReturnNgoDto, ReturnPaginatedNgosDto} from '@/api-donator/ngo/dto/ngo.dto';
+import {
+  ReturnNgoDto,
+  ReturnPaginatedNgosDto,
+} from '@/api-donator/ngo/dto/ngo.dto';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { prefix } from '@/api-donator/prefix';
 import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
@@ -75,5 +79,4 @@ export class NgoController {
   ) {
     return this.ngoService.favoriteNgo(donatorId, ngoId, favorite);
   }
-
 }
