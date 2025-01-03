@@ -5,7 +5,7 @@ import { isCuid } from '@paralleldrive/cuid2';
 // REST
 export class CreateJWTDonationBoxDto {
   @Validate(isCuid, {
-    message: 'Invalid CUID',
+    message: 'Invalid cuid',
   })
   readonly cuid: string;
 }

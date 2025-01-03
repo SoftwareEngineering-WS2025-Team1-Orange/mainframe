@@ -24,7 +24,7 @@ export class DonationboxService {
     const cuid = createId();
     await this.prismaService.donationBox.create({
       data: {
-        CUID: cuid,
+        cuid: cuid,
         last_status: 'UNINITIALIZED',
         name: null,
       },
@@ -101,7 +101,7 @@ export class DonationboxService {
     // Check if donation box is active
     const donationbox = await this.prismaService.donationBox.findFirst({
       where: {
-        CUID: cuid,
+        cuid: cuid,
       },
     });
 
@@ -120,7 +120,7 @@ export class DonationboxService {
   async handleStatusResponse(client: WebSocket, status: Status) {
     await this.prismaService.donationBox.update({
       where: {
-        CUID: this.authorizedClients.get(client),
+        cuid: this.authorizedClients.get(client),
       },
       data: {
         last_status: status,

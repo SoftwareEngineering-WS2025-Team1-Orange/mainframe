@@ -12,7 +12,7 @@ export class DonationboxService {
   ) {
     await this.prismaService.donationBox.update({
       where: {
-        CUID: donationBox.cuid,
+        cuid: donationBox.cuid,
       },
       data: {
         last_status: 'AVAILABLE',
