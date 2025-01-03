@@ -1,17 +1,18 @@
 import {
+  Body,
   ClassSerializerInterceptor,
   Controller,
   Get,
   Param,
   ParseBoolPipe,
-  ParseIntPipe,
+  ParseIntPipe, Post,
   Query,
   SerializeOptions,
   UseInterceptors,
   Version,
 } from '@nestjs/common';
 import { NgoService } from '@/shared/services/ngo.service';
-import { ReturnPaginatedNgosDto } from '@/api-donator/ngo/dto/ngo.dto';
+import {ReturnNgoDto, ReturnPaginatedNgosDto} from '@/api-donator/ngo/dto/ngo.dto';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { prefix } from '@/api-donator/prefix';
 import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
@@ -62,4 +63,17 @@ export class NgoController {
     };
     return this.ngoService.findFilteredNgosWithFavourite(filters, donatorId);
   }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({ type: ReturnNgoDto })
+  @Post(':ngo_id/donator/:donator_id/favorite')
+  async favoriteNgo(
+    @Param('donator_id', ParseIntPipe) donatorId: number,
+    @Param('ngo_id', ParseIntPipe) ngoId: number,
+    @Body('favorite', ParseBoolPipe) favorite: boolean,
+  ) {
+    return this.ngoService.favoriteNgo(donatorId, ngoId, favorite);
+  }
+
 }

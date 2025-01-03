@@ -1,17 +1,18 @@
 import {
+  Body,
   ClassSerializerInterceptor,
   Controller,
   Get,
   Param,
   ParseBoolPipe,
-  ParseIntPipe,
+  ParseIntPipe, Post,
   Query,
   SerializeOptions,
   UseInterceptors,
   Version,
 } from '@nestjs/common';
 import { ProjectService } from '@/shared/services/project.service';
-import { ReturnPaginatedProjectsDto } from '@/api-donator/project/dto/project.dto';
+import {ReturnPaginatedProjectsDto, ReturnProjectDto} from '@/api-donator/project/dto/project.dto';
 import { parseEnumCategory } from '@/utils/sort_filter.helper';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
@@ -72,5 +73,17 @@ export class ProjectController {
       filters,
       donatorId,
     );
+  }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({ type: ReturnProjectDto })
+  @Post(':project_id/donator/:donator_id/favorite')
+  async favoriteProject(
+    @Param('donator_id', ParseIntPipe) donatorId: number,
+    @Param('project_id', ParseIntPipe) projectId: number,
+    @Body('favorite', ParseBoolPipe) favorite: boolean,
+  ) {
+    return this.projectService.favoriteProject(donatorId, projectId, favorite);
   }
 }
