@@ -6,7 +6,7 @@ import {
   IsStrongPassword,
   IsOptional,
 } from 'class-validator';
-import { DonatorScope, Project } from '@prisma/client';
+import { DonatorScope } from '@prisma/client';
 import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
 import { ReturnProjectDto } from '@/api-donator/project/dto/project.dto';
 
@@ -17,7 +17,7 @@ class PaginatedProjects {
 
   @Expose()
   @Type(() => ReturnProjectDto)
-  projects: Project[];
+  projects: ReturnProjectDto[];
 }
 
 export class ReturnNgoWithoutProjectsDto {
