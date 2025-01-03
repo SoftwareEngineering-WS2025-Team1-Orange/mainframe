@@ -24,7 +24,7 @@ export class DonationboxService {
     const cuid = createId();
     await this.prismaService.donationBox.create({
       data: {
-        cuid: cuid,
+        cuid,
         last_status: 'UNINITIALIZED',
         name: null,
       },
@@ -101,7 +101,7 @@ export class DonationboxService {
     // Check if donation box is active
     const donationbox = await this.prismaService.donationBox.findFirst({
       where: {
-        cuid: cuid,
+        cuid,
       },
     });
 
