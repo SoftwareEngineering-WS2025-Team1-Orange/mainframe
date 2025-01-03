@@ -1,30 +1,31 @@
 import {
   Body,
   ClassSerializerInterceptor,
-  Controller,
+  Controller, Delete,
   Get,
   Param,
   ParseIntPipe,
-  Post,
+  Post, Put,
   Req,
   SerializeOptions,
   UseGuards,
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import { Request } from 'express';
-import { DonatorService } from '@/shared/services/donator.service';
-import { CreateDonatorDto, ReturnDonatorDto } from './dto';
-import { prefix } from '@/api-donator/prefix';
-import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
+import {Request} from 'express';
+import {DonatorService} from '@/shared/services/donator.service';
+import {CreateDonatorDto, ReturnDonatorDto, UpdateDonatorDto} from './dto';
+import {prefix} from '@/api-donator/prefix';
+import {AccessTokenGuard} from '@/shared/auth/accessToken.guard';
 
 @Controller(`${prefix}/donator`)
 export class DonatorController {
-  constructor(private donatorService: DonatorService) {}
+  constructor(private donatorService: DonatorService) {
+  }
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnDonatorDto })
+  @SerializeOptions({type: ReturnDonatorDto})
   @Post('/')
   postDonator(@Body() createDonatorDto: CreateDonatorDto) {
     return this.donatorService.createDonator(createDonatorDto);
@@ -32,7 +33,7 @@ export class DonatorController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnDonatorDto })
+  @SerializeOptions({type: ReturnDonatorDto})
   @Get('/me')
   @UseGuards(AccessTokenGuard)
   getDonatorByToken(@Req() req: Request) {
@@ -42,9 +43,33 @@ export class DonatorController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnDonatorDto })
+  @SerializeOptions({type: ReturnDonatorDto})
   @Get('/:donator_id')
   getDonatorById(@Param('donator_id', ParseIntPipe) donatorId: number) {
     return this.donatorService.findDonatorById(donatorId);
   }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({type: ReturnDonatorDto})
+  @Put('/:donator_id')
+  putDonator(
+    @Param('donator_id', ParseIntPipe)
+    donatorId: number,
+    @Body() updateDonatorDto: UpdateDonatorDto,
+  ) {
+    return this.donatorService.updateDonator(donatorId, updateDonatorDto);
+  }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({type: ReturnDonatorDto})
+  @Delete('/:donator_id')
+  deleteDonator(
+    @Param('donator_id', ParseIntPipe)
+    donatorId: number,
+  ) {
+    return this.donatorService.deleteDonator(donatorId);
+  }
 }
+

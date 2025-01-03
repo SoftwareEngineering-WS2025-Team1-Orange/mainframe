@@ -386,7 +386,7 @@ export class NgoService {
       .catch((error) => {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           throw new NotFoundException(
-            'NGO not found for deletion. ' +
+            'NGO not found or not ready for deletion. ' +
               'Please check if the NGO exists, that all open projects ' +
               'are archived and the NGO is not deleted already.',
           );

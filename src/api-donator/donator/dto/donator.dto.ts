@@ -1,6 +1,6 @@
 import {
   IsEmail,
-  IsNotEmpty,
+  IsNotEmpty, IsOptional,
   IsString,
   IsStrongPassword,
 } from 'class-validator';
@@ -42,7 +42,39 @@ export class ReturnDonatorDto {
   @Exclude()
   updatedAt: Date;
 
+  @Exclude()
+  deletedAt: Date;
+
   constructor(partial: Partial<ReturnDonatorDto>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class UpdateDonatorDto {
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @IsStrongPassword({
+    minLength: 8,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+  })
+  @IsNotEmpty()
+  @IsOptional()
+  password?: string;
+
+  constructor(partial: Partial<UpdateDonatorDto>) {
     Object.assign(this, partial);
   }
 }
