@@ -1,13 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { Donation, Prisma } from '@prisma/client';
+import { NotFoundError } from 'rxjs';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
 import { DonationFilter } from '@/shared/filters/donation.filter.interface';
+import { DonatorService } from '@/shared/services/donator.service';
+import { InsufficientBalanceError } from '@/shared/errors/InsufficientBalanceError';
 
 @Injectable()
 export class DonationService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private donatorService: DonatorService,
+  ) {}
 
   async findFilteredDonations(
     filters: DonationFilter,
@@ -128,6 +134,85 @@ export class DonationService {
       },
     });
     return { donations, pagination };
+  }
+
+  async createDonationToProject(
+    donatorId: number,
+    projectId: number,
+    amount: number,
+  ): Promise<Donation> {
+    try {
+      const ngo = await this.prismaService.nGO.findFirstOrThrow({
+        where: {
+          projects: {
+            some: {
+              id: projectId,
+            },
+          },
+        },
+      });
+      return await this.createDonation(donatorId, amount, ngo.id, projectId);
+    } catch {
+      throw new Error('Failed to create donation to project');
+    }
+  }
+
+  async createDonationToNgo(
+    donatorId: number,
+    ngoId: number,
+    amount: number,
+  ): Promise<Donation> {
+    return this.createDonation(donatorId, ngoId, amount, null);
+  }
+
+  private async createDonation(
+    donatorId: number,
+    ngoId: number,
+    amount: number,
+    projectId?: number,
+  ): Promise<Donation> {
+    try {
+      const donator = await this.prismaService.donator.findFirstOrThrow({
+        where: {
+          id: donatorId,
+        },
+      });
+      if (donator.balance < amount) {
+        throw new InsufficientBalanceError('Insufficient balance');
+      } else if (amount <= 0) {
+        throw new Error('Donation amount must be positive'); // TODO: Create new error type here
+      }
+      // If recalculating the balance fails, the transaction should be aborted and the donation deleted
+      const donation = await this.prismaService.$transaction(async (prisma) => {
+        const newDonation = await prisma.donation.create({
+          data: {
+            donator: {
+              connect: {
+                id: donatorId,
+              },
+            },
+            ngo: {
+              connect: {
+                id: ngoId,
+              },
+            },
+            project: projectId ? { connect: { id: projectId } } : undefined,
+            amount,
+          },
+        });
+        await this.donatorService.recalculateBalance(donatorId);
+        return newDonation;
+      });
+      return donation;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new NotFoundError('Donation record not found');
+      } else if (error instanceof InsufficientBalanceError) {
+        throw error;
+      } else {
+        throw new TypeError(`Failed to create donation.`);
+      }
+    }
   }
 
   private getSortField(sortFor?: string): string {
