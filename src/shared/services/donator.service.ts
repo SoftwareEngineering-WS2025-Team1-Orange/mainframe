@@ -11,19 +11,17 @@ import {
   NGOScopeEnum,
   Prisma,
 } from '@prisma/client';
-import {randomBytes} from 'node:crypto';
-import {StatusCodes} from 'http-status-codes';
-import {PrismaService} from '@/shared/prisma/prisma.service';
-import {CreateDonatorDto, UpdateDonatorDto} from '@/api-donator/donator/dto';
-import {Pagination} from '@/utils/pagination/pagination.helper';
-import {DonatorWithScope} from '@/api-donator/auth/types';
-import {DonatorFilter} from '@/shared/filters/donator.filter.interface';
-import {InsufficientBalanceError} from '@/shared/errors/InsufficientBalanceError';
+import { randomBytes } from 'node:crypto';
+import { StatusCodes } from 'http-status-codes';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import { CreateDonatorDto, UpdateDonatorDto } from '@/api-donator/donator/dto';
+import { Pagination } from '@/utils/pagination/pagination.helper';
+import { DonatorWithScope } from '@/api-donator/auth/types';
+import { DonatorFilter } from '@/shared/filters/donator.filter.interface';
 
 @Injectable()
 export class DonatorService {
-  constructor(private prismaService: PrismaService) {
-  }
+  constructor(private prismaService: PrismaService) {}
 
   async findDonatorById(id: number): Promise<Donator> {
     const donator = await this.prismaService.donator.findFirst({
@@ -60,32 +58,32 @@ export class DonatorService {
   ): Promise<{ donators: DonatorWithScope[]; pagination: Pagination }> {
     const whereInputObject: Prisma.DonatorWhereInput = {
       AND: [
-        filters.filterId != null ? {id: filters.filterId} : {},
+        filters.filterId != null ? { id: filters.filterId } : {},
         filters.filterMail
-          ? {email: {contains: filters.filterMail, mode: 'insensitive'}}
+          ? { email: { contains: filters.filterMail, mode: 'insensitive' } }
           : {},
         filters.filterFirstName
           ? {
-            firstName: {
-              contains: filters.filterFirstName,
-              mode: 'insensitive',
-            },
-          }
+              firstName: {
+                contains: filters.filterFirstName,
+                mode: 'insensitive',
+              },
+            }
           : {},
         filters.filterLastName
           ? {
-            lastName: {
-              contains: filters.filterLastName,
-              mode: 'insensitive',
-            },
-          }
+              lastName: {
+                contains: filters.filterLastName,
+                mode: 'insensitive',
+              },
+            }
           : {},
       ],
     };
 
     const numTotalResults = await this.prismaService.donator.count();
     const numFilteredResults = await this.prismaService.donator.count({
-      where: {...whereInputObject, deletedAt: null},
+      where: { ...whereInputObject, deletedAt: null },
     });
     const pagination = new Pagination(
       numTotalResults,
@@ -94,12 +92,12 @@ export class DonatorService {
       filters.paginationPage,
     );
     const donators = await this.prismaService.donator.findMany({
-      where: {...whereInputObject},
+      where: { ...whereInputObject },
       include: {
         scope: true,
       },
       ...pagination.constructPaginationQueryObject(),
-      orderBy: {[this.getSortField(filters.sortFor)]: filters.sortType},
+      orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
     });
     return {
       donators,
@@ -123,8 +121,8 @@ export class DonatorService {
         salt,
         scope: {
           connectOrCreate: defaultRoles.map((scope) => ({
-            where: {name: scope},
-            create: {name: scope},
+            where: { name: scope },
+            create: { name: scope },
           })),
         },
       },
@@ -141,7 +139,7 @@ export class DonatorService {
     const donatorWithHash = {
       ...donator,
       ...(donator.password != null
-        ? {password: await argon2.hash(donator.password + salt), salt}
+        ? { password: await argon2.hash(donator.password + salt), salt }
         : {}),
     };
 
@@ -152,7 +150,7 @@ export class DonatorService {
           deletedAt: null,
         },
         data: donatorWithHash,
-        include: {scope: true},
+        include: { scope: true },
       })
       .catch((error) => {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -179,7 +177,7 @@ export class DonatorService {
           id,
           deletedAt: null,
           balance: 0,
-          donationBox: {none: {}},
+          donationBox: { none: {} },
         },
         data: {
           deletedAt: new Date(),
@@ -193,17 +191,14 @@ export class DonatorService {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           throw new NotFoundException(
             'Donator not found, already deleted or not ready for deletion. ' +
-            'Please check that the Donator exists, that their balance is 0 (all money is spent) ' +
-            'and that all donationboxes are unregistered.',
+              'Please check that the Donator exists, that their balance is 0 (all money is spent) ' +
+              'and that all donationboxes are unregistered.',
           );
         }
         throw new InternalServerErrorException(
           'Something went wrong deleting the Donator.',
         );
       });
-    if (!donator) {
-      throw new HttpException('Donator not found', StatusCodes.NOT_FOUND);
-    }
     return {
       ...donator,
       scope: donator.scope.map((scope) => scope.name as DonatorScopeEnum),
@@ -221,7 +216,7 @@ export class DonatorService {
     }
   }
 
-  async recalculateBalance(donatorId: number): Promise<void> {
+  async recalculateBalance(donatorId: number): Promise<number> {
     const earnings = await this.prismaService.earning.aggregate({
       _sum: {
         amount: true,
@@ -242,18 +237,8 @@ export class DonatorService {
       },
     });
 
-    const balance =
-      // eslint-disable-next-line no-underscore-dangle
-      (earnings._sum.amount || 0) - (donations._sum.amount || 0);
-    if (balance < 0) {
-      throw new InsufficientBalanceError(
-        'The balance can not be lower than 0.',
-      );
-    }
-    await this.prismaService.donator.update({
-      where: {id: donatorId},
-      data: {balance},
-    });
+    // eslint-disable-next-line no-underscore-dangle
+    return (earnings._sum.amount || 0) - (donations._sum.amount || 0);
   }
 
   private createSalt(): string {

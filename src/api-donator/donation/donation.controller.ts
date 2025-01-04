@@ -1,26 +1,52 @@
-import { Controller } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Param,
+  ParseIntPipe,
+  Post,
+  SerializeOptions,
+  UseInterceptors,
+  Version,
+} from '@nestjs/common';
 import { DonationService } from '@/shared/services/donation.service';
 import { prefix } from '@/api-donator/prefix';
+import {
+  CreateDonationDto,
+  ReturnDonationDto,
+} from '@/api-donator/donation/dto';
 
 @Controller(`${prefix}/donation`)
 export class DonationController {
   constructor(private donationService: DonationService) {}
 
-  // TODO: Return correct DTO for donation from transactions (or write a new, short one) and write two dtos for donation to ngo and project (can have superclass)
-  /*
+  @Post('donator/:donator_id/ngo/:ngo_id')
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @Post('/ngo')
-  async createDonationToNgo(@Body() createDonationDto: CreateDonationDto) {
-    const {donatorId, ngoId, amount} = createDonationDto;
+  @SerializeOptions({ type: ReturnDonationDto })
+  async createDonationToNgo(
+    @Param('donator_id', ParseIntPipe) donatorId: number,
+    @Param('ngo_id', ParseIntPipe) ngoId: number,
+    @Body() createDonationDto: CreateDonationDto,
+  ) {
+    const { amount } = createDonationDto;
     return this.donationService.createDonationToNgo(donatorId, ngoId, amount);
   }
 
+  @Post('donator/:donator_id/project/:project_id')
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @Post('/project')
-  async createDonationToProject(@Body() createDonationDto: CreateDonationDto) {
-    const {donatorId, projectId, amount} = createDonationDto;
-    return this.donationService.createDonationToProject(donatorId, projectId, amount);
-  } */
+  @SerializeOptions({ type: ReturnDonationDto })
+  async createDonationToProject(
+    @Param('donator_id', ParseIntPipe) donatorId: number,
+    @Param('project_id', ParseIntPipe) projectId: number,
+    @Body() createDonationDto: CreateDonationDto,
+  ) {
+    const { amount } = createDonationDto;
+    return this.donationService.createDonationToProject(
+      donatorId,
+      projectId,
+      amount,
+    );
+  }
 }
