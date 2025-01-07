@@ -105,7 +105,7 @@ export class ReturnEarningsDonationBoxDto {
   name: string;
 
   @Expose()
-  CUID: string;
+  cuid: string;
 
   constructor(partial: Partial<ReturnEarningsDonationBoxDto>) {
     Object.assign(this, partial);
