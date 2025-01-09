@@ -383,7 +383,7 @@ export class NgoService {
       .catch((error) => {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           throw new NotFoundException(
-            'NGO not found for deletion. ' +
+            'NGO not found or not ready for deletion. ' +
               'Please check if the NGO exists, that all open projects ' +
               'are archived and the NGO is not deleted already.',
           );
@@ -402,7 +402,37 @@ export class NgoService {
     };
   }
 
-  private getSortField(sortFor?: string): string {
+  async favoriteNgo(
+    donatorId: number,
+    ngoId: number,
+    favorite: boolean,
+  ): Promise<NGO & { is_favorite: boolean }> {
+    try {
+      const donator = await this.prismaService.donator.findFirstOrThrow({
+        where: {
+          id: donatorId,
+        },
+      });
+      const ngo = await this.prismaService.nGO.update({
+        where: { id: ngoId, deletedAt: null },
+        data: {
+          favouritedByDonators: favorite
+            ? { connect: { id: donator.id } }
+            : { disconnect: { id: donator.id } },
+        },
+      });
+      return { ...ngo, is_favorite: favorite };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new NotFoundException('NGO or Donator not found.');
+      }
+      throw new InternalServerErrorException(
+        'Something went wrong favoriting the NGO.',
+      );
+    }
+  }
+
+  getSortField(sortFor?: string): string {
     switch (sortFor) {
       case 'created_at':
         return 'createdAt';

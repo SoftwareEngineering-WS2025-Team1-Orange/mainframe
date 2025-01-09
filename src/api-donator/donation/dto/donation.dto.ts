@@ -1,87 +1,18 @@
-import { Expose, Exclude, Type } from 'class-transformer';
-import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
+import { IsNumber, IsPositive } from 'class-validator';
+import { Expose } from 'class-transformer';
+import { ReturnTransactionDonationDto } from '@/api-donator/transaction/dto';
 
-class ReturnDonationDonatorDto {
-  @Expose()
-  id: number;
-
-  @Expose()
-  firstName: string;
-
-  @Expose()
-  lastName: string;
-
-  Constructor(partial: Partial<ReturnDonationDonatorDto>) {
-    Object.assign(this, partial);
-  }
-}
-
-class ReturnDonationNgoDto {
-  @Expose()
-  id: number;
-
-  @Expose()
-  name: string;
-
-  Constructor(partial: Partial<ReturnDonationNgoDto>) {
-    Object.assign(this, partial);
-  }
-}
-
-class ReturnDonationProjectDto {
-  @Expose()
-  id: number;
-
-  @Expose()
-  name: string;
-
-  Constructor(partial: Partial<ReturnDonationProjectDto>) {
-    Object.assign(this, partial);
-  }
-}
-
-export class ReturnDonationDto {
-  @Expose()
-  id: number;
-
-  @Expose()
+export class CreateDonationDto {
+  @IsNumber()
+  @IsPositive()
   amount: number;
 
-  @Expose()
-  createdAt: Date;
-
-  @Expose()
-  ngo: ReturnDonationNgoDto;
-
-  @Expose()
-  project: ReturnDonationProjectDto;
-
-  @Exclude()
-  donator: ReturnDonationDonatorDto;
-
-  @Exclude()
-  updatedAt: Date;
-
-  @Exclude()
-  ngoId: number;
-
-  @Exclude()
-  donatorId: number;
-
-  @Exclude()
-  projectId: number;
-
-  Constructor(partial: Partial<ReturnDonationDto>) {
+  constructor(partial: Partial<CreateDonationDto>) {
     Object.assign(this, partial);
   }
 }
 
-export class ReturnPaginatedDonationsDto {
+export class ReturnDonationDto extends ReturnTransactionDonationDto {
   @Expose()
-  @Type(() => ReturnPaginationDto)
-  pagination: ReturnPaginationDto;
-
-  @Expose()
-  @Type(() => ReturnDonationDto)
-  donations: ReturnDonationDto[];
+  newBalance: number;
 }

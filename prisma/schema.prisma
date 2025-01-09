@@ -14,16 +14,17 @@ datasource db {
 }
 
 model Donator {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   firstName    String
   lastName     String
-  email        String   @unique
+  email        String    @unique
   password     String
   salt         String
   refreshToken String?
-  balance      Float    @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  balance      Float     @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
   scope             DonatorScope[]
   donationBox       DonationBox[]

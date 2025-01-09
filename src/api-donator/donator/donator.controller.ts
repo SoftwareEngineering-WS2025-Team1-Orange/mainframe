@@ -2,10 +2,12 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Req,
   SerializeOptions,
   UseGuards,
@@ -15,7 +17,7 @@ import {
 import { Request } from 'express';
 import { DonatorScopeEnum } from '@prisma/client';
 import { DonatorService } from '@/shared/services/donator.service';
-import { CreateDonatorDto, ReturnDonatorDto } from './dto';
+import { CreateDonatorDto, ReturnDonatorDto, UpdateDonatorDto } from './dto';
 import { prefix } from '@/api-donator/prefix';
 import { DonatorAccessTokenGuard } from '@/api-donator/auth/accessToken.guard';
 import { ScopesGuard } from '@/shared/auth/scopes.guard';
@@ -50,5 +52,28 @@ export class DonatorController {
   @Get('/:donator_id')
   getDonatorById(@Param('donator_id', ParseIntPipe) donatorId: number) {
     return this.donatorService.findDonatorById(donatorId);
+  }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({ type: ReturnDonatorDto })
+  @Put('/:donator_id')
+  putDonator(
+    @Param('donator_id', ParseIntPipe)
+    donatorId: number,
+    @Body() updateDonatorDto: UpdateDonatorDto,
+  ) {
+    return this.donatorService.updateDonator(donatorId, updateDonatorDto);
+  }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({ type: ReturnDonatorDto })
+  @Delete('/:donator_id')
+  deleteDonator(
+    @Param('donator_id', ParseIntPipe)
+    donatorId: number,
+  ) {
+    return this.donatorService.deleteDonator(donatorId);
   }
 }
