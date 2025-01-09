@@ -22,21 +22,11 @@ export class TransactionService {
     Donation: 'D',
   };
 
-  /**
-   * Finds filtered transactions based on the provided earning and donation filters,
-   * and paginates the results, which
-   * is based on a temporary union of the filtered results of both transaction types.
-   * Pagination and sorting use the provided base filter.
-   *
-   * @param earningFilters - Filters to apply to earnings.
-   * @param donationFilters - Filters to apply to donations.
-   * @param baseFilter - Base filter containing pagination and sorting information for the combined result.
-   * @returns An object containing filtered and paginated donations, earnings, and pagination details.
-   */
   async findFilteredTransactions(
     earningFilters: EarningFilter,
     donationFilters: DonationFilter,
     baseFilter: BaseFilter,
+    forceEarningsUpdate: boolean = false,
   ): Promise<{
     donations: Donation[];
     earnings: Earning[];
@@ -49,6 +39,7 @@ export class TransactionService {
     const earningsResult = await this.earningsService.findFilteredEarnings(
       { ...earningFilters, ...baseFilter }, // Use pagination and sort from baseFilter
       false,
+      forceEarningsUpdate,
     );
 
     const donationsWithType = donationsResult.donations.map((donation) => ({

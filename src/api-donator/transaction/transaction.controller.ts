@@ -45,6 +45,7 @@ export class TransactionController {
     filterAmountFrom?: number,
     @Query('filter_amount_to', new ParseIntPipe({ optional: true }))
     filterAmountTo?: number,
+    @Query('force_earnings_update') forceEarningsUpdate?: boolean,
     @Query('sort_for') sortFor?: string,
     @Query('sort_type') sortType?: string,
     @Query(PaginationQueryArguments.page, new ParseIntPipe({ optional: true }))
@@ -86,6 +87,7 @@ export class TransactionController {
       earningsFilters,
       donationFilters,
       baseFilter,
+      forceEarningsUpdate,
     );
   }
 }

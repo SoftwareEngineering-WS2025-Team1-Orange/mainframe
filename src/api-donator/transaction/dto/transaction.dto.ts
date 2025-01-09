@@ -76,27 +76,6 @@ export class ReturnTransactionDonationDto {
   }
 }
 
-export class ReturnEarningsPayoutDto {
-  @Exclude()
-  id: number;
-
-  @Exclude()
-  amount: number;
-
-  @Exclude()
-  transactionHash: Date;
-
-  @Expose()
-  periodStart: Date;
-
-  @Expose()
-  periodEnd: Date;
-
-  constructor(partial: Partial<ReturnEarningsPayoutDto>) {
-    Object.assign(this, partial);
-  }
-}
-
 export class ReturnEarningsDonationBoxDto {
   @Expose()
   id: number;
@@ -106,6 +85,12 @@ export class ReturnEarningsDonationBoxDto {
 
   @Expose()
   cuid: string;
+
+  @Expose()
+  earningsLastSuccessfullUpdateAt: Date;
+
+  @Expose()
+  earningsLastUpdateSuccessfull: boolean;
 
   constructor(partial: Partial<ReturnEarningsDonationBoxDto>) {
     Object.assign(this, partial);
@@ -133,9 +118,6 @@ export class ReturnTransactionEarningDto {
 
   @Exclude()
   payoutId: number;
-
-  @Expose()
-  payout: ReturnEarningsPayoutDto;
 
   constructor(partial: Partial<ReturnTransactionEarningDto>) {
     Object.assign(this, partial);

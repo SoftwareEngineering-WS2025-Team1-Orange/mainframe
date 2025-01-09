@@ -60,6 +60,10 @@ model DonationBox {
   last_status Status
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  integratedPublicAddress String @unique
+  integratedPublicAddressId String @unique
+  earningsLastSuccessfullUpdateAt DateTime?
+  earningsLastUpdateSuccessfull Boolean @default(false) @map("lastUpdateSuccessfull")
 
   donatorId     Int?
   powerSupplyId Int?
@@ -171,25 +175,13 @@ model Donation {
 
 model Earning {
   id                 Int      @id @default(autoincrement())
+  blockHeight        Int
   amount             Float
+  timestamp          DateTime
+  lastEarningTimeStamp DateTime
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-  activeTimeInPeriod Float
 
   donationBoxId Int
   donationBox   DonationBox @relation(fields: [donationBoxId], references: [id])
-  payoutId      Int
-  payout        Payout      @relation(fields: [payoutId], references: [id])
-}
-
-model Payout {
-  id              Int      @id @default(autoincrement())
-  amount          Float
-  periodStart     DateTime
-  periodEnd       DateTime
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  transactionHash String   @unique
-
-  earnings Earning[]
 }

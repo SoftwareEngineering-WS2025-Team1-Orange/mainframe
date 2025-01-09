@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createId } from '@paralleldrive/cuid2';
@@ -6,6 +6,8 @@ import { Status } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { formatMessage, formatError } from '@/utils/ws.helper';
+import { IntegratedKeyService } from '@/utils/integrated_address_generator/integrated_key.service';
+import { IntegratedPublicAddress } from '@/utils/integrated_address_generator/types';
 import {
   DonationBoxDtoResponse,
   JwtDonationBoxDto,
@@ -18,18 +20,31 @@ export class DonationboxService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private prismaService: PrismaService,
+    private integratedKeyService: IntegratedKeyService,
   ) {}
 
   async initNewDonationBox(): Promise<DonationBoxDtoResponse> {
-    const cuid = createId();
-    await this.prismaService.donationBox.create({
-      data: {
-        cuid,
-        last_status: 'UNINITIALIZED',
-        name: null,
-      },
-    });
-    return { cuid };
+    try {
+      const cuid = createId();
+      const integratedAddress: IntegratedPublicAddress =
+        await this.integratedKeyService.generateIntegratedAddress();
+      await this.prismaService.donationBox.create({
+        data: {
+          cuid,
+          last_status: 'UNINITIALIZED',
+          name: null,
+          integratedPublicAddress: integratedAddress.integratedPublicAddress,
+          integratedPublicAddressId:
+            integratedAddress.integratedPublicAddressId,
+        },
+      });
+      return { cuid };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to initialize donation box',
+        error,
+      );
+    }
   }
 
   async generateToken(cuid: string): Promise<JwtDonationBoxDtoResponse> {
