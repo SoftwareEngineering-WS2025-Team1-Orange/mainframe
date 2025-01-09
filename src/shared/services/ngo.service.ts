@@ -35,7 +35,7 @@ export class NgoService {
         await this.minioClient.bucketExists(BUCKET_NAME);
       if (!isBucketAvailable) {
         const settings = JSON.stringify({
-          Version: new Date().toISOString(),
+          Version: '2012-10-17',
           Statement: [
             {
               Effect: 'Allow',
@@ -88,7 +88,7 @@ export class NgoService {
         });
       return {
         ...ngo,
-        scope: ngo.scope.map((scope) => scope.name as NGOScopeEnum),
+        scope: ngo.scope.map((scope) => scope.name),
         projects: {
           projects,
           pagination,
@@ -98,7 +98,7 @@ export class NgoService {
 
     return {
       ...ngo,
-      scope: ngo.scope.map((scope) => scope.name as NGOScopeEnum),
+      scope: ngo.scope.map((scope) => scope.name),
     };
   }
 
@@ -226,17 +226,14 @@ export class NgoService {
       password: await argon2.hash(ngo.password + salt),
     };
 
-    const defaultRoles = [NGOScopeEnum.NOT_IMPLEMENTED];
+    const defaultRoles = Object.values(NGOScopeEnum);
 
     const newNgo = await this.prismaService.nGO.create({
       data: {
         ...ngoWithHash,
         salt,
         scope: {
-          connectOrCreate: defaultRoles.map((scope) => ({
-            where: { name: scope },
-            create: { name: scope },
-          })),
+          connect: defaultRoles.map((scope) => ({ name: scope })),
         },
       },
     });
@@ -328,7 +325,7 @@ export class NgoService {
 
     return {
       ...updatedNgo,
-      scope: updatedNgo.scope.map((scope) => scope.name as NGOScopeEnum),
+      scope: updatedNgo.scope.map((scope) => scope.name),
     };
   }
 
@@ -358,7 +355,7 @@ export class NgoService {
 
     return {
       ...updatedNgo,
-      scope: updatedNgo.scope.map((scope) => scope.name as NGOScopeEnum),
+      scope: updatedNgo.scope.map((scope) => scope.name),
     };
   }
 
@@ -401,7 +398,7 @@ export class NgoService {
 
     return {
       ...ngo,
-      scope: ngo.scope.map((scope) => scope.name as NGOScopeEnum),
+      scope: ngo.scope.map((scope) => scope.name),
     };
   }
 

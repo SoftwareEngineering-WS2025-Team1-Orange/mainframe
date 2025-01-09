@@ -1,13 +1,22 @@
 import { validateOrReject, ValidationError } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { DonatorScope, NGOScope } from '@prisma/client';
+import * as argon2 from 'argon2';
+import { randomBytes } from 'node:crypto';
 import {
   GrantType,
   OAuth2Dto,
   OAuth2PasswordDto,
   OAuth2RefreshTokenDto,
+  TokenEndpointAuthMethod,
 } from '@/shared/auth/dto/auth.dto';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import { DonatorClientWithScope } from '@/api-donator/auth/types';
+import { NGOClientWithScope } from '@/api-ngo/auth/types';
+
+export const REFRESH_TOKEN_LIFETIME_IN_DAYS = 14;
 
 export function buildValidationErrorResponse(errors: ValidationError[]) {
   return {
@@ -42,7 +51,7 @@ export async function handleOAuthFlow(
     res.cookie('refresh_token', tokens.refreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
+      sameSite: 'none',
       path: req.url,
     });
 
@@ -62,8 +71,11 @@ export async function handleOAuthFlow(
     res.cookie('refresh_token', tokens.refreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
+      sameSite: 'none',
       path: req.url,
+      expires: new Date(
+        Date.now() + REFRESH_TOKEN_LIFETIME_IN_DAYS * 24 * 60 * 60 * 1000,
+      ),
     });
 
     return { access_token: tokens.accessToken };
@@ -78,4 +90,93 @@ export function rejectOnNotOwnedResource(req: Request, id: number): number {
     throw new BadRequestException('Not authorized');
   }
   return ident.sub;
+}
+
+export async function generateAlphanumericClientUuid10(
+  prismaService: PrismaService,
+): Promise<string> {
+  let result: string = '';
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 10; i += 1) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    // eslint-disable-next-line no-await-in-loop
+    const [inTableA, inTableB] = await Promise.all([
+      prismaService.nGOClient.findFirst({ where: { clientId: result } }),
+      prismaService.donatorClient.findFirst({ where: { clientId: result } }),
+    ]);
+
+    if (!(!!inTableA || !!inTableB)) {
+      return result;
+    }
+  }
+}
+
+export function generateClientResponseEntityFromPrisma(
+  client: DonatorClientWithScope | NGOClientWithScope,
+  secret: string,
+  dateNow: number,
+) {
+  return {
+    client_id: client.clientId,
+    client_secret: secret,
+    client_name: client.clientName,
+    client_secret_expires_at: convertBigIntToInt(client.clientSecretExpires),
+    client_id_issued_at: dateNow,
+    grant_types: [GrantType.PASSWORD],
+    token_endpoint_auth_method: TokenEndpointAuthMethod.CLIENT_SECRET_BASIC,
+    client_secret_lifetime: convertBigIntToInt(client.clientSecretLifetime),
+    access_token_lifetime: convertBigIntToInt(client.accessTokenLifetime),
+    refresh_token_lifetime: convertBigIntToInt(client.refreshTokenLifetime),
+    scope: client.allowedScopes.map(
+      (scope: DonatorScope | NGOScope) => scope.name,
+    ),
+  };
+}
+
+export function convertBigIntToInt(value: bigint | number) {
+  // Solution for JavaScript BigInt to Number conversion
+  return Number(value);
+}
+
+export async function generateSecret(length: number): Promise<string[]> {
+  const secret = randomBytes(length * 2)
+    .toString('base64')
+    .slice(0, length);
+
+  const hash = await argon2.hash(secret);
+
+  return [secret, hash];
+}
+
+export async function validateClientWithScopesImpl(
+  clientId: string,
+  clientSecret: string,
+  scopes: string[],
+  validateClient: (
+    clientId: string,
+    clientSecret: string,
+  ) => Promise<DonatorClientWithScope | NGOClientWithScope>,
+) {
+  const client = await validateClient(clientId, clientSecret);
+
+  const clientScopes = new Set(
+    client.allowedScopes.map(
+      (scope: DonatorScope | NGOScope) => scope.name as string,
+    ),
+  );
+  if (scopes.some((scope) => !clientScopes.has(scope))) {
+    throw new ForbiddenException('Access Denied');
+  }
+  return client;
+}
+
+export function validateScopes(scopesFirst: string[], scopesSecond: string[]) {
+  if (!scopesFirst.every((scope) => scopesSecond.includes(scope))) {
+    throw new ForbiddenException('Access Denied');
+  }
 }

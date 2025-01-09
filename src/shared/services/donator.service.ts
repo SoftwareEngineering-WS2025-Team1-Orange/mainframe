@@ -101,17 +101,14 @@ export class DonatorService {
       password: await argon2.hash(donator.password + salt),
     };
 
-    const defaultRoles = [DonatorScopeEnum.NOT_IMPLEMENTED];
+    const defaultRoles = Object.values(DonatorScopeEnum);
 
     const newDonator = await this.prismaService.donator.create({
       data: {
         ...donatorWithHash,
         salt,
         scope: {
-          connectOrCreate: defaultRoles.map((scope) => ({
-            where: { name: scope },
-            create: { name: scope },
-          })),
+          connect: defaultRoles.map((scope) => ({ name: scope })),
         },
       },
     });
