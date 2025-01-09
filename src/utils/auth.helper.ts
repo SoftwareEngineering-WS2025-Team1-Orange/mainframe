@@ -53,13 +53,15 @@ export async function handleOAuthFlow(
       secure: true,
       sameSite: 'none',
       path: req.url,
+      expires: new Date(
+        jwtService.decode<{ exp: number }>(tokens.refreshToken).exp * 1000,
+      ),
     });
 
     return {
       access_token: tokens.accessToken,
       token_type: 'Bearer',
-      expires_at:
-        jwtService.decode<{ exp: number }>(tokens.refreshToken).exp * 1000,
+      expires_at: jwtService.decode<{ exp: number }>(tokens.refreshToken).exp,
     };
   }
 
