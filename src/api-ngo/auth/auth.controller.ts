@@ -16,6 +16,7 @@ import {
   Version,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { NGOScopeEnum } from '@prisma/client';
 import { AuthService } from '@/api-ngo/auth/auth.service';
 import {
   DeleteOAuth2ClientDto,
@@ -30,7 +31,6 @@ import {
   NGOCreateOAuth2ClientDTO,
   NGOUpdateOAuth2ClientDTO,
 } from '@/api-ngo/auth/dto/auth.dto';
-import { NGOScopeEnum } from '@prisma/client';
 
 @Controller(`${prefix}/auth`)
 export class AuthController {
