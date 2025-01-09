@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 import { DonatorScope, NGOScope } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { randomBytes } from 'node:crypto';
+import { JwtService } from '@nestjs/jwt';
 import {
   GrantType,
   OAuth2Dto,
@@ -30,6 +31,7 @@ export async function handleOAuthFlow(
   data: OAuth2Dto,
   req: Request,
   res: Response,
+  jwtService: JwtService,
   signInFn: (
     data: OAuth2PasswordDto,
   ) => Promise<{ accessToken: string; refreshToken: string }>,
@@ -55,7 +57,11 @@ export async function handleOAuthFlow(
       path: req.url,
     });
 
-    return { access_token: tokens.accessToken };
+    return {
+      access_token: tokens.accessToken,
+      token_type: 'Bearer',
+      expires_at: jwtService.decode<{ exp: number }>(tokens.refreshToken).exp,
+    };
   }
 
   if (data.grant_type === GrantType.CLIENT_CREDENTIALS)
@@ -74,11 +80,15 @@ export async function handleOAuthFlow(
       sameSite: 'none',
       path: req.url,
       expires: new Date(
-        Date.now() + REFRESH_TOKEN_LIFETIME_IN_DAYS * 24 * 60 * 60 * 1000,
+        jwtService.decode<{ exp: number }>(tokens.refreshToken).exp,
       ),
     });
 
-    return { access_token: tokens.accessToken };
+    return {
+      access_token: tokens.accessToken,
+      token_type: 'Bearer',
+      expires_at: jwtService.decode<{ exp: number }>(tokens.refreshToken).exp,
+    };
   }
 
   throw new BadRequestException('Invalid grant type');

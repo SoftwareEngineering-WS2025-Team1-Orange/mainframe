@@ -17,6 +17,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { DonatorScopeEnum } from '@prisma/client';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '@/api-donator/auth/auth.service';
 import {
   DeleteOAuth2ClientDto,
@@ -34,7 +35,10 @@ import {
 
 @Controller(`${prefix}/auth`)
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private jwtService: JwtService,
+  ) {}
 
   @Version('1')
   @Post('client')
@@ -84,6 +88,7 @@ export class AuthController {
       data,
       req,
       res,
+      this.jwtService,
       (loginData: OAuth2PasswordDto) =>
         this.authService.signIn(
           loginData,
