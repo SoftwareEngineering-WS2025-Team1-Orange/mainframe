@@ -17,8 +17,6 @@ import { PrismaService } from '@/shared/prisma/prisma.service';
 import { DonatorClientWithScope } from '@/api-donator/auth/types';
 import { NGOClientWithScope } from '@/api-ngo/auth/types';
 
-export const REFRESH_TOKEN_LIFETIME_IN_DAYS = 14;
-
 export function buildValidationErrorResponse(errors: ValidationError[]) {
   return {
     message: errors.flatMap((e) => Object.values(e.constraints)),
@@ -60,7 +58,8 @@ export async function handleOAuthFlow(
     return {
       access_token: tokens.accessToken,
       token_type: 'Bearer',
-      expires_at: jwtService.decode<{ exp: number }>(tokens.refreshToken).exp,
+      expires_at:
+        jwtService.decode<{ exp: number }>(tokens.refreshToken).exp * 1000,
     };
   }
 
@@ -80,7 +79,7 @@ export async function handleOAuthFlow(
       sameSite: 'none',
       path: req.url,
       expires: new Date(
-        jwtService.decode<{ exp: number }>(tokens.refreshToken).exp,
+        jwtService.decode<{ exp: number }>(tokens.refreshToken).exp * 1000,
       ),
     });
 
@@ -135,13 +134,21 @@ export function generateClientResponseEntityFromPrisma(
     client_id: client.clientId,
     client_secret: secret,
     client_name: client.clientName,
-    client_secret_expires_at: convertBigIntToInt(client.clientSecretExpires),
+    client_secret_expires_at: Math.floor(
+      convertBigIntToInt(client.clientSecretExpires) / 1000,
+    ),
     client_id_issued_at: dateNow,
     grant_types: [GrantType.PASSWORD],
     token_endpoint_auth_method: TokenEndpointAuthMethod.CLIENT_SECRET_BASIC,
-    client_secret_lifetime: convertBigIntToInt(client.clientSecretLifetime),
-    access_token_lifetime: convertBigIntToInt(client.accessTokenLifetime),
-    refresh_token_lifetime: convertBigIntToInt(client.refreshTokenLifetime),
+    client_secret_lifetime: Math.floor(
+      convertBigIntToInt(client.clientSecretLifetime) / 1000,
+    ),
+    access_token_lifetime: Math.floor(
+      convertBigIntToInt(client.accessTokenLifetime) / 1000,
+    ),
+    refresh_token_lifetime: Math.floor(
+      convertBigIntToInt(client.refreshTokenLifetime) / 1000,
+    ),
     scope: client.allowedScopes.map(
       (scope: DonatorScope | NGOScope) => scope.name,
     ),

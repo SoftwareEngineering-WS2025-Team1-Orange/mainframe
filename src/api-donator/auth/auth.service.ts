@@ -77,10 +77,10 @@ export class AuthService {
         clientId: await generateAlphanumericClientUuid10(this.prismaService),
         clientSecret: hash,
         clientName: data.client_name,
-        clientSecretExpires: dateNow + data.client_secret_lifetime,
-        clientSecretLifetime: data.client_secret_lifetime,
-        accessTokenLifetime: data.access_token_lifetime,
-        refreshTokenLifetime: data.refresh_token_lifetime,
+        clientSecretExpires: dateNow + data.client_secret_lifetime * 1000,
+        clientSecretLifetime: data.client_secret_lifetime * 1000,
+        accessTokenLifetime: data.access_token_lifetime * 1000,
+        refreshTokenLifetime: data.refresh_token_lifetime * 1000,
         allowedScopes: {
           connect: data.scope.map((scope: DonatorScopeEnum | NGOScopeEnum) => ({
             name: scope as DonatorScopeEnum,
@@ -111,10 +111,10 @@ export class AuthService {
       data: {
         clientName: data.client_name,
         clientSecret: hash,
-        clientSecretExpires: dateNow + data.client_secret_lifetime,
-        clientSecretLifetime: data.client_secret_lifetime,
-        accessTokenLifetime: data.access_token_lifetime,
-        refreshTokenLifetime: data.refresh_token_lifetime,
+        clientSecretExpires: dateNow + data.client_secret_lifetime * 1000,
+        clientSecretLifetime: data.client_secret_lifetime * 1000,
+        accessTokenLifetime: data.access_token_lifetime * 1000,
+        refreshTokenLifetime: data.refresh_token_lifetime * 1000,
         allowedScopes: {
           set: data.scope.map((scope: DonatorScopeEnum | NGOScopeEnum) => ({
             name: scope as DonatorScopeEnum,
@@ -194,12 +194,14 @@ export class AuthService {
       email: donator.email,
       scope: scopes,
       sub: donator.id,
-      iat: Math.floor(Date.now()),
+      iat: Math.floor(Date.now() / 1000),
     };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('DONATOR_JWT_ACCESS_SECRET'),
-        expiresIn: convertBigIntToInt(client.accessTokenLifetime),
+        expiresIn: Math.floor(
+          convertBigIntToInt(client.accessTokenLifetime) / 1000,
+        ),
       }),
       this.jwtService.signAsync(
         {
@@ -208,7 +210,9 @@ export class AuthService {
         },
         {
           secret: this.configService.get<string>('DONATOR_JWT_REFRESH_SECRET'),
-          expiresIn: convertBigIntToInt(client.refreshTokenLifetime),
+          expiresIn: Math.floor(
+            convertBigIntToInt(client.refreshTokenLifetime) / 1000,
+          ),
         },
       ),
     ]);
