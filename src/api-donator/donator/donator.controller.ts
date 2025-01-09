@@ -15,10 +15,13 @@ import {
   Version,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { DonatorScopeEnum } from '@prisma/client';
 import { DonatorService } from '@/shared/services/donator.service';
 import { CreateDonatorDto, ReturnDonatorDto, UpdateDonatorDto } from './dto';
 import { prefix } from '@/api-donator/prefix';
-import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
+import { DonatorAccessTokenGuard } from '@/api-donator/auth/accessToken.guard';
+import { ScopesGuard } from '@/shared/auth/scopes.guard';
+import { Scopes } from '@/shared/auth/scopes.decorator';
 
 @Controller(`${prefix}/donator`)
 export class DonatorController {
@@ -36,7 +39,8 @@ export class DonatorController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnDonatorDto })
   @Get('/me')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(DonatorAccessTokenGuard, ScopesGuard)
+  @Scopes(DonatorScopeEnum.READ_DONATOR)
   getDonatorByToken(@Req() req: Request) {
     const donator = req.user as { sub: number };
     return this.donatorService.findDonatorById(donator.sub);

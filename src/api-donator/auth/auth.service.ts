@@ -2,8 +2,25 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { DonatorScopeEnum, NGOScopeEnum } from '@prisma/client';
 import { DonatorService } from '@/shared/services/donator.service';
-import { DonatorWithScope } from '@/api-donator/auth/types';
+import {
+  DonatorClientWithScope,
+  DonatorWithScope,
+} from '@/api-donator/auth/types';
+import {
+  convertBigIntToInt,
+  generateAlphanumericClientUuid10,
+  generateClientResponseEntityFromPrisma,
+  generateSecret,
+  validateClientWithScopesImpl,
+  validateScopes,
+} from '@/utils/auth.helper';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import {
+  DonatorCreateOAuth2ClientDTO,
+  DonatorUpdateOAuth2ClientDTO,
+} from '@/api-donator/auth/dto/auth.dto';
 import { OAuth2PasswordDto } from '@/shared/auth/dto/auth.dto';
 
 @Injectable()
@@ -12,9 +29,132 @@ export class AuthService {
     private donatorService: DonatorService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+    private prismaService: PrismaService,
+  ) {
+    const insertScopes = async () => {
+      const inserts = [];
+      Object.values(DonatorScopeEnum).forEach((scope) => {
+        inserts.push(
+          prismaService.donatorScope.upsert({
+            where: { name: scope },
+            update: {},
+            create: { name: scope },
+          }),
+        );
+      });
+      await prismaService.$transaction(inserts);
+    };
+    insertScopes().catch((error) => {
+      throw error;
+    });
+  }
 
-  async signIn(data: OAuth2PasswordDto) {
+  async validateClient(clientId: string, clientSecret: string) {
+    const client = await this.prismaService.donatorClient.findFirst({
+      where: {
+        clientId,
+        clientSecretExpires: {
+          gte: Date.now(),
+        },
+      },
+      include: {
+        allowedScopes: true,
+      },
+    });
+
+    if (!client || !(await argon2.verify(client.clientSecret, clientSecret))) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    return client;
+  }
+
+  async registerClient(data: DonatorCreateOAuth2ClientDTO) {
+    const dateNow = Date.now();
+    const [secret, hash] = await generateSecret(64);
+    const client = await this.prismaService.donatorClient.create({
+      data: {
+        clientId: await generateAlphanumericClientUuid10(this.prismaService),
+        clientSecret: hash,
+        clientName: data.client_name,
+        clientSecretExpires: dateNow + data.client_secret_lifetime * 1000,
+        clientSecretLifetime: data.client_secret_lifetime * 1000,
+        accessTokenLifetime: data.access_token_lifetime * 1000,
+        refreshTokenLifetime: data.refresh_token_lifetime * 1000,
+        allowedScopes: {
+          connect: data.scope.map((scope: DonatorScopeEnum | NGOScopeEnum) => ({
+            name: scope as DonatorScopeEnum,
+          })),
+        },
+      },
+      include: {
+        allowedScopes: true,
+      },
+    });
+
+    return generateClientResponseEntityFromPrisma(client, secret, dateNow);
+  }
+
+  async updateClient(
+    clientId: string,
+    data: DonatorUpdateOAuth2ClientDTO,
+    rotateSecret: boolean,
+  ) {
+    const dateNow = Date.now();
+    const [secret, hash] = rotateSecret
+      ? await generateSecret(64)
+      : [data.client_secret, undefined];
+    const client = await this.prismaService.donatorClient.update({
+      where: {
+        clientId,
+      },
+      data: {
+        clientName: data.client_name,
+        clientSecret: hash,
+        clientSecretExpires: dateNow + data.client_secret_lifetime * 1000,
+        clientSecretLifetime: data.client_secret_lifetime * 1000,
+        accessTokenLifetime: data.access_token_lifetime * 1000,
+        refreshTokenLifetime: data.refresh_token_lifetime * 1000,
+        allowedScopes: {
+          set: data.scope.map((scope: DonatorScopeEnum | NGOScopeEnum) => ({
+            name: scope as DonatorScopeEnum,
+          })),
+        },
+      },
+      include: {
+        allowedScopes: true,
+      },
+    });
+
+    return generateClientResponseEntityFromPrisma(client, secret, dateNow);
+  }
+
+  async deleteClient(clientId: string) {
+    await this.prismaService.donatorClient.delete({
+      where: {
+        clientId,
+      },
+    });
+  }
+
+  async validateClientWithScopes(
+    clientId: string,
+    clientSecret: string,
+    scope: string[],
+  ) {
+    return (await validateClientWithScopesImpl(
+      clientId,
+      clientSecret,
+      scope,
+      this.validateClient.bind(this),
+    )) as DonatorClientWithScope;
+  }
+
+  async signIn(
+    data: OAuth2PasswordDto,
+    client: DonatorClientWithScope,
+    scope: DonatorScopeEnum[],
+  ) {
     const donator: DonatorWithScope = await this.validateDonator(
       data.username,
       data.password,
@@ -22,7 +162,7 @@ export class AuthService {
     if (!donator) {
       throw new ForbiddenException('Access Denied');
     }
-    const tokens = await this.getTokens(donator);
+    const tokens = await this.getTokens(donator, client, scope);
     await this.donatorService.updateRefreshToken(
       donator.id,
       tokens.refreshToken,
@@ -30,33 +170,49 @@ export class AuthService {
     return tokens;
   }
 
-  async generateTokensFromRefreshToken(token: string) {
-    return this.refreshTokens(token);
+  async generateTokensFromRefreshToken(
+    token: string,
+    client: DonatorClientWithScope,
+  ) {
+    return this.refreshTokens(token, client);
   }
 
   async logout(donatorId: number) {
     return this.donatorService.updateRefreshToken(donatorId, null);
   }
 
-  async getTokens(donator: DonatorWithScope) {
+  async getTokens(
+    donator: DonatorWithScope,
+    client: DonatorClientWithScope,
+    scopes: DonatorScopeEnum[],
+  ) {
+    validateScopes(
+      scopes,
+      donator.scope.map((scope) => scope.name),
+    );
     const payload = {
       email: donator.email,
-      scope: donator.scope.map((scope) => scope.name),
+      scope: scopes,
       sub: donator.id,
       iat: Math.floor(Date.now() / 1000),
     };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        expiresIn: '5m',
+        secret: this.configService.get<string>('DONATOR_JWT_ACCESS_SECRET'),
+        expiresIn: Math.floor(
+          convertBigIntToInt(client.accessTokenLifetime) / 1000,
+        ),
       }),
       this.jwtService.signAsync(
         {
           sub: payload.sub,
+          scope: payload.scope,
         },
         {
-          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
+          secret: this.configService.get<string>('DONATOR_JWT_REFRESH_SECRET'),
+          expiresIn: Math.floor(
+            convertBigIntToInt(client.refreshTokenLifetime) / 1000,
+          ),
         },
       ),
     ]);
@@ -67,12 +223,15 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(refreshToken: string) {
+  async refreshTokens(refreshToken: string, client: DonatorClientWithScope) {
     const { sub: donatorId } = await this.jwtService.verifyAsync<{
       sub: number;
     }>(refreshToken, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      secret: this.configService.get<string>('DONATOR_JWT_REFRESH_SECRET'),
     });
+    const { scope } = this.jwtService.decode<{ scope: DonatorScopeEnum[] }>(
+      refreshToken,
+    );
     const donatorPaginationObject =
       await this.donatorService.findFilteredDonator({ filterId: donatorId });
     const donator = donatorPaginationObject.donators[0];
@@ -86,7 +245,7 @@ export class AuthService {
     if (!refreshTokenMatches) {
       throw new ForbiddenException('Access Denied');
     }
-    const tokens = await this.getTokens(donator);
+    const tokens = await this.getTokens(donator, client, scope);
     await this.donatorService.updateRefreshToken(
       donator.id,
       tokens.refreshToken,

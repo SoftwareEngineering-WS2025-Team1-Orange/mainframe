@@ -8,7 +8,7 @@ import { JWTDonatorPayload } from '@/api-donator/auth/types';
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(private configService: ConfigService) {
-    const accessToken: string = configService.get('JWT_ACCESS_SECRET');
+    const accessToken: string = configService.get('NGO_JWT_ACCESS_SECRET');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: accessToken,
