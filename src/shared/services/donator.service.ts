@@ -5,12 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import {
-  Donator,
-  DonatorScopeEnum,
-  NGOScopeEnum,
-  Prisma,
-} from '@prisma/client';
+import { Donator, DonatorScopeEnum, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/shared/prisma/prisma.service';
@@ -160,7 +155,7 @@ export class DonatorService {
 
     return {
       ...updatedDonator,
-      scope: updatedDonator.scope.map((scope) => scope.name as NGOScopeEnum),
+      scope: updatedDonator.scope.map((scope) => scope.name),
     };
   }
 
@@ -198,7 +193,7 @@ export class DonatorService {
       });
     return {
       ...donator,
-      scope: donator.scope.map((scope) => scope.name as DonatorScopeEnum),
+      scope: donator.scope.map((scope) => scope.name),
     };
   }
 
