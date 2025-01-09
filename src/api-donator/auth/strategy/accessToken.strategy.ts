@@ -2,23 +2,23 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JWTDonatorPayload } from '@/api-donator/auth/types';
 
 @Injectable()
-export class RefreshTokenStrategy extends PassportStrategy(
+export class AccessTokenStrategy extends PassportStrategy(
   Strategy,
-  'jwt-refresh',
+  'donator-jwt',
 ) {
   constructor(private configService: ConfigService) {
-    const refreshToken: string = configService.get('JWT_REFRESH_SECRET');
+    const accessToken: string = configService.get('DONATOR_JWT_ACCESS_SECRET');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: refreshToken,
-      passReqToCallback: true,
+      secretOrKey: accessToken,
       ignoreExpiration: false,
     });
   }
 
-  validate(payload: object) {
+  async validate(payload: JWTDonatorPayload) {
     return payload;
   }
 }

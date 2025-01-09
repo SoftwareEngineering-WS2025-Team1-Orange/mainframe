@@ -23,6 +23,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { NGOScopeEnum } from '@prisma/client';
 import { NgoService } from '@/shared/services/ngo.service';
 import {
   CreateNgoDto,
@@ -32,11 +33,13 @@ import {
 } from './dto/ngo.dto';
 import { prefix } from '@/api-ngo/prefix';
 import { rejectOnNotOwnedResource } from '@/utils/auth.helper';
-import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
+import { NGOAccessTokenGuard } from '@/api-ngo/auth/accessToken.guard';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
 import { parseEnumCategory } from '@/utils/sort_filter.helper';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { FileTypeExtendedValidator } from '@/shared/validators/file_type_magic.validator';
+import { ScopesGuard } from '@/shared/auth/scopes.guard';
+import { Scopes } from '@/shared/auth/scopes.decorator';
 
 @Controller(`${prefix}/ngo`)
 export class NgoController {
@@ -46,7 +49,8 @@ export class NgoController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnNgoDto })
   @Get('/me')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.READ_NGO, NGOScopeEnum.READ_PROJECT)
   getMe(
     @Req() req: Request,
     @Query('filter_project_id', new ParseIntPipe({ optional: true }))
@@ -92,7 +96,8 @@ export class NgoController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnNgoDto })
   @Get('/:ngo_id')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.READ_NGO, NGOScopeEnum.READ_PROJECT)
   getNgo(
     @Param('ngo_id', ParseIntPipe)
     ngoId: number,
@@ -141,6 +146,8 @@ export class NgoController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnNgoWithoutProjectsDto })
   @Post('/')
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.WRITE_NGO)
   postNgo(@Body() createNgoDto: CreateNgoDto) {
     return this.ngoService.createNgo(createNgoDto);
   }
@@ -150,7 +157,7 @@ export class NgoController {
   @UseInterceptors(FileInterceptor('banner'))
   @SerializeOptions({ type: ReturnNgoWithoutProjectsDto })
   @Patch('/:ngo_id/banner_uri')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard)
   patchNgoBanner(
     @Param('ngo_id', ParseIntPipe)
     ngoId: number,
@@ -178,7 +185,9 @@ export class NgoController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnNgoWithoutProjectsDto })
   @Put('/:ngo_id')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.WRITE_NGO)
   putNgo(
     @Param('ngo_id', ParseIntPipe)
     ngoId: number,
@@ -193,7 +202,9 @@ export class NgoController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnNgoWithoutProjectsDto })
   @Delete('/:ngo_id')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.WRITE_NGO)
   deleteNgo(
     @Param('ngo_id', ParseIntPipe)
     ngoId: number,

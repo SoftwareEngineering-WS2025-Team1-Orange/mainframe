@@ -65,7 +65,7 @@ export class EarningService {
           select: {
             id: true,
             name: true,
-            CUID: true,
+            cuid: true,
           },
         },
       },

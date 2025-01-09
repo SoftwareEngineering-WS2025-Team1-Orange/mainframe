@@ -1,4 +1,4 @@
-import { DonatorScope, Prisma } from '@prisma/client';
+import { DonatorScopeEnum, Prisma } from '@prisma/client';
 
 export type DonatorWithScope = Prisma.DonatorGetPayload<{
   include: {
@@ -6,9 +6,15 @@ export type DonatorWithScope = Prisma.DonatorGetPayload<{
   };
 }>;
 
+export type DonatorClientWithScope = Prisma.DonatorClientGetPayload<{
+  include: {
+    allowedScopes: true;
+  };
+}>;
+
 export interface JWTDonatorPayload {
   email: string;
-  scope: DonatorScope[];
+  scope: DonatorScopeEnum[];
   sub: number;
   iat: number;
 }
