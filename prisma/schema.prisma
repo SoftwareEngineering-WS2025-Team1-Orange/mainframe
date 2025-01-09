@@ -213,10 +213,10 @@ model NGOClient {
   clientId             String     @unique
   clientSecret         String
   clientName           String
-  clientSecretExpires  Int
-  clientSecretLifetime Int
-  accessTokenLifetime  Int
-  refreshTokenLifetime Int
+  clientSecretExpires  BigInt
+  clientSecretLifetime BigInt
+  accessTokenLifetime  BigInt
+  refreshTokenLifetime BigInt
   allowedScopes        NGOScope[]
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt

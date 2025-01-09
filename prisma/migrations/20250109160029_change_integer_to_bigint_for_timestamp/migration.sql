@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "NGOClient" ALTER COLUMN "clientSecretExpires" SET DATA TYPE BIGINT,
+ALTER COLUMN "clientSecretLifetime" SET DATA TYPE BIGINT,
+ALTER COLUMN "accessTokenLifetime" SET DATA TYPE BIGINT,
+ALTER COLUMN "refreshTokenLifetime" SET DATA TYPE BIGINT;
