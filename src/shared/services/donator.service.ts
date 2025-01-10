@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -17,6 +18,16 @@ import { DonatorFilter } from '@/shared/filters/donator.filter.interface';
 @Injectable()
 export class DonatorService {
   constructor(private prismaService: PrismaService) {}
+
+  async findDonatorByIdWithBalance(
+    id: number,
+  ): Promise<Donator & { balance: number }> {
+    const [donator, balance] = await Promise.all([
+      this.findDonatorById(id),
+      this.calculateDonatorBalance(id),
+    ]);
+    return { ...donator, balance };
+  }
 
   async findDonatorById(id: number): Promise<Donator> {
     const donator = await this.prismaService.donator.findFirst({
@@ -159,21 +170,28 @@ export class DonatorService {
     };
   }
 
-  async deleteDonator(
-    id: number,
-  ): Promise<Donator & { scope: DonatorScopeEnum[] }> {
-    // allow soft delete if donator donated complete balance and if no boxes are associated with them (we assume unregistering and returning boxes is done via customer support in MVP)
-    const donator = await this.prismaService.donator
+  async deleteDonator(id: number): Promise<void> {
+    // Check balance is 0 before allowing deletion
+    const balance = await this.calculateDonatorBalance(id);
+    if (balance > 0) {
+      throw new BadRequestException(
+        'Cannot delete donator with remaining balance. Please spend all funds before deletion.',
+      );
+    }
+    // allow soft delete if donator has no balance and no boxes are associated with them (we assume unregistering and returning boxes is done via customer support in MVP)
+    await this.prismaService.donator
       .update({
         where: {
           id,
           deletedAt: null,
-          balance: 0,
           donationBox: { none: {} },
         },
         data: {
-          deletedAt: new Date(),
+          deletedAt: new Date(Date.now()),
           refreshToken: null,
+          firstName: `Deleted-${id}`,
+          lastName: `Deleted-${id}`,
+          email: `Deleted-${id}`,
         },
         include: {
           scope: true,
@@ -182,19 +200,15 @@ export class DonatorService {
       .catch((error) => {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           throw new NotFoundException(
-            'Donator not found, already deleted or not ready for deletion. ' +
-              'Please check that the Donator exists, that their balance is 0 (all money is spent) ' +
-              'and that all donationboxes are unregistered.',
+            'Donator not found ready for deletion. Either he does not exist, is already deleted or still has donation boxes associated with him.',
           );
+        } else if (error instanceof BadRequestException) {
+          throw error;
         }
         throw new InternalServerErrorException(
           'Something went wrong deleting the Donator.',
         );
       });
-    return {
-      ...donator,
-      scope: donator.scope.map((scope) => scope.name),
-    };
   }
 
   private getSortField(sortFor?: string): string {
@@ -208,7 +222,7 @@ export class DonatorService {
     }
   }
 
-  async recalculateBalance(donatorId: number): Promise<number> {
+  async calculateDonatorBalance(donatorId: number): Promise<number> {
     const earnings = await this.prismaService.earning.aggregate({
       _sum: {
         amount: true,
