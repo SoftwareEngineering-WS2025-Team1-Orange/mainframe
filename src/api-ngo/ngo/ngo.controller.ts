@@ -75,14 +75,6 @@ export class NgoController {
       filterCategory: parseEnumCategory(filterCategory),
       filterName,
       filterIncludeArchived,
-      filterNgoId: null,
-      filterNgoName: null,
-
-      filterFavoriteByDonatorId: null,
-      filterNotFavoriteByDonatorId: null,
-      filterDonatedToByDonatorId: null,
-      filterNotDonatedToByDonatorId: null,
-
       paginationPage,
       paginationPageSize,
       sortType,
@@ -125,14 +117,6 @@ export class NgoController {
       filterCategory: parseEnumCategory(filterCategory),
       filterName,
       filterIncludeArchived,
-      filterNgoId: null,
-      filterNgoName: null,
-
-      filterFavoriteByDonatorId: null,
-      filterNotFavoriteByDonatorId: null,
-      filterDonatedToByDonatorId: null,
-      filterNotDonatedToByDonatorId: null,
-
       paginationPage,
       paginationPageSize,
       sortType,

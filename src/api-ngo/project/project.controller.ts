@@ -23,22 +23,25 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { NGOScopeEnum } from '@prisma/client';
+import { ParseDatePipe } from '@nestjs/common/pipes/parse-date.pipe';
 import { ProjectService } from '@/shared/services/project.service';
-import {
-  ReturnPaginatedProjectsDto,
-  ReturnProjectWithoutFavDto,
-} from '@/api-donator/project/dto/project.dto';
 import { parseEnumCategory } from '@/utils/sort_filter.helper';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
 import { prefix } from '@/api-ngo/prefix';
-import { AccessTokenGuard } from '@/shared/auth/accessToken.guard';
+import { NGOAccessTokenGuard } from '@/api-ngo/auth/accessToken.guard';
 import { rejectOnNotOwnedResource } from '@/utils/auth.helper';
 import {
   CreateProjectDto,
+  ReturnProjectWithPaginatedDonations,
   UpdateProjectDto,
+  ReturnProjectWithoutFavDto,
 } from '@/api-ngo/project/dto/project.dto';
 import { FileTypeExtendedValidator } from '@/shared/validators/file_type_magic.validator';
+import { ScopesGuard } from '@/shared/auth/scopes.guard';
+import { Scopes } from '@/shared/auth/scopes.decorator';
+import { DonationFilter } from '@/shared/filters/donation.filter.interface';
 
 @Controller(`${prefix}/ngo/:ngo_id/project`)
 export class ProjectController {
@@ -46,15 +49,17 @@ export class ProjectController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnPaginatedProjectsDto })
+  @SerializeOptions({ type: ReturnProjectWithoutFavDto })
   @Get('/')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.READ_NGO)
   getFilteredProjects(
     @Param(':ngo_id', ParseIntPipe) ngoId: number,
     @Req() req: Request,
     @Query('filter_project_id', new ParseIntPipe({ optional: true }))
-    filterId?: number,
-    @Query('filter_category') filterCategory?: string,
+    filter_project_id?: number,
+    @Query('filter_category')
+    filterCategory?: string,
     @Query('filter_name_contains') filterName?: string,
     @Query('filter_include_archived', new ParseBoolPipe({ optional: true }))
     filterIncludeArchived?: boolean,
@@ -75,16 +80,12 @@ export class ProjectController {
   ) {
     rejectOnNotOwnedResource(ngoId, req);
     const filters: ProjectFilter = {
-      filterId,
+      filterId: filter_project_id,
       filterCategory: parseEnumCategory(filterCategory),
       filterName,
       filterIncludeArchived,
       filterNgoId,
       filterNgoName,
-      filterFavoriteByDonatorId: null,
-      filterNotFavoriteByDonatorId: null,
-      filterDonatedToByDonatorId: null,
-      filterNotDonatedToByDonatorId: null,
       sortFor,
       sortType,
       paginationPage,
@@ -95,9 +96,64 @@ export class ProjectController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
+  @SerializeOptions({ type: ReturnProjectWithPaginatedDonations })
+  @Get('/:project_id/')
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.READ_NGO, NGOScopeEnum.READ_PROJECT)
+  getProjectWithDonations(
+    @Param(':ngo_id', ParseIntPipe) ngoId: number,
+    @Param(':project_id', ParseIntPipe) projectId: number,
+    @Req() req: Request,
+    @Query('filter_donation_id', new ParseIntPipe({ optional: true }))
+    filterId?: number,
+    @Query('filter_created_from', new ParseDatePipe({ optional: true }))
+    filter_created_from?: Date,
+    @Query('filter_created_to', new ParseDatePipe({ optional: true }))
+    filter_created_to?: Date,
+    @Query('filter_amount_from')
+    filterAmountFrom?: string,
+    @Query('filter_amount_to')
+    filterAmountTo?: string,
+    @Query(PaginationQueryArguments.page, new ParseIntPipe({ optional: true }))
+    paginationPage?: number,
+    @Query(
+      PaginationQueryArguments.pageSize,
+      new ParseIntPipe({ optional: true }),
+    )
+    paginationPageSize?: number,
+    @Query('sort_for')
+    sortFor?: string,
+    @Query('sort_type') sortType?: string,
+  ) {
+    rejectOnNotOwnedResource(ngoId, req);
+    const filters: DonationFilter = {
+      filterId,
+      filterDonatorId: null,
+      filterDonatorFirstName: null,
+      filterDonatorLastName: null,
+      filterNgoId: ngoId,
+      filterNgoName: null,
+      filterProjectId: projectId,
+      filterProjectName: null,
+      filterCreatedFrom: filter_created_from,
+      filterCreatedTo: filter_created_to,
+      filterAmountFrom: Number.parseFloat(filterAmountFrom),
+      filterAmountTo: Number.parseFloat(filterAmountTo),
+      sortFor,
+      sortType,
+      paginationPage,
+      paginationPageSize,
+    };
+    return this.projectService.findProjectById(projectId, filters);
+  }
+
+  @Version('1')
+  @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnProjectWithoutFavDto })
   @Post('/')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.WRITE_PROJECT)
   createProject(
     @Param(':ngo_id', ParseIntPipe) ngoId: number,
     @Req() req: Request,
@@ -111,7 +167,8 @@ export class ProjectController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnProjectWithoutFavDto })
   @Put('/:project_id')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.WRITE_PROJECT)
   updateProject(
     @Param(':ngo_id', ParseIntPipe) ngoId: number,
     @Param(':project_id', ParseIntPipe) projectId: number,
@@ -127,7 +184,8 @@ export class ProjectController {
   @UseInterceptors(FileInterceptor('banner'))
   @SerializeOptions({ type: ReturnProjectWithoutFavDto })
   @Patch('/:project_id/banner_uri')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.WRITE_PROJECT)
   patchProjectBanner(
     @Param('ngo_id', ParseIntPipe) ngoId: number,
     @Param('project_id', ParseIntPipe)
@@ -156,7 +214,8 @@ export class ProjectController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnProjectWithoutFavDto })
   @Delete('/:project_id')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
+  @Scopes(NGOScopeEnum.WRITE_PROJECT)
   deleteNgo(
     @Param('ngo_id', ParseIntPipe) ngoId: number,
     @Param('project_id', ParseIntPipe) projectId: number,

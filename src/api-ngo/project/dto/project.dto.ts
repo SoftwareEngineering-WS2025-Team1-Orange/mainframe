@@ -1,5 +1,5 @@
-import { Expose, Type, Exclude } from 'class-transformer';
-import { Category, Project } from '@prisma/client';
+import { Expose, Type } from 'class-transformer';
+import { Category } from '@prisma/client';
 import {
   IsDate,
   IsEnum,
@@ -7,15 +7,7 @@ import {
   IsPositive,
   IsString,
 } from 'class-validator';
-import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
-
-export class ReturnProjectNgoDto {
-  @Expose()
-  id: number;
-
-  @Expose()
-  name: string;
-}
+import { ReturnPaginatedDonationsDto } from '@/api-ngo/donation/dto';
 
 export class CreateProjectDto {
   @IsString()
@@ -50,7 +42,7 @@ export class UpdateProjectDto {
   fundraising_goal: number;
 }
 
-export class ReturnProjectDto {
+export class ReturnProjectWithoutFavDto {
   @Expose()
   id: number;
 
@@ -85,28 +77,22 @@ export class ReturnProjectDto {
   updatedAt: Date;
 
   @Expose()
-  category: string;
-
-  @Exclude()
-  ngoId?: number;
+  category: Category;
 
   @Expose()
-  ngo?: ReturnProjectNgoDto;
+  ngoId: number;
 
-  @Expose()
-  isFavorite: boolean;
-
-  constructor(partial: Partial<ReturnProjectDto>) {
+  constructor(partial: Partial<ReturnProjectWithoutFavDto>) {
     Object.assign(this, partial);
   }
 }
 
-export class ReturnPaginatedProjectsDto {
+export class ReturnProjectWithPaginatedDonations {
   @Expose()
-  @Type(() => ReturnPaginationDto)
-  pagination: ReturnPaginationDto;
+  @Type(() => ReturnProjectWithoutFavDto)
+  project: ReturnProjectWithoutFavDto;
 
   @Expose()
-  @Type(() => ReturnProjectDto)
-  projects: Project[];
+  @Type(() => ReturnPaginatedDonationsDto)
+  donations: ReturnPaginatedDonationsDto;
 }

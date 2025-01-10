@@ -79,25 +79,23 @@ export class NgoService {
       throw new HttpException('NGO not found', StatusCodes.NOT_FOUND);
     }
 
-    if (projectFilter) {
-      const { projects, pagination } =
-        await this.projectService.findFilteredProjects({
-          ...projectFilter,
-          filterNgoId: id,
-        });
+    if (!projectFilter) {
       return {
         ...ngo,
         scope: ngo.scope.map((scope) => scope.name),
-        projects: {
-          projects,
-          pagination,
-        },
       };
     }
 
+    const paginatedProjects = await this.projectService.findFilteredProjects({
+      ...projectFilter,
+      filterNgoId: id,
+    });
     return {
       ...ngo,
       scope: ngo.scope.map((scope) => scope.name),
+      projects: {
+        ...paginatedProjects,
+      },
     };
   }
 

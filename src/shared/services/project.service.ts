@@ -13,41 +13,53 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
-import { ReturnProjectWithoutFavDto } from '@/api-donator/project/dto/project.dto';
 import {
   CreateProjectDto,
   UpdateProjectDto,
+  ReturnProjectWithoutFavDto,
 } from '@/api-ngo/project/dto/project.dto';
 import { ProjectWithDonations } from '@/api-ngo/project/types';
 import { Rule } from '@/utils/validaton/types';
 import { validateRules } from '@/utils/validaton/validation.helper';
 import { BUCKET_NAME, createBannerUri } from '@/utils/minio.helper';
+import { DonationFilter } from '@/shared/filters/donation.filter.interface';
+import { DonationService } from '@/shared/services/donation.service';
 
 @Injectable()
 export class ProjectService {
   constructor(
     private prismaService: PrismaService,
     private configService: ConfigService,
+    private donationService: DonationService,
     @InjectMinio() private minioClient: Client,
   ) {}
 
   async findProjectById(
     id: number,
-    includeDonations: boolean = false,
+    filters: DonationFilter | null = null,
   ): Promise<Project | ProjectWithDonations> {
     const project = await this.prismaService.project.findFirst({
       where: {
         id,
-      },
-      include: {
-        donations: includeDonations,
       },
     });
 
     if (!project) {
       throw new HttpException('Project not found', StatusCodes.NOT_FOUND);
     }
-    return project;
+    if (!filters) {
+      return project;
+    }
+
+    const paginatedDonations =
+      await this.donationService.findFilteredDonations(filters);
+
+    return {
+      ...project,
+      donations: {
+        ...paginatedDonations,
+      },
+    };
   }
 
   async findFilteredProjectsWithFavourite(
@@ -204,7 +216,7 @@ export class ProjectService {
 
     const hasNoDonations: Rule<ProjectWithDonations, UpdateProjectDto> = {
       condition: (previous: ProjectWithDonations, future: UpdateProjectDto) =>
-        previous.donations.length === 0 &&
+        previous.donations.donations.length === 0 &&
         (future.description === undefined ||
           future.fundraising_goal === undefined),
       onFailure: new BadRequestException(
@@ -212,10 +224,9 @@ export class ProjectService {
       ),
     };
 
-    const projectToUpdate = (await this.findProjectById(
-      id,
-      true,
-    )) as ProjectWithDonations;
+    const projectToUpdate = (await this.findProjectById(id, {
+      filterProjectId: id,
+    })) as ProjectWithDonations;
 
     await validateRules(projectToUpdate, project, [
       isNotArchived,

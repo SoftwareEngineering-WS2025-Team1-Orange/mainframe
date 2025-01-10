@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { DonatorScope } from '@prisma/client';
 import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
-import { ReturnProjectWithoutFavDto } from '@/api-donator/project/dto/project.dto';
+import { ReturnProjectWithoutFavDto } from '@/api-ngo/project/dto/project.dto';
 
 class PaginatedProjects {
   @Expose()
