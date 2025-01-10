@@ -156,7 +156,7 @@ export class DonationService {
           },
         },
       });
-      return await this.createDonation(donatorId, amount, ngo.id, projectId);
+      return await this.createDonation(donatorId, ngo.id, amount, projectId);
     } catch (error) {
       const errorEnriched =
         error instanceof Prisma.PrismaClientKnownRequestError
