@@ -34,7 +34,7 @@ export class NgoService {
         await this.minioClient.bucketExists(BUCKET_NAME);
       if (!isBucketAvailable) {
         const settings = JSON.stringify({
-          Version: new Date().toISOString(),
+          Version: '2012-10-17',
           Statement: [
             {
               Effect: 'Allow',
@@ -87,7 +87,7 @@ export class NgoService {
         });
       return {
         ...ngo,
-        scope: ngo.scope.map((scope) => scope.name as NGOScopeEnum),
+        scope: ngo.scope.map((scope) => scope.name),
         projects: {
           projects,
           pagination,
@@ -97,7 +97,7 @@ export class NgoService {
 
     return {
       ...ngo,
-      scope: ngo.scope.map((scope) => scope.name as NGOScopeEnum),
+      scope: ngo.scope.map((scope) => scope.name),
     };
   }
 
@@ -225,17 +225,14 @@ export class NgoService {
       password: await argon2.hash(ngo.password + salt),
     };
 
-    const defaultRoles = [NGOScopeEnum.NOT_IMPLEMENTED];
+    const defaultRoles = Object.values(NGOScopeEnum);
 
     const newNgo = await this.prismaService.nGO.create({
       data: {
         ...ngoWithHash,
         salt,
         scope: {
-          connectOrCreate: defaultRoles.map((scope) => ({
-            where: { name: scope },
-            create: { name: scope },
-          })),
+          connect: defaultRoles.map((scope) => ({ name: scope })),
         },
       },
     });
@@ -314,7 +311,7 @@ export class NgoService {
 
     return {
       ...updatedNgo,
-      scope: updatedNgo.scope.map((scope) => scope.name as NGOScopeEnum),
+      scope: updatedNgo.scope.map((scope) => scope.name),
     };
   }
 
@@ -344,7 +341,7 @@ export class NgoService {
 
     return {
       ...updatedNgo,
-      scope: updatedNgo.scope.map((scope) => scope.name as NGOScopeEnum),
+      scope: updatedNgo.scope.map((scope) => scope.name),
     };
   }
 
@@ -372,7 +369,7 @@ export class NgoService {
       .catch((error) => {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           throw new NotFoundException(
-            'NGO not found for deletion. ' +
+            'NGO not found or not ready for deletion. ' +
               'Please check if the NGO exists, that all open projects ' +
               'are archived and the NGO is not deleted already.',
           );
@@ -387,11 +384,41 @@ export class NgoService {
 
     return {
       ...ngo,
-      scope: ngo.scope.map((scope) => scope.name as NGOScopeEnum),
+      scope: ngo.scope.map((scope) => scope.name),
     };
   }
 
-  private getSortField(sortFor?: string): string {
+  async favoriteNgo(
+    donatorId: number,
+    ngoId: number,
+    favorite: boolean,
+  ): Promise<NGO & { is_favorite: boolean }> {
+    try {
+      const donator = await this.prismaService.donator.findFirstOrThrow({
+        where: {
+          id: donatorId,
+        },
+      });
+      const ngo = await this.prismaService.nGO.update({
+        where: { id: ngoId, deletedAt: null },
+        data: {
+          favouritedByDonators: favorite
+            ? { connect: { id: donator.id } }
+            : { disconnect: { id: donator.id } },
+        },
+      });
+      return { ...ngo, is_favorite: favorite };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new NotFoundException('NGO or Donator not found.');
+      }
+      throw new InternalServerErrorException(
+        'Something went wrong favoriting the NGO.',
+      );
+    }
+  }
+
+  getSortField(sortFor?: string): string {
     switch (sortFor) {
       case 'created_at':
         return 'createdAt';

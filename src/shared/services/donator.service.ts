@@ -1,10 +1,15 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { Donator, DonatorScopeEnum, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/shared/prisma/prisma.service';
-import { CreateDonatorDto } from '@/api-donator/donator/dto';
+import { CreateDonatorDto, UpdateDonatorDto } from '@/api-donator/donator/dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { DonatorWithScope } from '@/api-donator/auth/types';
 import { DonatorFilter } from '@/shared/filters/donator.filter.interface';
@@ -17,6 +22,7 @@ export class DonatorService {
     const donator = await this.prismaService.donator.findFirst({
       where: {
         id,
+        deletedAt: null,
       },
     });
 
@@ -34,6 +40,7 @@ export class DonatorService {
     await this.prismaService.donator.update({
       where: {
         id,
+        deletedAt: null,
       },
       data: {
         refreshToken: hashedRefreshToken,
@@ -71,7 +78,7 @@ export class DonatorService {
 
     const numTotalResults = await this.prismaService.donator.count();
     const numFilteredResults = await this.prismaService.donator.count({
-      where: { ...whereInputObject },
+      where: { ...whereInputObject, deletedAt: null },
     });
     const pagination = new Pagination(
       numTotalResults,
@@ -94,29 +101,100 @@ export class DonatorService {
   }
 
   async createDonator(donator: CreateDonatorDto): Promise<Donator> {
-    const salt = randomBytes(16).toString('hex');
+    const salt = this.createSalt();
 
     const donatorWithHash = {
       ...donator,
       password: await argon2.hash(donator.password + salt),
     };
 
-    const defaultRoles = [DonatorScopeEnum.NOT_IMPLEMENTED];
+    const defaultRoles = Object.values(DonatorScopeEnum);
 
     const newDonator = await this.prismaService.donator.create({
       data: {
         ...donatorWithHash,
         salt,
         scope: {
-          connectOrCreate: defaultRoles.map((scope) => ({
-            where: { name: scope },
-            create: { name: scope },
-          })),
+          connect: defaultRoles.map((scope) => ({ name: scope })),
         },
       },
     });
-
     return newDonator;
+  }
+
+  async updateDonator(
+    id: number,
+    donator: UpdateDonatorDto,
+  ): Promise<Donator & { scope: DonatorScopeEnum[] }> {
+    const salt = this.createSalt();
+
+    const donatorWithHash = {
+      ...donator,
+      ...(donator.password != null
+        ? { password: await argon2.hash(donator.password + salt), salt }
+        : {}),
+    };
+
+    const updatedDonator = await this.prismaService.donator
+      .update({
+        where: {
+          id,
+          deletedAt: null,
+        },
+        data: donatorWithHash,
+        include: { scope: true },
+      })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new NotFoundException('Donator not found.');
+        }
+        throw new InternalServerErrorException(
+          'Something went wrong updating the Donator.',
+        );
+      });
+
+    return {
+      ...updatedDonator,
+      scope: updatedDonator.scope.map((scope) => scope.name),
+    };
+  }
+
+  async deleteDonator(
+    id: number,
+  ): Promise<Donator & { scope: DonatorScopeEnum[] }> {
+    // allow soft delete if donator donated complete balance and if no boxes are associated with them (we assume unregistering and returning boxes is done via customer support in MVP)
+    const donator = await this.prismaService.donator
+      .update({
+        where: {
+          id,
+          deletedAt: null,
+          balance: 0,
+          donationBox: { none: {} },
+        },
+        data: {
+          deletedAt: new Date(),
+          refreshToken: null,
+        },
+        include: {
+          scope: true,
+        },
+      })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new NotFoundException(
+            'Donator not found, already deleted or not ready for deletion. ' +
+              'Please check that the Donator exists, that their balance is 0 (all money is spent) ' +
+              'and that all donationboxes are unregistered.',
+          );
+        }
+        throw new InternalServerErrorException(
+          'Something went wrong deleting the Donator.',
+        );
+      });
+    return {
+      ...donator,
+      scope: donator.scope.map((scope) => scope.name),
+    };
   }
 
   private getSortField(sortFor?: string): string {
@@ -128,5 +206,34 @@ export class DonatorService {
       default:
         return 'id';
     }
+  }
+
+  async recalculateBalance(donatorId: number): Promise<number> {
+    const earnings = await this.prismaService.earning.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        donationBox: {
+          donatorId,
+        },
+      },
+    });
+
+    const donations = await this.prismaService.donation.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        donatorId,
+      },
+    });
+
+    // eslint-disable-next-line no-underscore-dangle
+    return (earnings._sum.amount || 0) - (donations._sum.amount || 0);
+  }
+
+  private createSalt(): string {
+    return randomBytes(16).toString('hex');
   }
 }

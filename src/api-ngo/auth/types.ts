@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { NGOScopeEnum, Prisma } from '@prisma/client';
 
 export type NGOWithScope = Prisma.NGOGetPayload<{
   include: {
@@ -6,9 +6,16 @@ export type NGOWithScope = Prisma.NGOGetPayload<{
   };
 }>;
 
+export type NGOClientWithScope = Prisma.NGOClientGetPayload<{
+  include: {
+    allowedScopes: true;
+  };
+}>;
+
 export interface JWTNgoPayload {
   email: string;
-  scope: NGOWithScope[];
+  scope: NGOScopeEnum[];
   sub: number;
   iat: number;
+  exp: number;
 }

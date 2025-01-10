@@ -344,4 +344,34 @@ export class ProjectService {
         return 'id';
     }
   }
+
+  async favoriteProject(
+    donatorId: number,
+    projectId: number,
+    favorite: boolean,
+  ): Promise<Project & { is_favorite: boolean }> {
+    try {
+      const donator = await this.prismaService.donator.findFirstOrThrow({
+        where: {
+          id: donatorId,
+        },
+      });
+      const project = await this.prismaService.project.update({
+        where: { id: projectId },
+        data: {
+          FavouritedByDonators: favorite
+            ? { connect: { id: donator.id } }
+            : { disconnect: { id: donator.id } },
+        },
+      });
+      return { ...project, is_favorite: favorite };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new NotFoundException('Project or Donator not found.');
+      }
+      throw new InternalServerErrorException(
+        'Something went wrong favoriting the project.',
+      );
+    }
+  }
 }
