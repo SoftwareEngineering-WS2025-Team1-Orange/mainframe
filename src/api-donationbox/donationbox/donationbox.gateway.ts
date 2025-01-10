@@ -9,7 +9,12 @@ import {
 } from '@nestjs/websockets';
 import { Server } from 'ws';
 import { DonationboxService } from '@/api-donationbox/donationbox/donationbox.service';
-import { JwtDonationBoxDto, DonationBoxStatusDto } from './dto';
+import {
+  JwtDonationBoxDto,
+  DonationBoxPowerSupplyStatusDto,
+  DonationBoxContainerStatusDto,
+  ContainerStatusDto,
+} from './dto';
 
 @WebSocketGateway({ version: 1, path: '/api/v1/api-donationbox' })
 export default class DonationboxGateway
@@ -32,7 +37,12 @@ export default class DonationboxGateway
     this.logger.log('Client connected');
   }
 
-  handleDisconnect(client: WebSocket) {
+  async handleDisconnect(client: WebSocket) {
+    await this.donationboxService.handleContainerStatusInsertToDB({
+      containerName: 'db-main',
+      statusCode: 1,
+      statusMsg: 'Disconnected',
+    });
     this.donationboxService.removeAuthorizedClient(client);
   }
 
@@ -47,13 +57,36 @@ export default class DonationboxGateway
   @SubscribeMessage('statusResponse')
   async handleStatusResponseEvent(
     client: WebSocket,
-    payload: DonationBoxStatusDto,
+    payload: {
+      time: string;
+      power_supply: DonationBoxPowerSupplyStatusDto;
+      container: DonationBoxContainerStatusDto;
+    },
   ): Promise<void> {
     if (!this.donationboxService.isAuthorizedClient(client)) {
       return null;
     }
-    const { status } = payload;
-    await this.donationboxService.handleStatusResponse(client, status);
+    const { power_supply: powerSupply, container } = payload;
+    await this.donationboxService.handleContainerStatusResponse(
+      client,
+      container,
+    );
+    await this.donationboxService.handlePowerSupplyStatusResponse(
+      client,
+      powerSupply,
+    );
+    return null;
+  }
+
+  @SubscribeMessage('addErrorResponse')
+  async handeAddErrorResponseEvent(
+    client: WebSocket,
+    payload: ContainerStatusDto,
+  ): Promise<void> {
+    if (!this.donationboxService.isAuthorizedClient(client)) {
+      return null;
+    }
+    await this.donationboxService.handleContainerStatusInsertToDB(payload);
     return null;
   }
 }
