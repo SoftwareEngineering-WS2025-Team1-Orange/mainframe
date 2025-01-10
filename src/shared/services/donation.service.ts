@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -204,18 +205,14 @@ export class DonationService {
             },
           });
           const danglingNewBalance =
-            (await this.donatorService.recalculateBalance(donatorId)) - amount;
+            (await this.donatorService.calculateDonatorBalance(donatorId)) -
+            amount;
           if (danglingNewBalance < 0) {
             throw new InsufficientBalanceError('Insufficient balance');
           }
-          await this.prismaService.donator.update({
-            where: { id: donatorId },
-            data: { balance: danglingNewBalance },
-          });
           return [createdDonation, danglingNewBalance];
         },
       );
-      // If recalculating the balance fails, the transaction should be aborted and the donation deleted
       const donationObject = await this.findFilteredDonations(
         { filterId: donation.id },
         false,
@@ -230,7 +227,7 @@ export class DonationService {
         error instanceof InsufficientBalanceError ||
         error instanceof NegativeAmountError
       ) {
-        throw new InternalServerErrorException(
+        throw new BadRequestException(
           'Failed to create donation. The donation amount must be positive and the donators balance sufficient.',
           error,
         );

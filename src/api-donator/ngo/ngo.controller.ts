@@ -6,7 +6,7 @@ import {
   Param,
   ParseBoolPipe,
   ParseIntPipe,
-  Post,
+  Put,
   Query,
   SerializeOptions,
   UseInterceptors,
@@ -71,7 +71,7 @@ export class NgoController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnNgoDto })
-  @Post(':ngo_id/donator/:donator_id/favorite')
+  @Put(':ngo_id/donator/:donator_id/favorite')
   async favoriteNgo(
     @Param('donator_id', ParseIntPipe) donatorId: number,
     @Param('ngo_id', ParseIntPipe) ngoId: number,
