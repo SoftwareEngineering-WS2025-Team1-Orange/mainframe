@@ -86,12 +86,6 @@ export class ReturnEarningsDonationBoxDto {
   @Expose()
   cuid: string;
 
-  @Expose()
-  earningsLastSuccessfullUpdateAt: Date;
-
-  @Expose()
-  earningsLastUpdateSuccessfull: boolean;
-
   constructor(partial: Partial<ReturnEarningsDonationBoxDto>) {
     Object.assign(this, partial);
   }
@@ -118,6 +112,9 @@ export class ReturnTransactionEarningDto {
 
   @Exclude()
   payoutId: number;
+
+  @Exclude()
+  blockHeight: number;
 
   constructor(partial: Partial<ReturnTransactionEarningDto>) {
     Object.assign(this, partial);
