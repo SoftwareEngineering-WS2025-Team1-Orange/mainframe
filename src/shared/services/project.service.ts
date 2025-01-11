@@ -63,7 +63,7 @@ export class ProjectService {
     );
 
     const projectsWithIsFavorite = projects.map(
-      (project): ProjectWithFavourite => ({
+      (project: ProjectWithPartialRelations): ProjectWithFavourite => ({
         ...project,
         is_favorite: favorizedProjectIDs.has(project.id),
       }),
