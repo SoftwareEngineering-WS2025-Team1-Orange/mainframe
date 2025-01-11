@@ -3,7 +3,10 @@ import { Earning, Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
-import { EarningFilter, EarningIncludePartialRelations } from '@/shared/filters/earning.filter.interface';
+import {
+  EarningFilter,
+  EarningIncludePartialRelations,
+} from '@/shared/filters/earning.filter.interface';
 import { EarningWithPartialRelations } from './types/EarningWithPartialRelations';
 
 @Injectable()

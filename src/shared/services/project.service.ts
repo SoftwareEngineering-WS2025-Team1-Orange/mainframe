@@ -8,7 +8,10 @@ import { Prisma, Project } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
-import { ProjectFilter, ProjectIncludePartialRelations } from '@/shared/filters/project.filter.interface';
+import {
+  ProjectFilter,
+  ProjectIncludePartialRelations,
+} from '@/shared/filters/project.filter.interface';
 import { ProjectWithPartialRelations } from './types/projectWithPartialRelations';
 
 @Injectable()
@@ -39,10 +42,11 @@ export class ProjectService {
       projects,
       pagination,
     }: { projects: ProjectWithPartialRelations[]; pagination: Pagination } =
-      await this.findFilteredProjectsWithPartialRelations(
-        filters,
-        { ngo: true, donations: false, FavouritedByDonators: false },
-      );
+      await this.findFilteredProjectsWithPartialRelations(filters, {
+        ngo: true,
+        donations: false,
+        FavouritedByDonators: false,
+      });
 
     const favorizedProjects = await this.prismaService.project.findMany({
       select: {
@@ -169,10 +173,11 @@ export class ProjectService {
   async findFilteredProjects(
     filters: ProjectFilter,
   ): Promise<{ projects: Project[]; pagination: Pagination }> {
-    return this.findFilteredProjectsWithPartialRelations(
-      filters,
-      { ngo: false, donations: false, FavouritedByDonators: false },
-    );
+    return this.findFilteredProjectsWithPartialRelations(filters, {
+      ngo: false,
+      donations: false,
+      FavouritedByDonators: false,
+    });
   }
 
   private getSortField(sortFor?: string): string {
