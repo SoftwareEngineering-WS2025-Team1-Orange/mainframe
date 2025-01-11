@@ -34,6 +34,14 @@ jobs:
         run: yarn install --immutable
         shell: bash
 
+      - name: Add prisma
+        run: yarn add --dev prisma
+        shell: bash
+
+      - name: Generate prisma client
+        run: yarn prisma generate
+        shell: bash
+
       - name: Run linter and formatter
         run: yarn run lint
         shell: bash
@@ -42,3 +50,6 @@ jobs:
         run: yarn run test:cov
         shell: bash
 
+      - name: Run build
+        run: yarn run build
+        shell: bash
