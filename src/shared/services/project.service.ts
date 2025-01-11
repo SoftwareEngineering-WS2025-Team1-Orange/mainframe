@@ -62,10 +62,12 @@ export class ProjectService {
       favorizedProjects.map((project) => project.id),
     );
 
-    const projectsWithIsFavorite = projects.map((project): ProjectWithFavourite => ({
+    const projectsWithIsFavorite = projects.map(
+      (project): ProjectWithFavourite => ({
         ...project,
         is_favorite: favorizedProjectIDs.has(project.id),
-    }));
+      }),
+    );
     return { projects: projectsWithIsFavorite, pagination };
   }
 
