@@ -9,3 +9,8 @@ export interface EarningFilter extends BaseFilter {
   filterAmountFrom?: number;
   filterAmountTo?: number;
 }
+
+export interface EarningIncludePartialRelations {
+  payout?: boolean;
+  donationBox?: boolean;
+}

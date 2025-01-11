@@ -3,7 +3,8 @@ import { Earning, Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
-import { EarningFilter } from '@/shared/filters/earning.filter.interface';
+import { EarningFilter, EarningIncludePartialRelations } from '@/shared/filters/earning.filter.interface';
+import { EarningWithPartialRelations } from './types/EarningWithPartialRelations';
 
 @Injectable()
 export class EarningService {
@@ -13,6 +14,21 @@ export class EarningService {
     filters: EarningFilter,
     paginate: boolean = true,
   ): Promise<{ earnings: Earning[]; pagination: Pagination }> {
+    return this.findFilteredEarningsWithPartialRelations(
+      filters,
+      { payout: false, donationBox: false },
+      paginate,
+    );
+  }
+
+  async findFilteredEarningsWithPartialRelations(
+    filters: EarningFilter,
+    includePartialRelations: EarningIncludePartialRelations,
+    paginate: boolean = true,
+  ): Promise<{
+    earnings: EarningWithPartialRelations[];
+    pagination: Pagination;
+  }> {
     const whereInputObject: Prisma.EarningWhereInput = {
       AND: [
         filters.filterId != null ? { id: filters.filterId } : {},
@@ -55,19 +71,23 @@ export class EarningService {
       },
       ...(paginate ? pagination.constructPaginationQueryObject() : {}),
       include: {
-        payout: {
-          select: {
-            periodStart: true,
-            periodEnd: true,
-          },
-        },
-        donationBox: {
-          select: {
-            id: true,
-            name: true,
-            cuid: true,
-          },
-        },
+        payout: includePartialRelations.payout
+          ? {
+              select: {
+                periodStart: true,
+                periodEnd: true,
+              },
+            }
+          : undefined,
+        donationBox: includePartialRelations.donationBox
+          ? {
+              select: {
+                id: true,
+                name: true,
+                cuid: true,
+              },
+            }
+          : undefined,
       },
       orderBy: {
         [this.getSortField(filters.sortFor)]: getSortType(
