@@ -35,7 +35,7 @@ export class ProjectService {
     filters: ProjectFilter,
     favourizedByDonatorId: number,
   ): Promise<{
-    projects: (ProjectWithPartialRelations & { is_favorite: boolean })[];
+    projects: Array<ProjectWithPartialRelations & { is_favorite: boolean }>;
     pagination: Pagination;
   }> {
     const {
@@ -64,7 +64,7 @@ export class ProjectService {
     const projectsWithIsFavorite = projects.map((project) => ({
       ...project,
       is_favorite: favorizedProjectIDs.has(project.id),
-    }));
+    })) as Array<ProjectWithPartialRelations & { is_favorite: boolean }>;
     return { projects: projectsWithIsFavorite, pagination };
   }
 

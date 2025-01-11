@@ -5,4 +5,3 @@ export type ProjectWithPartialRelations = Project & {
   donations?: Pick<Donation, 'id' | 'amount' | 'createdAt'>[];
   FavouritedByDonators?: Pick<Donator, 'id'>[];
 };
-
