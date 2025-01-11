@@ -12,8 +12,6 @@ import {
   ProjectFilter,
   ProjectIncludePartialRelations,
 } from '@/shared/filters/project.filter.interface';
-import { ProjectWithPartialRelations } from './types/projectWithPartialRelations';
-import { ProjectWithFavourite } from './types/ProjectWithFavourite';
 
 @Injectable()
 export class ProjectService {
@@ -36,13 +34,13 @@ export class ProjectService {
     filters: ProjectFilter,
     favourizedByDonatorId: number,
   ): Promise<{
-    projects: ProjectWithFavourite[];
+    projects: (Project & { is_favorite: boolean })[];
     pagination: Pagination;
   }> {
     const {
       projects,
       pagination,
-    }: { projects: ProjectWithPartialRelations[]; pagination: Pagination } =
+    }: { projects: Project[]; pagination: Pagination } =
       await this.findFilteredProjectsWithPartialRelations(filters, {
         ngo: true,
         donations: false,
@@ -63,7 +61,7 @@ export class ProjectService {
     );
 
     const projectsWithIsFavorite = projects.map(
-      (project: ProjectWithPartialRelations): ProjectWithFavourite => ({
+      (project: Project & { is_favorite: boolean }) => ({
         ...project,
         is_favorite: favorizedProjectIDs.has(project.id),
       }),
@@ -75,7 +73,7 @@ export class ProjectService {
     filters: ProjectFilter,
     includePartialRelations: ProjectIncludePartialRelations,
   ): Promise<{
-    projects: ProjectWithPartialRelations[];
+    projects: Project[];
     pagination: Pagination;
   }> {
     const whereInputObject: Prisma.ProjectWhereInput = {
