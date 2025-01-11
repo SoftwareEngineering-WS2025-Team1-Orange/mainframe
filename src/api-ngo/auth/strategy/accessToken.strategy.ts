@@ -6,7 +6,7 @@ import { JWTNgoPayload } from '@/api-ngo/auth/types';
 import { JWTDonatorPayload } from '@/api-donator/auth/types';
 
 @Injectable()
-export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class AccessTokenStrategy extends PassportStrategy(Strategy, 'ngo-jwt') {
   constructor(private configService: ConfigService) {
     const accessToken: string = configService.get('NGO_JWT_ACCESS_SECRET');
     super({
