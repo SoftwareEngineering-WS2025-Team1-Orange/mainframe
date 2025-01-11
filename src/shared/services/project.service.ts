@@ -13,6 +13,7 @@ import {
   ProjectIncludePartialRelations,
 } from '@/shared/filters/project.filter.interface';
 import { ProjectWithPartialRelations } from './types/projectWithPartialRelations';
+import { ProjectWithFavourite } from './types/ProjectWithFavourite';
 
 @Injectable()
 export class ProjectService {
@@ -35,7 +36,7 @@ export class ProjectService {
     filters: ProjectFilter,
     favourizedByDonatorId: number,
   ): Promise<{
-    projects: Array<ProjectWithPartialRelations & { is_favorite: boolean }>;
+    projects: ProjectWithFavourite[];
     pagination: Pagination;
   }> {
     const {
@@ -61,10 +62,10 @@ export class ProjectService {
       favorizedProjects.map((project) => project.id),
     );
 
-    const projectsWithIsFavorite = projects.map((project) => ({
+    const projectsWithIsFavorite: ProjectWithFavourite[] = projects.map((project) => ({
       ...project,
       is_favorite: favorizedProjectIDs.has(project.id),
-    })) as Array<ProjectWithPartialRelations & { is_favorite: boolean }>;
+    })) as ProjectWithFavourite[];
     return { projects: projectsWithIsFavorite, pagination };
   }
 
