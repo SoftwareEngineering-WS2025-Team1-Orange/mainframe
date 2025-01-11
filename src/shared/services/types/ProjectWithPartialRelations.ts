@@ -1,8 +1,19 @@
-import { NGO, Project, Donation, Donator } from '@prisma/client';
+import { Project} from '@prisma/client';
 
-type PartialNgo = Pick<NGO, 'id' | 'name'>;
-type PartialDonation = Pick<Donation, 'id' | 'amount' | 'createdAt'>;
-type PartialDonator = Pick<Donator, 'id'>;
+type PartialNgo = {
+  id: number;
+  name: string;
+};
+
+type PartialDonation = {
+  id: number;
+  amount: number;
+  createdAt: Date;
+};
+
+type PartialDonator = {
+  id: number;
+};
 
 export type ProjectWithPartialRelations = Project & {
   ngo?: PartialNgo;
