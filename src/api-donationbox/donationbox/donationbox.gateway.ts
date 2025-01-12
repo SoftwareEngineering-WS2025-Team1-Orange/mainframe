@@ -12,7 +12,6 @@ import { DonationboxService } from '@/api-donationbox/donationbox/donationbox.se
 import {
   JwtDonationBoxDto,
   DonationBoxPowerSupplyStatusDto,
-  DonationBoxContainerStatusDto,
   ContainerStatusDto,
 } from './dto';
 
@@ -38,11 +37,14 @@ export default class DonationboxGateway
   }
 
   async handleDisconnect(client: WebSocket) {
-    await this.donationboxService.handleContainerStatusInsertToDB({
-      containerName: 'db-main',
-      statusCode: 1,
-      statusMsg: 'Disconnected',
-    });
+    await this.donationboxService.handleContainerStatusInsertToDB(
+      {
+        containerName: 'db-main',
+        statusCode: 1,
+        statusMsg: 'Disconnected',
+      },
+      client,
+    );
     this.donationboxService.removeAuthorizedClient(client);
   }
 
@@ -54,28 +56,29 @@ export default class DonationboxGateway
     await this.donationboxService.verifyClient(client, payload);
   }
 
-  @SubscribeMessage('statusResponse')
+  @SubscribeMessage('statusUpdateResponse')
   async handleStatusResponseEvent(
     client: WebSocket,
     payload: {
       time: string;
-      power_supply: DonationBoxPowerSupplyStatusDto;
-      container: DonationBoxContainerStatusDto;
+      power_supply?: DonationBoxPowerSupplyStatusDto;
+      container: ContainerStatusDto[];
     },
   ): Promise<void> {
     if (!this.donationboxService.isAuthorizedClient(client)) {
-      return null;
+      return;
     }
     const { power_supply: powerSupply, container } = payload;
     await this.donationboxService.handleContainerStatusResponse(
       client,
       container,
     );
-    await this.donationboxService.handlePowerSupplyStatusResponse(
-      client,
-      powerSupply,
-    );
-    return null;
+    if (powerSupply) {
+      await this.donationboxService.handlePowerSupplyStatusResponse(
+        client,
+        powerSupply,
+      );
+    }
   }
 
   @SubscribeMessage('addErrorResponse')
@@ -84,9 +87,11 @@ export default class DonationboxGateway
     payload: ContainerStatusDto,
   ): Promise<void> {
     if (!this.donationboxService.isAuthorizedClient(client)) {
-      return null;
+      return;
     }
-    await this.donationboxService.handleContainerStatusInsertToDB(payload);
-    return null;
+    await this.donationboxService.handleContainerStatusInsertToDB(
+      payload,
+      client,
+    );
   }
 }

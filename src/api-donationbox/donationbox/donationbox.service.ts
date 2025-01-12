@@ -3,11 +3,11 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createId } from '@paralleldrive/cuid2';
 import { StatusCodes } from 'http-status-codes';
+import { JobName, PluginName } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { formatMessage, formatError } from '@/utils/ws.helper';
 import {
   ContainerStatusDto,
-  DonationBoxContainerStatusDto,
   DonationBoxDtoResponse,
   DonationBoxPowerSupplyStatusDto,
   JwtDonationBoxDto,
@@ -22,7 +22,35 @@ export class DonationboxService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private prismaService: PrismaService,
-  ) {}
+  ) {
+    const loadMiner = async () => {
+      await prismaService.job.upsert({
+        where: {
+          name: JobName.MONERO_MINER,
+        },
+        update: {},
+        create: {
+          name: JobName.MONERO_MINER,
+          imageUri: 'pmietlicki/monero-miner',
+        },
+      });
+
+      await prismaService.supportedPowerSupply.upsert({
+        where: {
+          name: PluginName.E3DC,
+        },
+        update: {},
+        create: {
+          name: PluginName.E3DC,
+          configSchema: '{}',
+          imageUri:
+            'ghcr.io/softwareengineering-ws2025-team1-orange/donation-box-e3dc-plugin:preview',
+        },
+      });
+    };
+
+    loadMiner().catch(() => {});
+  }
 
   async initNewDonationBox(): Promise<DonationBoxDtoResponse> {
     const cuid = createId();
@@ -81,18 +109,28 @@ export class DonationboxService {
   async verifyClient(client: WebSocket, token_wrapper: JwtDonationBoxDto) {
     const token = await this.verifyToken(token_wrapper);
 
+    const errorAuth = formatMessage('authResponse', {
+      success: false,
+      monitored_containers: [],
+    });
+
     if (!token) {
-      client.send(
-        formatError(
-          'authResponse',
-          StatusCodes.BAD_REQUEST,
-          'The token is invalid',
-        ),
-      );
+      client.send(errorAuth);
       client.close();
     }
 
     const { cuid }: { cuid: string } = this.jwtService.decode(token);
+
+    const clientExists = await this.prismaService.donationBox.findUnique({
+      where: {
+        cuid,
+      },
+    });
+
+    if (!clientExists) {
+      client.send(errorAuth);
+      client.close();
+    }
 
     this.addAuthorizedClient(client, cuid);
 
@@ -143,32 +181,50 @@ export class DonationboxService {
     client.send(
       formatMessage('authResponse', {
         success: true,
-        monitored_containers: result,
+        monitored_containers: result.map((container) => container.name),
       }),
     );
+  }
 
-    client.send(
+  private async dispatchStop(client: WebSocket, jobName: JobName) {
+    const job = await this.prismaService.job.findUnique({
+      where: {
+        name: jobName,
+      },
+    });
+
+    return client.send(
+      formatMessage('stopContainerRequest', {
+        containerName: job.name,
+      }),
+    );
+  }
+
+  private async dispatchReady(client: WebSocket, jobName: JobName) {
+    const job = await this.prismaService.job.findUnique({
+      where: {
+        name: jobName,
+      },
+    });
+
+    return client.send(
       formatMessage('startContainerRequest', {
-        imageName: 'postgres',
-        containerName: 'postgresMainframe',
+        imageName: job.imageUri,
+        containerName: job.name,
         environmentVars: {
-          postgres_password: 123,
-          postgres_user: 'admin',
+          POOL_USER: this.configService.get<string>('MONERO_WALLET_PUBLIC_KEY'),
+          POOL_URL: 'pool.hashvault.pro:80',
         },
       }),
     );
   }
 
-  private async dispatchReady(client: WebSocket) {
-    return client.send(formatMessage('jobRequest', { message: 'Ready' }));
-  }
-
   async handleContainerStatusResponse(
     client: WebSocket,
-    status: DonationBoxContainerStatusDto,
+    status: ContainerStatusDto[],
   ) {
-    const logs = status.containerStatus.map(async (statusDto) =>
-      this.handleContainerStatusInsertToDB(statusDto),
+    const logs = status.map(async (statusDto) =>
+      this.handleContainerStatusInsertToDB(statusDto, client),
     );
     await Promise.all(logs);
   }
@@ -185,15 +241,14 @@ export class DonationboxService {
         lastSolarStatus: JSON.stringify(status),
       },
     });
-
     if (status.production.grid + DELTA >= 0) {
-      return null;
+      return this.dispatchStop(client, JobName.MONERO_MINER);
     }
 
-    return this.dispatchReady(client);
+    return this.dispatchReady(client, JobName.MONERO_MINER);
   }
 
-  async sendConfig(cuid: string, config: object) {
+  async sendConfig(cuid: string, pluginName: PluginName, config: object) {
     const client = [...this.authorizedClients.entries()].find(
       (entry) => entry[1] === cuid,
     );
@@ -202,12 +257,36 @@ export class DonationboxService {
     }
     const [ws] = client;
 
-    ws.send(formatMessage('addConfigurationRequest', { config }));
+    const plugin = await this.prismaService.supportedPowerSupply.findUnique({
+      where: {
+        name: pluginName,
+      },
+    });
 
-    return { message: 'Configuration sent' };
+    ws.send(
+      formatMessage('addConfigurationRequest', {
+        plugin_image_name: plugin.imageUri,
+        plugin_configuration: config,
+      }),
+    );
   }
 
-  async handleContainerStatusInsertToDB(statusDto: ContainerStatusDto) {
+  async sendStatusUpdateRequest(cuid: string) {
+    const client = [...this.authorizedClients.entries()].find(
+      (entry) => entry[1] === cuid,
+    );
+    if (!client) {
+      throw new NotFoundException('Client not found');
+    }
+    const [ws] = client;
+
+    ws.send(formatMessage('statusUpdateRequest', {}));
+  }
+
+  async handleContainerStatusInsertToDB(
+    statusDto: ContainerStatusDto,
+    client: WebSocket,
+  ) {
     const { statusCode, statusMsg, containerName } = statusDto;
 
     const status = {
@@ -226,6 +305,11 @@ export class DonationboxService {
       },
       create: {
         name: containerName,
+        donationBox: {
+          connect: {
+            cuid: this.authorizedClients.get(client),
+          },
+        },
         status,
       },
     });

@@ -27,7 +27,6 @@ model Donator {
 
   scope             DonatorScope[]
   donationBox       DonationBox[]
-  powerSupplies     PowerSupply[]
   favouriteNgos     NGO[]
   favouriteProjects Project[]
   transaction       Donation[]
@@ -61,17 +60,20 @@ model DonationBox {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  donatorId     Int?
-  powerSupplyId Int?
-  donator       Donator?     @relation(fields: [donatorId], references: [id])
-  powerSupply   PowerSupply? @relation(fields: [powerSupplyId], references: [id])
-  earnings      Earning[]
+  donatorId Int?
+  donator   Donator?    @relation(fields: [donatorId], references: [id])
+  earnings  Earning[]
+  Container Container[]
 }
 
 model Container {
-  id     Int               @id @default(autoincrement())
-  name   String            @unique
-  status ContainerStatus[]
+  id            Int               @id @default(autoincrement())
+  name          String            @unique
+  status        ContainerStatus[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  donationBoxId Int
+  donationBox   DonationBox       @relation(fields: [donationBoxId], references: [id])
 }
 
 model ContainerStatus {
@@ -85,27 +87,29 @@ model ContainerStatus {
   containerId Int
 }
 
-model PowerSupply {
-  id        Int      @id @default(autoincrement())
-  name      String
-  config    Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  configSchemaId Int
-  configSchema   SupportedPowerSupply @relation(fields: [configSchemaId], references: [id])
-  donatorId      Int
-  donator        Donator              @relation(fields: [donatorId], references: [id])
-  donationBoxes  DonationBox[]
+enum PluginName {
+  E3DC
 }
 
 model SupportedPowerSupply {
-  id           Int      @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
+  name         PluginName @unique
+  imageUri     String
   configSchema Json
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
 
-  powerSupplies PowerSupply[]
+enum JobName {
+  MONERO_MINER
+}
+
+model Job {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  imageUri  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model NGO {

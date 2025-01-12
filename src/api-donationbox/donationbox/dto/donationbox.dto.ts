@@ -1,5 +1,6 @@
 import { Expose, Type } from 'class-transformer';
-import { IsArray, IsInt, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsObject, IsString } from 'class-validator';
+import { PluginName } from '@prisma/client';
 
 export class DonationBoxDtoResponse {
   @Expose()
@@ -15,12 +16,6 @@ export class ContainerStatusDto {
 
   @IsString()
   statusMsg: string;
-}
-
-export class DonationBoxContainerStatusDto {
-  @IsArray()
-  @Type(() => ContainerStatusDto)
-  containerStatus: ContainerStatusDto[];
 }
 
 class ProductionDto {
@@ -57,4 +52,15 @@ export class DonationBoxPowerSupplyStatusDto {
 
   @Type(() => ConsumptionDto)
   consumption: ConsumptionDto;
+}
+
+export class DeployPluginDto {
+  @IsObject()
+  config: object;
+
+  @IsEnum(PluginName)
+  pluginName: PluginName;
+
+  @IsString()
+  cuid: string;
 }
