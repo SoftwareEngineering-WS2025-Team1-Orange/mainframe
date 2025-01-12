@@ -1,7 +1,6 @@
 import {
   ClassSerializerInterceptor,
   Controller,
-  Get,
   Param,
   ParseIntPipe,
   Query,
@@ -31,9 +30,8 @@ export class DonationController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnPaginatedDonationsDto })
-  @Get('/:project_id/')
   @UseGuards(NGOAccessTokenGuard, ScopesGuard)
-  @Scopes(NGOScopeEnum.READ_NGO, NGOScopeEnum.READ_PROJECT)
+  @Scopes(NGOScopeEnum.READ_DONATION)
   getDonations(
     @Param(':ngo_id', ParseIntPipe) ngoId: number,
     @Req() req: Request,

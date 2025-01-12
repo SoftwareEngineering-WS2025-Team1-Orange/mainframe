@@ -127,6 +127,7 @@ enum NGOScopeEnum {
   WRITE_NGO     @map("write:ngo")
   READ_PROJECT  @map("read:project")
   WRITE_PROJECT @map("write:project")
+  READ_DONATION @map("read:donation")
 }
 
 model NGOScope {
