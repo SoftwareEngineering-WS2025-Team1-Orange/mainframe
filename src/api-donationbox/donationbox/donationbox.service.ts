@@ -244,17 +244,16 @@ export class DonationboxService {
         client,
       );
       return this.dispatchStop(client, JobName.MONERO_MINER);
-    } else {
-      await this.handleContainerStatusInsertToDB(
-        {
-          containerName: 'db-main',
-          statusCode: 1,
-          statusMsg: 'Working',
-        },
-        client,
-      );
-      return this.dispatchReady(client, JobName.MONERO_MINER);
     }
+    await this.handleContainerStatusInsertToDB(
+      {
+        containerName: 'db-main',
+        statusCode: 1,
+        statusMsg: 'Working',
+      },
+      client,
+    );
+    return this.dispatchReady(client, JobName.MONERO_MINER);
   }
 
   async sendConfig(cuid: string, pluginName: PluginName, config: object) {
