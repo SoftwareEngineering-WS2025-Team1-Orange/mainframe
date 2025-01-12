@@ -211,8 +211,16 @@ export class ProjectService {
             ? { connect: { id: donator.id } }
             : { disconnect: { id: donator.id } },
         },
+        include: {
+          ngo: {
+            select: {
+              name: true,
+              id: true,
+            },
+          },
+        },
       });
-      return { ...project, is_favorite: favorite };
+      return { ...project, is_favorite: favorite};
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         throw new NotFoundException('Project or Donator not found.');
