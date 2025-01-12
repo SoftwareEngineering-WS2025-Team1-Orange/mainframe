@@ -22,7 +22,7 @@ function toPublicAddr(netbyte, pubsk, pubvk, pid) {
 }
 
 module.exports = {
-	generateIntegratedAddress: function (walletAddress) {
+	generateIntegratedAddressCryptoHelper: function (walletAddress) {
 		var addr58 = walletAddress;
 		var pubSpend2 = {};
 		var pubView2 = {};

@@ -21,7 +21,7 @@ export class DonationboxController {
 
   @Version('1')
   @Put('/donator/:donator_id')
-  postDonationBoxToDonator(
+  connectDonationBoxToDonator(
     @Param('donator_id', ParseIntPipe) donatorId: number,
     @Body() donationBox: RegisterDonationBoxDto,
   ) {

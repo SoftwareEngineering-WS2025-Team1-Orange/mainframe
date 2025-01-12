@@ -6,8 +6,8 @@ import { Status } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { formatMessage, formatError } from '@/utils/ws.helper';
-import { IntegratedKeyService } from '@/utils/integrated_address_generator/integrated_key.service';
-import { IntegratedPublicAddress } from '@/utils/integrated_address_generator/types';
+import { MoneroIntegratedAddressService } from '@/utils/integrated_address_generator/monero_integrated_key.service';
+import { MoneroIntegratedPublicAddress } from '@/utils/integrated_address_generator/types';
 import {
   DonationBoxDtoResponse,
   JwtDonationBoxDto,
@@ -20,23 +20,23 @@ export class DonationboxService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private prismaService: PrismaService,
-    private integratedKeyService: IntegratedKeyService,
+    private moneroIntegratedKeyService: MoneroIntegratedAddressService,
   ) {}
 
   async initNewDonationBox(): Promise<DonationBoxDtoResponse> {
     try {
       const cuid = createId();
-      const integratedAddress: IntegratedPublicAddress =
-        await this.integratedKeyService.generateIntegratedAddress();
+      const moneroIntegratedPublicAddress: MoneroIntegratedPublicAddress =
+        await this.moneroIntegratedKeyService.generateIntegratedAddress();
       await this.prismaService.donationBox.create({
         data: {
           cuid,
           last_status: 'UNINITIALIZED',
           name: null,
           integratedPublicMoneroAddress:
-            integratedAddress.integratedPublicAddress,
+            moneroIntegratedPublicAddress.integratedPublicAddress,
           integratedPublicMoneroAddressId:
-            integratedAddress.integratedPublicAddressId,
+            moneroIntegratedPublicAddress.integratedPublicAddressId,
         },
       });
       return { cuid };

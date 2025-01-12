@@ -1,4 +1,4 @@
-export interface IntegratedPublicAddress {
+export interface MoneroIntegratedPublicAddress {
   integratedPublicAddress: string;
   integratedPublicAddressId: string;
 }
