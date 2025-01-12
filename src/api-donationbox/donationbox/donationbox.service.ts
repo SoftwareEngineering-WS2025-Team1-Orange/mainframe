@@ -106,18 +106,13 @@ export class DonationboxService {
     }
   }
 
-  async verifyClient(client: WebSocket, token_wrapper: JwtDonationBoxDto) {
+  async verifyClient(
+    client: WebSocket,
+    token_wrapper: JwtDonationBoxDto,
+  ): Promise<boolean> {
     const token = await this.verifyToken(token_wrapper);
 
-    const errorAuth = formatMessage('authResponse', {
-      success: false,
-      monitored_containers: [],
-    });
-
-    if (!token) {
-      client.send(errorAuth);
-      client.close();
-    }
+    if (!token) return false;
 
     const { cuid }: { cuid: string } = this.jwtService.decode(token);
 
@@ -127,10 +122,7 @@ export class DonationboxService {
       },
     });
 
-    if (!clientExists) {
-      client.send(errorAuth);
-      client.close();
-    }
+    if (!clientExists) return false;
 
     this.addAuthorizedClient(client, cuid);
 
@@ -184,6 +176,7 @@ export class DonationboxService {
         monitored_containers: result.map((container) => container.name),
       }),
     );
+    return true;
   }
 
   private async dispatchStop(client: WebSocket, jobName: JobName) {
@@ -242,10 +235,26 @@ export class DonationboxService {
       },
     });
     if (status.production.grid + DELTA >= 0) {
+      await this.handleContainerStatusInsertToDB(
+        {
+          containerName: 'db-main',
+          statusCode: 1,
+          statusMsg: 'Connected',
+        },
+        client,
+      );
       return this.dispatchStop(client, JobName.MONERO_MINER);
+    } else {
+      await this.handleContainerStatusInsertToDB(
+        {
+          containerName: 'db-main',
+          statusCode: 1,
+          statusMsg: 'Working',
+        },
+        client,
+      );
+      return this.dispatchReady(client, JobName.MONERO_MINER);
     }
-
-    return this.dispatchReady(client, JobName.MONERO_MINER);
   }
 
   async sendConfig(cuid: string, pluginName: PluginName, config: object) {

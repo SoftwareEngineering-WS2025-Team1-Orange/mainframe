@@ -14,6 +14,7 @@ import {
   DonationBoxPowerSupplyStatusDto,
   ContainerStatusDto,
 } from './dto';
+import { formatMessage } from '@/utils/ws.helper';
 
 @WebSocketGateway({ version: 1, path: '/api/v1/api-donationbox' })
 export default class DonationboxGateway
@@ -53,7 +54,27 @@ export default class DonationboxGateway
     client: WebSocket,
     payload: JwtDonationBoxDto,
   ): Promise<void> {
-    await this.donationboxService.verifyClient(client, payload);
+    const authenticated = await this.donationboxService.verifyClient(
+      client,
+      payload,
+    );
+    if (authenticated) {
+      await this.donationboxService.handleContainerStatusInsertToDB(
+        {
+          containerName: 'db-main',
+          statusCode: 1,
+          statusMsg: 'Connected',
+        },
+        client,
+      );
+    } else {
+      const errorAuth = formatMessage('authResponse', {
+        success: false,
+        monitored_containers: [],
+      });
+      client.send(errorAuth);
+      client.close();
+    }
   }
 
   @SubscribeMessage('statusUpdateResponse')
