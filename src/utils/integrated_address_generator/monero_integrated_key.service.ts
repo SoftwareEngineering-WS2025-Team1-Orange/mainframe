@@ -19,14 +19,17 @@ export class MoneroIntegratedAddressService {
       );
     }
 
-    const result = generateIntegratedAddressCryptoHelper(walletPublicKey); //from crypto helper
+    const result = generateIntegratedAddressCryptoHelper(walletPublicKey); // from crypto helper
     if (!result || typeof result !== 'object') {
       throw new IntegratedKeyGenerationError(
         'Invalid response from generateIntegratedAddress',
       );
     }
 
-    const integratedAddressDto = plainToInstance(MoneroIntegratedAddressDto, result);
+    const integratedAddressDto = plainToInstance(
+      MoneroIntegratedAddressDto,
+      result,
+    );
     await validateOrReject(integratedAddressDto).catch(() => {
       throw new IntegratedKeyGenerationError(
         `Validating integrated address failed.`,
