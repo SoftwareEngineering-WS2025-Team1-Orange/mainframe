@@ -1,8 +1,10 @@
 import {
   ClassSerializerInterceptor,
   Controller,
+  DefaultValuePipe,
   Get,
   Param,
+  ParseBoolPipe,
   ParseIntPipe,
   Query,
   SerializeOptions,
@@ -45,7 +47,8 @@ export class TransactionController {
     filterAmountFrom?: number,
     @Query('filter_amount_to', new ParseIntPipe({ optional: true }))
     filterAmountTo?: number,
-    @Query('force_earnings_update') forceEarningsUpdate?: boolean,
+    @Query('force_earnings_update', new DefaultValuePipe(false), ParseBoolPipe)
+    forceEarningsUpdate?: boolean,
     @Query('sort_for') sortFor?: string,
     @Query('sort_type') sortType?: string,
     @Query(PaginationQueryArguments.page, new ParseIntPipe({ optional: true }))

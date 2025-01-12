@@ -1,10 +1,6 @@
 //This file was created using code from luigi1111's address tools
 //located at https://xmr.llcoins.net/
-//see copyright below
-
-//functions for various XMR/Cryptonote stuff
 //(c) 2016 luigi1111
-//can't imagine this is useful for anything but this site, but
 //Licensed under the MIT license:
 //http://www.opensource.org/licenses/MIT
 

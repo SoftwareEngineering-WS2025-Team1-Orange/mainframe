@@ -18,10 +18,26 @@ import { CreateDonatorDto, UpdateDonatorDto } from '@/api-donator/donator/dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { DonatorWithScope } from '@/api-donator/auth/types';
 import { DonatorFilter } from '@/shared/filters/donator.filter.interface';
+import { EarningService } from '@/shared/services/earning.service';
 
 @Injectable()
 export class DonatorService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private earningService: EarningService,
+  ) {}
+
+  async findDonatorByIdWithBalance(
+    id: number,
+    forceRecalculation: boolean = false,
+  ): Promise<Donator & { balance: number }> {
+    const [, donator] = await Promise.all([
+      this.earningService.updateEarningsForDonator(id, forceRecalculation),
+      this.findDonatorById(id),
+    ]);
+    const balance = await this.recalculateBalance(id);
+    return { ...donator, balance };
+  }
 
   async findDonatorById(id: number): Promise<Donator> {
     const donator = await this.prismaService.donator.findFirst({
@@ -176,7 +192,6 @@ export class DonatorService {
         where: {
           id,
           deletedAt: null,
-          balance: 0,
           donationBox: { none: {} },
         },
         data: {
@@ -219,7 +234,7 @@ export class DonatorService {
   async recalculateBalance(donatorId: number): Promise<number> {
     const earnings = await this.prismaService.earning.aggregate({
       _sum: {
-        amount: true,
+        amountInCent: true,
       },
       where: {
         donationBox: {
@@ -230,15 +245,17 @@ export class DonatorService {
 
     const donations = await this.prismaService.donation.aggregate({
       _sum: {
-        amount: true,
+        amountInCent: true,
       },
       where: {
         donatorId,
       },
     });
 
-    // eslint-disable-next-line no-underscore-dangle
-    return (earnings._sum.amount || 0) - (donations._sum.amount || 0);
+    return (
+      // eslint-disable-next-line no-underscore-dangle
+      (earnings._sum.amountInCent || 0) - (donations._sum.amountInCent || 0)
+    );
   }
 
   private createSalt(): string {

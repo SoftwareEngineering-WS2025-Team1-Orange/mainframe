@@ -33,8 +33,9 @@ export class DonationboxService {
           cuid,
           last_status: 'UNINITIALIZED',
           name: null,
-          integratedPublicAddress: integratedAddress.integratedPublicAddress,
-          integratedPublicAddressId:
+          integratedPublicMoneroAddress:
+            integratedAddress.integratedPublicAddress,
+          integratedPublicMoneroAddressId:
             integratedAddress.integratedPublicAddressId,
         },
       });

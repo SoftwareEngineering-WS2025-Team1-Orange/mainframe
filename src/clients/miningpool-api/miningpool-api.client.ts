@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import { PrismaService } from '@/shared/prisma/prisma.service';
-import { MiningPoolApiRewardDto } from './miningpool-api.dto';
+import { MiningPoolApiPayoutDto } from './miningpool-api.dto';
 
 @Injectable()
 export class MiningPoolApiClient {
@@ -23,33 +23,33 @@ export class MiningPoolApiClient {
     }
   }
 
-  async getMiningRewards(
+  async getMiningPayouts(
     donationBoxId: number,
     fromDate?: Date,
-  ): Promise<MiningPoolApiRewardDto[]> {
+  ): Promise<MiningPoolApiPayoutDto[]> {
     try {
       const box = await this.prismaService.donationBox.findFirstOrThrow({
         where: {
           id: donationBoxId,
         },
       });
-      const walletPrivateKey = box.integratedPublicAddress;
+      const walletPrivateKey = box.integratedPublicMoneroAddress;
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/${walletPrivateKey}/rewards`),
+        this.httpService.get(`${this.baseUrl}/${walletPrivateKey}/payments`),
       );
-      let rewards: MiningPoolApiRewardDto[] = plainToInstance(
-        MiningPoolApiRewardDto,
+      let payouts: MiningPoolApiPayoutDto[] = plainToInstance(
+        MiningPoolApiPayoutDto,
         Array.isArray(response.data) ? response.data : [response.data],
       );
-      await Promise.all(rewards.map((reward) => validateOrReject(reward)));
+      await Promise.all(payouts.map((payout) => validateOrReject(payout)));
       if (fromDate) {
-        rewards = rewards.filter(
-          (reward) => new Date(reward.ts * 1000) > fromDate,
+        payouts = payouts.filter(
+          (payout) => new Date(payout.ts * 1000) > fromDate,
         );
       }
-      return rewards;
+      return payouts;
     } catch {
-      throw new Error(`Failed to fetch mining rewards.`);
+      throw new Error(`Failed to fetch mining payouts.`);
     }
   }
 }

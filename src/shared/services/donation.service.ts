@@ -84,10 +84,10 @@ export class DonationService {
           ? { createdAt: { lte: filters.filterCreatedTo } }
           : {},
         filters.filterAmountFrom
-          ? { amount: { gte: filters.filterAmountFrom } }
+          ? { amountInCent: { gte: filters.filterAmountFrom } }
           : {},
         filters.filterAmountTo
-          ? { amount: { lte: filters.filterAmountTo } }
+          ? { amountInCent: { lte: filters.filterAmountTo } }
           : {},
       ],
     };
@@ -143,7 +143,7 @@ export class DonationService {
   async createDonationToProject(
     donatorId: number,
     projectId: number,
-    amount: number,
+    amountInCent: number,
   ): Promise<Donation & { newBalance: number }> {
     try {
       const ngo = await this.prismaService.nGO.findFirstOrThrow({
@@ -155,7 +155,12 @@ export class DonationService {
           },
         },
       });
-      return await this.createDonation(donatorId, amount, ngo.id, projectId);
+      return await this.createDonation(
+        donatorId,
+        ngo.id,
+        amountInCent,
+        projectId,
+      );
     } catch (error) {
       const errorEnriched =
         error instanceof Prisma.PrismaClientKnownRequestError
@@ -170,19 +175,19 @@ export class DonationService {
   async createDonationToNgo(
     donatorId: number,
     ngoId: number,
-    amount: number,
+    amountInCent: number,
   ): Promise<Donation & { newBalance: number }> {
-    return this.createDonation(donatorId, ngoId, amount, null);
+    return this.createDonation(donatorId, ngoId, amountInCent, null);
   }
 
   private async createDonation(
     donatorId: number,
     ngoId: number,
-    amount: number,
+    amountInCent: number,
     projectId?: number,
   ): Promise<Donation & { newBalance: number }> {
     try {
-      if (amount <= 0) {
+      if (amountInCent <= 0) {
         throw new NegativeAmountError('Donation amount must be positive');
       }
       const [donation, newBalance] = await this.prismaService.$transaction(
@@ -200,18 +205,15 @@ export class DonationService {
                 },
               },
               project: projectId ? { connect: { id: projectId } } : undefined,
-              amount,
+              amountInCent,
             },
           });
           const danglingNewBalance =
-            (await this.donatorService.recalculateBalance(donatorId)) - amount;
+            (await this.donatorService.recalculateBalance(donatorId)) -
+            amountInCent;
           if (danglingNewBalance < 0) {
             throw new InsufficientBalanceError('Insufficient balance');
           }
-          await this.prismaService.donator.update({
-            where: { id: donatorId },
-            data: { balance: danglingNewBalance },
-          });
           return [createdDonation, danglingNewBalance];
         },
       );
@@ -248,7 +250,7 @@ export class DonationService {
       case 'created_at':
         return 'createdAt';
       case 'amount':
-        return 'amount';
+        return 'amountInCent';
       default:
         return 'createdAt';
     }

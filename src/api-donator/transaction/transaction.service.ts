@@ -33,11 +33,19 @@ export class TransactionService {
     pagination: Pagination;
   }> {
     const donationsResult = await this.donationService.findFilteredDonations(
-      { ...donationFilters, ...baseFilter }, // Use pagination and sort from baseFilter
+      {
+        ...donationFilters,
+        ...baseFilter,
+        sortFor: this.getSortFieldDonation(baseFilter.sortFor),
+      }, // Use pagination and sort from baseFilter
       false,
     );
     const earningsResult = await this.earningsService.findFilteredEarnings(
-      { ...earningFilters, ...baseFilter }, // Use pagination and sort from baseFilter
+      {
+        ...earningFilters,
+        ...baseFilter,
+        sortFor: this.getSortFieldEarning(baseFilter.sortFor),
+      }, // Use pagination and sort from baseFilter
       false,
       forceEarningsUpdate,
     );
@@ -101,12 +109,22 @@ export class TransactionService {
 
     const combinedResults = [...donationsWithType, ...earningsWithType];
     combinedResults.sort((a, b) => {
-      const fieldA: Date | number = a[this.getSortField(baseFilter.sortFor)] as
-        | Date
-        | number; // created_at or amount
-      const fieldB: Date | number = b[this.getSortField(baseFilter.sortFor)] as
-        | Date
-        | number; // created_at or amount
+      const fieldA: Date | number =
+        a.type === this.transactionType.Donation
+          ? ((a as Donation)[this.getSortFieldDonation(baseFilter.sortFor)] as
+              | Date
+              | number)
+          : ((a as Earning)[this.getSortFieldEarning(baseFilter.sortFor)] as
+              | Date
+              | number);
+      const fieldB: Date | number =
+        b.type === this.transactionType.Donation
+          ? ((b as Donation)[this.getSortFieldDonation(baseFilter.sortFor)] as
+              | Date
+              | number)
+          : ((b as Earning)[this.getSortFieldEarning(baseFilter.sortFor)] as
+              | Date
+              | number);
       if (fieldA < fieldB)
         return getSortType(baseFilter.sortType) === (SortType.ASC as string)
           ? -1
@@ -121,14 +139,26 @@ export class TransactionService {
     return combinedResults;
   }
 
-  private getSortField(sortFor?: string): string {
+  private getSortFieldDonation(sortFor?: string): string {
+    switch (sortFor) {
+      case 'amount':
+        return 'amountInCent';
+      case 'created_at_or_timestamp':
+      case 'created_at':
+      default:
+        return 'createdAt';
+    }
+  }
+
+  private getSortFieldEarning(sortFor?: string): string {
     switch (sortFor) {
       case 'created_at':
         return 'createdAt';
       case 'amount':
-        return 'amount';
+        return 'amountInCent';
+      case 'payoutTimestamp':
       default:
-        return 'createdAt';
+        return 'payoutTimestamp';
     }
   }
 }

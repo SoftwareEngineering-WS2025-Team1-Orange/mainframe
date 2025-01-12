@@ -21,7 +21,6 @@ model Donator {
   password     String
   salt         String
   refreshToken String?
-  balance      Float     @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
@@ -54,16 +53,16 @@ enum Status {
 }
 
 model DonationBox {
-  id          Int      @id @default(autoincrement())
-  cuid        String   @unique @default(cuid())
-  name        String?
-  last_status Status
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  integratedPublicAddress String @unique
-  integratedPublicAddressId String @unique
+  id                              Int       @id @default(autoincrement())
+  cuid                            String    @unique @default(cuid())
+  name                            String?
+  last_status                     Status
+  createdAt                       DateTime  @default(now())
+  updatedAt                       DateTime  @updatedAt
+  integratedPublicMoneroAddress   String    @unique
+  integratedPublicMoneroAddressId String    @unique
   earningsLastSuccessfullUpdateAt DateTime?
-  earningsLastUpdateSuccessfull Boolean @default(false) @map("lastUpdateSuccessfull")
+  earningsLastUpdateSuccessfull   Boolean   @default(false)
 
   donatorId     Int?
   powerSupplyId Int?
@@ -161,7 +160,7 @@ model Project {
 
 model Donation {
   id        Int      @id @default(autoincrement())
-  amount    Float
+  amountInCent    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -174,14 +173,34 @@ model Donation {
 }
 
 model Earning {
-  id                 Int      @id @default(autoincrement())
-  blockHeight        Int
-  amount             Float
-  timestamp          DateTime
-  lastEarningTimeStamp DateTime
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  amountInCent Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  payoutTimestamp DateTime
+  payoutType PayoutTypeEnum
 
-  donationBoxId Int
-  donationBox   DonationBox @relation(fields: [donationBoxId], references: [id])
+  donationBoxId      Int
+  donationBox        DonationBox         @relation(fields: [donationBoxId], references: [id])
+  moneroMiningPayout MoneroMiningPayout?
+}
+
+enum PayoutTypeEnum {
+  MONERO_MINING
+}
+
+
+
+model MoneroMiningPayout {
+  id                  Int      @id @default(autoincrement())
+  amountInPiconero    Float
+  timestamp           DateTime
+  lastPayoutTimestamp DateTime
+  txnHash             String
+  txnKey              String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  earning   Earning @relation(fields: [earningId], references: [id])
+  earningId Int     @unique
 }

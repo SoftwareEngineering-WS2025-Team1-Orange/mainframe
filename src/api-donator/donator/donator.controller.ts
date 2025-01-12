@@ -2,12 +2,15 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseBoolPipe,
   ParseIntPipe,
   Post,
   Put,
+  Query,
   Req,
   SerializeOptions,
   UseGuards,
@@ -37,17 +40,31 @@ export class DonatorController {
   @SerializeOptions({ type: ReturnDonatorDto })
   @Get('/me')
   @UseGuards(AccessTokenGuard)
-  getDonatorByToken(@Req() req: Request) {
+  getDonatorByToken(
+    @Req() req: Request,
+    @Query('force_earnings_update', new DefaultValuePipe(false), ParseBoolPipe)
+    forceEarningsUpdate?: boolean,
+  ) {
     const donator = req.user as { sub: number };
-    return this.donatorService.findDonatorById(donator.sub);
+    return this.donatorService.findDonatorByIdWithBalance(
+      donator.sub,
+      forceEarningsUpdate,
+    );
   }
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnDonatorDto })
   @Get('/:donator_id')
-  getDonatorById(@Param('donator_id', ParseIntPipe) donatorId: number) {
-    return this.donatorService.findDonatorById(donatorId);
+  getDonatorById(
+    @Param('donator_id', ParseIntPipe) donatorId: number,
+    @Query('force_earnings_update', new DefaultValuePipe(false), ParseBoolPipe)
+    forceEarningsUpdate?: boolean,
+  ) {
+    return this.donatorService.findDonatorByIdWithBalance(
+      donatorId,
+      forceEarningsUpdate,
+    );
   }
 
   @Version('1')

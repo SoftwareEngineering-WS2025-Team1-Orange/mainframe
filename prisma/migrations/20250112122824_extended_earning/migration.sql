@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "PayoutTypeEnum" AS ENUM ('MONERO_MINING');
+
+-- AlterTable
+ALTER TABLE "Earning" ADD COLUMN     "payoutTimestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "payoutType" "PayoutTypeEnum" NOT NULL DEFAULT 'MONERO_MINING';

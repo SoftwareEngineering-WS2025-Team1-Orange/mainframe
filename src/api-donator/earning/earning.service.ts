@@ -209,12 +209,6 @@ export class EarningService {
             earningsLastUpdateSuccessfull: true,
           },
         },
-        moneroMiningPayout: {
-          select: {
-            timestamp: true,
-            lastPayoutTimestamp: true,
-          },
-        },
       },
       orderBy: {
         [this.getSortField(filters.sortFor)]: getSortType(
@@ -229,11 +223,11 @@ export class EarningService {
   private getSortField(sortFor?: string): string {
     switch (sortFor) {
       case 'created_at': // Filter for timestamp
-        return 'createdAt';
+        return 'payoutTimestamp';
       case 'amount':
-        return 'amountInCent';
+        return 'amount';
       default:
-        return 'createdAt';
+        return 'payoutTimestamp';
     }
   }
 }

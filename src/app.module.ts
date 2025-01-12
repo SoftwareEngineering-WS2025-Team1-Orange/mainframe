@@ -7,6 +7,7 @@ import { ApiDonatorModule } from '@/api-donator/api-donator.module';
 import { ApiDonationboxModule } from '@/api-donationbox/api-donationbox.module';
 import { PrismaModule } from '@/shared/prisma/prisma.module';
 import { ApiNgoModule } from '@/api-ngo/api-ngo.module';
+import { SharedServicesModule } from './shared/services/shared.services.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ApiNgoModule } from '@/api-ngo/api-ngo.module';
     ApiDonatorModule,
     ApiNgoModule,
     PrismaModule,
+    SharedServicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

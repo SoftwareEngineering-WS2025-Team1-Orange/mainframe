@@ -1,4 +1,5 @@
 import { Expose, Exclude, Type } from 'class-transformer';
+import { PayoutTypeEnum } from '@prisma/client';
 import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
 
 class ReturnDonationDonatorDto {
@@ -86,9 +87,35 @@ export class ReturnEarningsDonationBoxDto {
   @Expose()
   cuid: string;
 
+  @Exclude()
+  earningsLastSuccessfullUpdateAt: Date;
+
+  @Exclude()
+  earningsLastUpdateSuccessfull: boolean;
+
+  @Exclude()
+  donatorId: number;
+
+  @Exclude()
+  powerSupplyId: number;
+
+  @Exclude()
+  integratedPublicMoneroAddress: string;
+
+  @Exclude()
+  integratedPublicMoneroAddressId: string;
+
   constructor(partial: Partial<ReturnEarningsDonationBoxDto>) {
     Object.assign(this, partial);
   }
+}
+
+export class ReturnMoneroMiningPayoutDto {
+  @Expose()
+  timestamp: Date;
+
+  @Expose()
+  lastPayoutTimestamp: Date;
 }
 
 export class ReturnTransactionEarningDto {
@@ -96,25 +123,26 @@ export class ReturnTransactionEarningDto {
   id: number;
 
   @Expose()
-  amount: number;
+  amountInCent: number;
 
   @Expose()
+  payoutTimestamp: Date;
+
+  @Expose()
+  payoutType: PayoutTypeEnum;
+
+  @Exclude()
   createdAt: Date;
 
   @Exclude()
   updatedAt: Date;
 
-  @Expose()
-  activeInTimePeriod: number;
-
   @Exclude()
   donationBoxId: number;
 
-  @Exclude()
-  payoutId: number;
-
-  @Exclude()
-  blockHeight: number;
+  @Expose()
+  @Type(() => ReturnEarningsDonationBoxDto)
+  donationBox: ReturnEarningsDonationBoxDto;
 
   constructor(partial: Partial<ReturnTransactionEarningDto>) {
     Object.assign(this, partial);
@@ -133,8 +161,4 @@ export class ReturnPaginatedTransactionsDto {
   @Expose()
   @Type(() => ReturnTransactionEarningDto)
   earnings: ReturnTransactionEarningDto[];
-
-  @Expose()
-  @Type(() => ReturnEarningsDonationBoxDto)
-  donationBox: ReturnEarningsDonationBoxDto;
 }

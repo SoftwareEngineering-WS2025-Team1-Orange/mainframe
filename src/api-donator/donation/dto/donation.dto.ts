@@ -1,11 +1,11 @@
-import { IsNumber, IsPositive } from 'class-validator';
+import { IsInt, IsPositive } from 'class-validator';
 import { Expose } from 'class-transformer';
 import { ReturnTransactionDonationDto } from '@/api-donator/transaction/dto';
 
 export class CreateDonationDto {
-  @IsNumber()
+  @IsInt()
   @IsPositive()
-  amount: number;
+  amountInCent: number;
 
   constructor(partial: Partial<CreateDonationDto>) {
     Object.assign(this, partial);
