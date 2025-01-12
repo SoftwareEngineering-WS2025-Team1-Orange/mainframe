@@ -22,9 +22,6 @@ export class ReturnDonatorDto {
   @Expose()
   email: string;
 
-  @Expose()
-  balance: number;
-
   @Exclude()
   password: string;
 
@@ -49,6 +46,11 @@ export class ReturnDonatorDto {
   constructor(partial: Partial<ReturnDonatorDto>) {
     Object.assign(this, partial);
   }
+}
+
+export class ReturnDonatorWithBalanceDto extends ReturnDonatorDto {
+  @Expose()
+  balance: number;
 }
 
 export class UpdateDonatorDto {

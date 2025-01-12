@@ -205,7 +205,7 @@ export class AuthService {
         {
           secret: this.configService.get<string>('NGO_JWT_REFRESH_SECRET'),
           expiresIn: Math.floor(
-            convertBigIntToInt(client.accessTokenLifetime) / 1000,
+            convertBigIntToInt(client.refreshTokenLifetime) / 1000,
           ),
         },
       ),
