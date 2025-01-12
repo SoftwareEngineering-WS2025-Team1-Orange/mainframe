@@ -31,6 +31,15 @@ export class DonationBoxDto {
   @Expose()
   power_supply_id?: number;
 
+  @Expose()
+  last_status: Status;
+
+  @Expose()
+  earningsLastSuccessfullUpdateAt: Date;
+
+  @Expose()
+  earningsLastUpdateSuccessfull: boolean;
+
   @Exclude()
   donatorId: number;
 
@@ -39,6 +48,12 @@ export class DonationBoxDto {
 
   @Exclude()
   updatedAt: Date;
+
+  @Exclude()
+  integratedPublicMoneroAddress: string;
+
+  @Exclude()
+  integratedPublicMoneroAddressId: string;
 
   constructor(partial: Partial<DonationBoxDto>) {
     Object.assign(this, partial);

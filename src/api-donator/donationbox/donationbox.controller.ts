@@ -5,7 +5,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  Post,
+  Put,
   SerializeOptions,
   UseInterceptors,
   Version,
@@ -20,7 +20,7 @@ export class DonationboxController {
   constructor(private donationboxService: DonationboxService) {}
 
   @Version('1')
-  @Post('/donator/:donator_id')
+  @Put('/donator/:donator_id')
   postDonationBoxToDonator(
     @Param('donator_id', ParseIntPipe) donatorId: number,
     @Body() donationBox: RegisterDonationBoxDto,
