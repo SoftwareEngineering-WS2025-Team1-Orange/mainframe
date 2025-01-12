@@ -8,6 +8,7 @@ import { DonationFilter } from '@/shared/filters/donation.filter.interface';
 import { DonationService } from '@/shared/services/donation.service';
 import { EarningService } from '@/shared/services/earning.service';
 import { BaseFilter } from '@/shared/filters/base.filter.interface';
+import { DonationWithPartialRelations } from '@/shared/services/types/DonationWithPartialRelations';
 
 @Injectable()
 export class TransactionService {
@@ -28,27 +29,31 @@ export class TransactionService {
     baseFilter: BaseFilter,
     forceEarningsUpdate: boolean = false,
   ): Promise<{
-    donations: Donation[];
+    donations: DonationWithPartialRelations[];
     earnings: Earning[];
     pagination: Pagination;
   }> {
-    const donationsResult = await this.donationService.findFilteredDonations(
-      {
-        ...donationFilters,
-        ...baseFilter,
-        sortFor: this.getSortFieldDonation(baseFilter.sortFor),
-      }, // Use pagination and sort from baseFilter
-      false,
-    );
-    const earningsResult = await this.earningsService.findFilteredEarnings(
-      {
-        ...earningFilters,
-        ...baseFilter,
-        sortFor: this.getSortFieldEarning(baseFilter.sortFor),
-      }, // Use pagination and sort from baseFilter
-      false,
-      forceEarningsUpdate,
-    );
+    const donationsResult =
+      await this.donationService.findFilteredDonationsWithPartialRelations(
+        {
+          ...donationFilters,
+          ...baseFilter,
+          sortFor: this.getSortFieldDonation(baseFilter.sortFor),
+        }, // Use pagination and sort from baseFilter
+        { donator: false, ngo: true, project: true },
+        false,
+      );
+    const earningsResult =
+      await this.earningsService.findFilteredEarningsWithPartialRelations(
+        {
+          ...earningFilters,
+          ...baseFilter,
+          sortFor: this.getSortFieldEarning(baseFilter.sortFor),
+        }, // Use pagination and sort from baseFilter
+        { moneroMiningPayout: true, donationBox: true },
+        false,
+        forceEarningsUpdate,
+      );
 
     const donationsWithType = donationsResult.donations.map((donation) => ({
       ...donation,
@@ -59,12 +64,13 @@ export class TransactionService {
       type: this.transactionType.Earning,
     }));
 
-    const combinedResults: ((Donation | Earning) & { type: string })[] =
-      this.combineAndSortResults(
-        donationsWithType,
-        earningsWithType,
-        baseFilter,
-      );
+    const combinedResults: ((DonationWithPartialRelations | Earning) & {
+      type: string;
+    })[] = this.combineAndSortResults(
+      donationsWithType,
+      earningsWithType,
+      baseFilter,
+    );
 
     const pagination = new Pagination(
       donationsResult.pagination.totalResults +
@@ -76,12 +82,13 @@ export class TransactionService {
     );
 
     const startIndex = (pagination.currentPage - 1) * pagination.pageSize;
-    const paginatedResults: ((Donation | Earning) & { type: string })[] =
-      combinedResults.slice(startIndex, startIndex + pagination.pageSize);
+    const paginatedResults: ((DonationWithPartialRelations | Earning) & {
+      type: string;
+    })[] = combinedResults.slice(startIndex, startIndex + pagination.pageSize);
 
-    const paginatedDonations: Donation[] = paginatedResults
+    const paginatedDonations: DonationWithPartialRelations[] = paginatedResults
       .filter((result) => result.type === 'D')
-      .map(({ type, ...rest }) => rest as Donation);
+      .map(({ type, ...rest }) => rest as DonationWithPartialRelations);
     const paginatedEarnings: Earning[] = paginatedResults
       .filter((result) => result.type === 'E')
       .map(({ type, ...rest }) => rest as Earning);
@@ -94,10 +101,10 @@ export class TransactionService {
   }
 
   private combineAndSortResults(
-    donations: Donation[],
+    donations: DonationWithPartialRelations[],
     earnings: Earning[],
     baseFilter: BaseFilter,
-  ): ((Donation | Earning) & { type: string })[] {
+  ): ((DonationWithPartialRelations | Earning) & { type: string })[] {
     const donationsWithType = donations.map((donation) => ({
       ...donation,
       type: this.transactionType.Donation,

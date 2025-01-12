@@ -85,7 +85,7 @@ export class DonationboxService {
     try {
       // Verify JWT token
       await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get('JWT_ACCESS_SECRET'),
+        secret: this.configService.get('DONATIONBOX_JWT_ACCESS_SECRET'),
       });
       return token;
     } catch {

@@ -41,7 +41,7 @@ export class ReturnProjectDto {
   @Expose()
   createdAt: Date;
 
-  @Expose()
+  @Exclude()
   updatedAt: Date;
 
   @Expose()

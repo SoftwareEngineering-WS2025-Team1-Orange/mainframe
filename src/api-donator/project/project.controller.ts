@@ -6,7 +6,7 @@ import {
   Param,
   ParseBoolPipe,
   ParseIntPipe,
-  Post,
+  Put,
   Query,
   SerializeOptions,
   UseInterceptors,
@@ -82,7 +82,7 @@ export class ProjectController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnProjectDto })
-  @Post(':project_id/donator/:donator_id/favorite')
+  @Put(':project_id/donator/:donator_id/favorite')
   async favoriteProject(
     @Param('donator_id', ParseIntPipe) donatorId: number,
     @Param('project_id', ParseIntPipe) projectId: number,

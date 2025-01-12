@@ -9,7 +9,11 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
-import { EarningFilter } from '@/shared/filters/earning.filter.interface';
+import {
+  EarningFilter,
+  EarningIncludePartialRelations,
+} from '@/shared/filters/earning.filter.interface';
+import { EarningWithPartialRelations } from './types/EarningWithPartialRelations';
 import { MiningPoolApiClient } from '@/clients/miningpool-api/miningpool-api.client';
 import { MiningPoolApiPayoutDto } from '@/clients/miningpool-api/miningpool-api.dto';
 import { convertPiconeroToCent } from '@/utils/converter_helper';
@@ -145,6 +149,23 @@ export class EarningService {
     paginate: boolean = true,
     forceEarningsUpdate: boolean = false,
   ): Promise<{ earnings: Earning[]; pagination: Pagination }> {
+    return this.findFilteredEarningsWithPartialRelations(
+      filters,
+      { moneroMiningPayout: false, donationBox: false },
+      paginate,
+      forceEarningsUpdate,
+    );
+  }
+
+  async findFilteredEarningsWithPartialRelations(
+    filters: EarningFilter,
+    includePartialRelations: EarningIncludePartialRelations,
+    paginate: boolean = true,
+    forceEarningsUpdate: boolean = false,
+  ): Promise<{
+    earnings: EarningWithPartialRelations[];
+    pagination: Pagination;
+  }> {
     const donationBoxIds = await this.prismaService.donationBox.findMany({
       where: {
         donatorId: filters.filterDonatorId ?? undefined,
@@ -200,21 +221,23 @@ export class EarningService {
       },
       ...(paginate ? pagination.constructPaginationQueryObject() : {}),
       include: {
-        donationBox: {
-          select: {
-            id: true,
-            name: true,
-            cuid: true,
-            earningsLastSuccessfullUpdateAt: true,
-            earningsLastUpdateSuccessfull: true,
-          },
-        },
-        moneroMiningPayout: {
-          select: {
-            timestamp: true,
-            lastPayoutTimestamp: true,
-          },
-        },
+        moneroMiningPayout: includePartialRelations.moneroMiningPayout
+          ? {
+              select: {
+                timestamp: true,
+                lastPayoutTimestamp: true,
+              },
+            }
+          : undefined,
+        donationBox: includePartialRelations.donationBox
+          ? {
+              select: {
+                id: true,
+                name: true,
+                cuid: true,
+              },
+            }
+          : undefined,
       },
       orderBy: {
         [this.getSortField(filters.sortFor)]: getSortType(
@@ -228,12 +251,13 @@ export class EarningService {
 
   private getSortField(sortFor?: string): string {
     switch (sortFor) {
-      case 'created_at': // Filter for timestamp
+      case 'created_at':
         return 'createdAt';
       case 'amount':
         return 'amountInCent';
+      case 'payoutTimestamp':
       default:
-        return 'createdAt';
+        return 'payoutTimestamp';
     }
   }
 }

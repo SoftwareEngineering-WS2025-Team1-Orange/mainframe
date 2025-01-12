@@ -14,3 +14,9 @@ export interface DonationFilter extends BaseFilter {
   filterAmountFrom?: number;
   filterAmountTo?: number;
 }
+
+export interface DonationIncludePartialRelations {
+  donator?: boolean;
+  ngo?: boolean;
+  project?: boolean;
+}

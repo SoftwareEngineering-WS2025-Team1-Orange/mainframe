@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -7,10 +8,14 @@ import { Donation, Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
-import { DonationFilter } from '@/shared/filters/donation.filter.interface';
+import {
+  DonationFilter,
+  DonationIncludePartialRelations,
+} from '@/shared/filters/donation.filter.interface';
 import { DonatorService } from '@/shared/services/donator.service';
 import { InsufficientBalanceError } from '@/shared/errors/InsufficientBalanceError';
 import { NegativeAmountError } from '@/shared/errors/NegativeAmountError';
+import { DonationWithPartialRelations } from './types/DonationWithPartialRelations';
 
 @Injectable()
 export class DonationService {
@@ -23,6 +28,21 @@ export class DonationService {
     filters: DonationFilter,
     paginate: boolean = true,
   ): Promise<{ donations: Donation[]; pagination: Pagination }> {
+    return this.findFilteredDonationsWithPartialRelations(
+      filters,
+      { donator: false, ngo: false, project: false },
+      paginate,
+    );
+  }
+
+  async findFilteredDonationsWithPartialRelations(
+    filters: DonationFilter,
+    includePartialRelations: DonationIncludePartialRelations,
+    paginate: boolean = true,
+  ): Promise<{
+    donations: DonationWithPartialRelations[];
+    pagination: Pagination;
+  }> {
     const whereInputObject: Prisma.DonationWhereInput = {
       AND: [
         filters.filterId != null ? { id: filters.filterId } : {},
@@ -110,25 +130,31 @@ export class DonationService {
       },
       ...(paginate ? pagination.constructPaginationQueryObject() : {}),
       include: {
-        project: {
-          select: {
-            name: true,
-            id: true,
-          },
-        },
-        ngo: {
-          select: {
-            name: true,
-            id: true,
-          },
-        },
-        donator: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
+        project: includePartialRelations.project
+          ? {
+              select: {
+                name: true,
+                id: true,
+              },
+            }
+          : undefined,
+        ngo: includePartialRelations.ngo
+          ? {
+              select: {
+                name: true,
+                id: true,
+              },
+            }
+          : undefined,
+        donator: includePartialRelations.donator
+          ? {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            }
+          : undefined,
       },
       orderBy: {
         [this.getSortField(filters.sortFor)]: getSortType(
@@ -144,9 +170,12 @@ export class DonationService {
     donatorId: number,
     projectId: number,
     amountInCent: number,
-  ): Promise<Donation & { newBalance: number }> {
+  ): Promise<DonationWithPartialRelations & { newBalance: number }> {
     try {
       const ngo = await this.prismaService.nGO.findFirstOrThrow({
+        select: {
+          id: true,
+        },
         where: {
           projects: {
             some: {
@@ -209,7 +238,7 @@ export class DonationService {
             },
           });
           const danglingNewBalance =
-            (await this.donatorService.recalculateBalance(donatorId)) -
+            (await this.donatorService.calculateDonatorBalance(donatorId)) -
             amountInCent;
           if (danglingNewBalance < 0) {
             throw new InsufficientBalanceError('Insufficient balance');
@@ -217,11 +246,11 @@ export class DonationService {
           return [createdDonation, danglingNewBalance];
         },
       );
-      // If recalculating the balance fails, the transaction should be aborted and the donation deleted
-      const donationObject = await this.findFilteredDonations(
-        { filterId: donation.id },
-        false,
-      );
+      const donationObject =
+        await this.findFilteredDonationsWithPartialRelations(
+          { filterId: donation.id },
+          { donator: false, ngo: true, project: true },
+        );
       return { ...donationObject.donations[0], newBalance };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -232,7 +261,7 @@ export class DonationService {
         error instanceof InsufficientBalanceError ||
         error instanceof NegativeAmountError
       ) {
-        throw new InternalServerErrorException(
+        throw new BadRequestException(
           'Failed to create donation. The donation amount must be positive and the donators balance sufficient.',
           error,
         );

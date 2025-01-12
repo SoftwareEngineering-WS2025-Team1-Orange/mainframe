@@ -37,11 +37,20 @@ model DonatorScope {
   id   Int              @id @default(autoincrement())
   name DonatorScopeEnum @unique
 
-  donators Donator[]
+  donators      Donator[]
+  DonatorClient DonatorClient[]
 }
 
 enum DonatorScopeEnum {
-  NOT_IMPLEMENTED
+  READ_DONATION     @map("read:donation")
+  WRITE_DONATION    @map("write:donation")
+  READ_DONATIONBOX  @map("read:donationbox")
+  WRITE_DONATIONBOX @map("write:donationbox")
+  READ_DONATOR      @map("read:donator")
+  WRITE_DONATOR     @map("write:donator")
+  READ_NGO          @map("read:ngo")
+  READ_PROJECT      @map("read:project")
+  READ_TRANSACTION  @map("read:transaction")
 }
 
 enum Status {
@@ -117,14 +126,19 @@ model NGO {
 }
 
 enum NGOScopeEnum {
-  NOT_IMPLEMENTED
+  READ_NGO      @map("read:ngo")
+  WRITE_NGO     @map("write:ngo")
+  READ_PROJECT  @map("read:project")
+  WRITE_PROJECT @map("write:project")
 }
 
 model NGOScope {
   id   Int          @id @default(autoincrement())
   name NGOScopeEnum @unique
 
-  ngos NGO[]
+  ngos        NGO[]
+  NGOClient   NGOClient[]
+  nGOClientId String?
 }
 
 enum Category {
@@ -203,4 +217,32 @@ model MoneroMiningPayout {
 
   earning   Earning @relation(fields: [earningId], references: [id])
   earningId Int     @unique
+}
+
+model NGOClient {
+  id                   String     @id @default(cuid())
+  clientId             String     @unique
+  clientSecret         String
+  clientName           String
+  clientSecretExpires  BigInt
+  clientSecretLifetime BigInt
+  accessTokenLifetime  BigInt
+  refreshTokenLifetime BigInt
+  allowedScopes        NGOScope[]
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+}
+
+model DonatorClient {
+  id                   String         @id @default(cuid())
+  clientId             String         @unique
+  clientSecret         String
+  clientName           String
+  clientSecretExpires  BigInt
+  clientSecretLifetime BigInt
+  accessTokenLifetime  BigInt
+  refreshTokenLifetime BigInt
+  allowedScopes        DonatorScope[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 }
