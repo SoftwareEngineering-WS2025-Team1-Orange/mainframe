@@ -28,7 +28,6 @@ model Donator {
 
   scope             DonatorScope[]
   donationBox       DonationBox[]
-  powerSupplies     PowerSupply[]
   favouriteNgos     NGO[]
   favouriteProjects Project[]
   transaction       Donation[]
@@ -54,50 +53,64 @@ enum DonatorScopeEnum {
   READ_TRANSACTION  @map("read:transaction")
 }
 
-enum Status {
-  WORKING
-  READY
-  AVAILABLE
-  UNAVAILABLE
-  UNINITIALIZED
-}
-
 model DonationBox {
-  id          Int      @id @default(autoincrement())
-  cuid        String   @unique @default(cuid())
-  name        String?
-  last_status Status
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  cuid            String   @unique @default(cuid())
+  name            String?
+  lastSolarStatus Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  donatorId     Int?
-  powerSupplyId Int?
-  donator       Donator?     @relation(fields: [donatorId], references: [id])
-  powerSupply   PowerSupply? @relation(fields: [powerSupplyId], references: [id])
-  earnings      Earning[]
+  donatorId Int?
+  donator   Donator?    @relation(fields: [donatorId], references: [id])
+  earnings  Earning[]
+  Container Container[]
 }
 
-model PowerSupply {
-  id        Int      @id @default(autoincrement())
-  name      String
-  config    Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Container {
+  id            Int               @id @default(autoincrement())
+  name          String            @unique
+  status        ContainerStatus[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  donationBoxId Int
+  donationBox   DonationBox       @relation(fields: [donationBoxId], references: [id])
+}
 
-  configSchemaId Int
-  configSchema   SupportedPowerSupply @relation(fields: [configSchemaId], references: [id])
-  donatorId      Int
-  donator        Donator              @relation(fields: [donatorId], references: [id])
-  donationBoxes  DonationBox[]
+model ContainerStatus {
+  id         Int      @id @default(autoincrement())
+  statusCode Int
+  statusMsg  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  container   Container @relation(fields: [containerId], references: [id])
+  containerId Int
+}
+
+enum PluginName {
+  E3DC
 }
 
 model SupportedPowerSupply {
-  id           Int      @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
+  name         PluginName @unique
+  imageUri     String
   configSchema Json
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
 
-  powerSupplies PowerSupply[]
+enum JobName {
+  MONERO_MINER
+}
+
+model Job {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  imageUri  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model NGO {

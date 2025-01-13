@@ -15,7 +15,6 @@ export class DonationboxService {
         cuid: donationBox.cuid,
       },
       data: {
-        last_status: 'AVAILABLE',
         donatorId,
         name: donationBox.name,
       },
