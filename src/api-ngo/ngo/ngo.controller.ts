@@ -146,8 +146,6 @@ export class NgoController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnNgoWithoutProjectsDto })
   @Post('/')
-  @UseGuards(NGOAccessTokenGuard, ScopesGuard)
-  @Scopes(NGOScopeEnum.WRITE_NGO)
   postNgo(@Body() createNgoDto: CreateNgoDto) {
     return this.ngoService.createNgo(createNgoDto);
   }
