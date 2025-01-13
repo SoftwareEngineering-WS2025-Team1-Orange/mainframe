@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -6,18 +7,40 @@ import {
 } from '@nestjs/common';
 import { Prisma, Project } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
+import { Client } from 'minio';
+import { InjectMinio } from 'nestjs-minio';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import {
   ProjectFilter,
   ProjectIncludePartialRelations,
 } from '@/shared/filters/project.filter.interface';
+import {
+  CreateProjectDto,
+  UpdateProjectDto,
+  ReturnProjectWithoutFavDto,
+} from '@/api-ngo/project/dto/project.dto';
+import { ProjectWithDonations } from '@/api-ngo/project/types';
+import { Rule } from '@/utils/validaton/types';
+import { validateRules } from '@/utils/validaton/validation.helper';
+import { BUCKET_NAME, createBannerUri } from '@/utils/minio.helper';
+import { DonationFilter } from '@/shared/filters/donation.filter.interface';
+import { DonationService } from '@/shared/services/donation.service';
 
 @Injectable()
 export class ProjectService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private configService: ConfigService,
+    private donationService: DonationService,
+    @InjectMinio() private minioClient: Client,
+  ) {}
 
-  async findProjectById(id: number): Promise<Project> {
+  async findProjectById(
+    id: number,
+    filters: DonationFilter | null = null,
+  ): Promise<Project | ProjectWithDonations> {
     const project = await this.prismaService.project.findFirst({
       where: {
         id,
@@ -27,12 +50,24 @@ export class ProjectService {
     if (!project) {
       throw new HttpException('Project not found', StatusCodes.NOT_FOUND);
     }
-    return project;
+    if (!filters) {
+      return project;
+    }
+
+    const paginatedDonations =
+      await this.donationService.findFilteredDonations(filters);
+
+    return {
+      ...project,
+      donations: {
+        ...paginatedDonations,
+      },
+    };
   }
 
   async findFilteredProjectsWithFavourite(
     filters: ProjectFilter,
-    favourizedByDonatorId: number,
+    favourizedByDonatorId?: number,
   ): Promise<{
     projects: (Project & { is_favorite: boolean })[];
     pagination: Pagination;
@@ -52,7 +87,9 @@ export class ProjectService {
         id: true,
       },
       where: {
-        FavouritedByDonators: { some: { id: favourizedByDonatorId } },
+        FavouritedByDonators: favourizedByDonatorId
+          ? { some: { id: favourizedByDonatorId } }
+          : {},
       },
     });
 
@@ -169,6 +206,173 @@ export class ProjectService {
       orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
     });
     return { projects, pagination };
+  }
+
+  async createProject(
+    ngoId: number,
+    project: CreateProjectDto,
+  ): Promise<ReturnProjectWithoutFavDto> {
+    const dateIsNotBeforeOneWeek: Rule<undefined, CreateProjectDto> = {
+      condition: (_previous: undefined, future: CreateProjectDto) =>
+        new Date(future.target_date) >
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      onFailure: new BadRequestException(
+        'Target date must be at least one week in the future',
+      ),
+    };
+    await validateRules(undefined, project, [dateIsNotBeforeOneWeek]);
+
+    const createdProject = await this.prismaService.project.create({
+      data: {
+        ...project,
+        ngo: {
+          connect: {
+            id: ngoId,
+          },
+        },
+      },
+    });
+    return createdProject;
+  }
+
+  async updateProject(
+    id: number,
+    project: UpdateProjectDto,
+  ): Promise<ReturnProjectWithoutFavDto> {
+    const isNotArchived: Rule<ProjectWithDonations, UpdateProjectDto> = {
+      condition: (previous: ProjectWithDonations, _future: UpdateProjectDto) =>
+        !previous.archived,
+      onFailure: new BadRequestException('Archived projects cannot be updated'),
+    };
+
+    const hasNoDonations: Rule<ProjectWithDonations, UpdateProjectDto> = {
+      condition: (previous: ProjectWithDonations, future: UpdateProjectDto) =>
+        previous.donations.donations.length === 0 &&
+        (future.description === undefined ||
+          future.fundraising_goal === undefined),
+      onFailure: new BadRequestException(
+        'Only the name and category can be updated for projects with donations',
+      ),
+    };
+
+    const projectToUpdate = (await this.findProjectById(id, {
+      filterProjectId: id,
+    })) as ProjectWithDonations;
+
+    await validateRules(projectToUpdate, project, [
+      isNotArchived,
+      hasNoDonations,
+    ]);
+
+    const updatedProject = await this.prismaService.project.update({
+      where: {
+        id,
+      },
+      data: project,
+    });
+
+    return updatedProject;
+  }
+
+  private async getBannerUriForDb(
+    id: number,
+    banner: Express.Multer.File,
+  ): Promise<string | null> {
+    if (!banner) {
+      const project = await this.prismaService.project.findFirst({
+        where: {
+          id,
+          archived: false,
+        },
+      });
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+      const bannerUri = project.banner_uri.split(BUCKET_NAME)[1];
+      await this.minioClient.removeObject(`${BUCKET_NAME}/`, bannerUri);
+      return null;
+    }
+    const storagePath = `project/${id}/banner.${banner.mimetype.split('/')[1]}`;
+    await this.minioClient.putObject(
+      BUCKET_NAME,
+      storagePath,
+      banner.buffer,
+      banner.size,
+      {
+        'Content-Type': banner.mimetype,
+      },
+    );
+    return createBannerUri(storagePath, this.configService);
+  }
+
+  async updateProjectBanner(
+    id: number,
+    banner?: Express.Multer.File,
+  ): Promise<ReturnProjectWithoutFavDto> {
+    const bannerUriForDB = await this.getBannerUriForDb(id, banner);
+
+    const updatedProject = await this.prismaService.project
+      .update({
+        where: {
+          id,
+          archived: null,
+        },
+        data: {
+          banner_uri: bannerUriForDB,
+        },
+      })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new NotFoundException('Project not found.');
+        }
+        throw new InternalServerErrorException(
+          'Something went wrong updating the project.',
+        );
+      });
+
+    return updatedProject;
+  }
+
+  async deleteProject(id: number): Promise<ReturnProjectWithoutFavDto> {
+    // A project can only be deleted if it has no donations or if progress is at 100
+    const project = await this.prismaService.project
+      .update({
+        where: {
+          id,
+          archived: false,
+          OR: [
+            {
+              donations: {
+                none: {},
+              },
+            },
+            {
+              progress: 100,
+            },
+          ],
+        },
+        data: {
+          archived: true,
+        },
+      })
+      .catch((error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new NotFoundException(
+            'Project could not be archived. ' +
+              'Please check if the project exists and that no donation were already made ' +
+              'or the progress is not by 100. Also check if the project is not archived.',
+          );
+        }
+        throw new InternalServerErrorException(
+          'Something went wrong archiving the Project.',
+        );
+      });
+
+    if (!project) {
+      throw new HttpException('Project not found.', StatusCodes.NOT_FOUND);
+    }
+
+    return project;
   }
 
   async findFilteredProjects(

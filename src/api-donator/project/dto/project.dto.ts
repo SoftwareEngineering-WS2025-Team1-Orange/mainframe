@@ -1,5 +1,5 @@
 import { Expose, Type, Exclude } from 'class-transformer';
-import { Project } from '@prisma/client';
+import { Category, Project } from '@prisma/client';
 import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
 
 export class ReturnProjectNgoDto {
@@ -45,13 +45,13 @@ export class ReturnProjectDto {
   updatedAt: Date;
 
   @Expose()
-  category: string;
+  category: Category;
 
   @Exclude()
-  ngoId?: number;
+  ngoId: number;
 
   @Expose()
-  ngo?: ReturnProjectNgoDto;
+  ngo: ReturnProjectNgoDto;
 
   @Expose()
   is_favorite: boolean;

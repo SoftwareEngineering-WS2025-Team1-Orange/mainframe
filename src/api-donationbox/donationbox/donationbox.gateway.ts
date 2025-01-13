@@ -22,13 +22,11 @@ export default class DonationboxGateway
   @WebSocketServer()
   server: Server;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  afterInit(server: Server) {
+  afterInit(_server: Server) {
     this.logger.log('WebSocket server initialized');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  handleConnection(client: WebSocket) {
+  handleConnection(_client: WebSocket) {
     this.logger.log('Client connected');
   }
 

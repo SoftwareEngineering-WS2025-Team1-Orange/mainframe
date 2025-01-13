@@ -75,14 +75,6 @@ export class NgoController {
       filterCategory: parseEnumCategory(filterCategory),
       filterName,
       filterIncludeArchived,
-      filterNgoId: null,
-      filterNgoName: null,
-
-      filterFavoriteByDonatorId: null,
-      filterNotFavoriteByDonatorId: null,
-      filterDonatedToByDonatorId: null,
-      filterNotDonatedToByDonatorId: null,
-
       paginationPage,
       paginationPageSize,
       sortType,
@@ -118,21 +110,13 @@ export class NgoController {
     @Query('sort_for') sortFor?: string,
     @Query('sort_type') sortType?: string,
   ) {
-    rejectOnNotOwnedResource(req, ngoId);
+    rejectOnNotOwnedResource(ngoId, req);
     const ngo = req.user as { sub: number };
     const filter: ProjectFilter = {
       filterId,
       filterCategory: parseEnumCategory(filterCategory),
       filterName,
       filterIncludeArchived,
-      filterNgoId: null,
-      filterNgoName: null,
-
-      filterFavoriteByDonatorId: null,
-      filterNotFavoriteByDonatorId: null,
-      filterDonatedToByDonatorId: null,
-      filterNotDonatedToByDonatorId: null,
-
       paginationPage,
       paginationPageSize,
       sortType,
@@ -175,7 +159,7 @@ export class NgoController {
     @Optional()
     banner?: Express.Multer.File,
   ) {
-    rejectOnNotOwnedResource(req, ngoId);
+    rejectOnNotOwnedResource(ngoId, req);
     return this.ngoService.updateNgoBanner(ngoId, banner);
   }
 
@@ -192,7 +176,7 @@ export class NgoController {
     @Body() updateNgoDto: UpdateNgoDto,
     @Req() req: Request,
   ) {
-    rejectOnNotOwnedResource(req, ngoId);
+    rejectOnNotOwnedResource(ngoId, req);
     return this.ngoService.updateNgo(ngoId, updateNgoDto);
   }
 
@@ -208,7 +192,7 @@ export class NgoController {
     ngoId: number,
     @Req() req: Request,
   ) {
-    rejectOnNotOwnedResource(req, ngoId);
+    rejectOnNotOwnedResource(ngoId, req);
     return this.ngoService.deleteNgo(ngoId);
   }
 }
