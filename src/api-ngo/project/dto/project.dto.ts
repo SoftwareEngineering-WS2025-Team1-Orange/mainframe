@@ -39,6 +39,10 @@ export class UpdateProjectDto {
 
   @IsNumber()
   @IsPositive()
+  progress: number;
+
+  @IsNumber()
+  @IsPositive()
   fundraising_goal: number;
 }
 
