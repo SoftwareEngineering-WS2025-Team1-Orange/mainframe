@@ -244,7 +244,10 @@ export class DonatorService {
     });
 
     // eslint-disable-next-line no-underscore-dangle
-    return (earnings._sum.amount || 0) - (donations._sum.amount || 0);
+    const earningsAmount = Number((earnings._sum.amount || 0).toFixed(2));
+    // eslint-disable-next-line no-underscore-dangle
+    const donationsAmount = Number((donations._sum.amount || 0).toFixed(2));
+    return Number((earningsAmount - donationsAmount).toFixed(2));
   }
 
   private createSalt(): string {

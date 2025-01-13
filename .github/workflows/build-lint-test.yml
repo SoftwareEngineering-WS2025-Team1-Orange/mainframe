@@ -24,7 +24,7 @@ jobs:
       - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
-          node-version: 22.11.0
+          node-version: 22.12.0
 
       - name: Enable corepack
         shell: bash
@@ -32,6 +32,14 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable
+        shell: bash
+
+      - name: Add prisma
+        run: yarn add --dev prisma
+        shell: bash
+
+      - name: Generate prisma client
+        run: yarn prisma generate
         shell: bash
 
       - name: Run linter and formatter
@@ -42,3 +50,6 @@ jobs:
         run: yarn run test:cov
         shell: bash
 
+      - name: Run build
+        run: yarn run build
+        shell: bash

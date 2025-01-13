@@ -12,7 +12,10 @@ import { InjectMinio } from 'nestjs-minio';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
-import { ProjectFilter } from '@/shared/filters/project.filter.interface';
+import {
+  ProjectFilter,
+  ProjectIncludePartialRelations,
+} from '@/shared/filters/project.filter.interface';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -73,7 +76,11 @@ export class ProjectService {
       projects,
       pagination,
     }: { projects: Project[]; pagination: Pagination } =
-      await this.findFilteredProjects(filters);
+      await this.findFilteredProjectsWithPartialRelations(filters, {
+        ngo: true,
+        donations: false,
+        FavouritedByDonators: false,
+      });
 
     const favorizedProjects = await this.prismaService.project.findMany({
       select: {
@@ -90,16 +97,22 @@ export class ProjectService {
       favorizedProjects.map((project) => project.id),
     );
 
-    const projectsWithIsFavorite = projects.map((project) => ({
-      ...project,
-      is_favorite: favorizedProjectIDs.has(project.id),
-    }));
+    const projectsWithIsFavorite = projects.map(
+      (project: Project & { is_favorite: boolean }) => ({
+        ...project,
+        is_favorite: favorizedProjectIDs.has(project.id),
+      }),
+    );
     return { projects: projectsWithIsFavorite, pagination };
   }
 
-  async findFilteredProjects(
+  async findFilteredProjectsWithPartialRelations(
     filters: ProjectFilter,
-  ): Promise<{ projects: Project[]; pagination: Pagination }> {
+    includePartialRelations: ProjectIncludePartialRelations,
+  ): Promise<{
+    projects: Project[];
+    pagination: Pagination;
+  }> {
     const whereInputObject: Prisma.ProjectWhereInput = {
       AND: [
         filters.filterId != null ? { id: filters.filterId } : {},
@@ -165,12 +178,30 @@ export class ProjectService {
       },
       ...pagination.constructPaginationQueryObject(),
       include: {
-        ngo: {
-          select: {
-            name: true,
-            id: true,
-          },
-        },
+        ngo: includePartialRelations.ngo
+          ? {
+              select: {
+                name: true,
+                id: true,
+              },
+            }
+          : undefined,
+        donations: includePartialRelations.donations
+          ? {
+              select: {
+                id: true,
+                amount: true,
+                createdAt: true,
+              },
+            }
+          : undefined,
+        FavouritedByDonators: includePartialRelations.FavouritedByDonators
+          ? {
+              select: {
+                id: true,
+              },
+            }
+          : undefined,
       },
       orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
     });
@@ -344,6 +375,16 @@ export class ProjectService {
     return project;
   }
 
+  async findFilteredProjects(
+    filters: ProjectFilter,
+  ): Promise<{ projects: Project[]; pagination: Pagination }> {
+    return this.findFilteredProjectsWithPartialRelations(filters, {
+      ngo: false,
+      donations: false,
+      FavouritedByDonators: false,
+    });
+  }
+
   private getSortField(sortFor?: string): string {
     switch (sortFor) {
       case 'created_at':
@@ -373,6 +414,14 @@ export class ProjectService {
           FavouritedByDonators: favorite
             ? { connect: { id: donator.id } }
             : { disconnect: { id: donator.id } },
+        },
+        include: {
+          ngo: {
+            select: {
+              name: true,
+              id: true,
+            },
+          },
         },
       });
       return { ...project, is_favorite: favorite };
