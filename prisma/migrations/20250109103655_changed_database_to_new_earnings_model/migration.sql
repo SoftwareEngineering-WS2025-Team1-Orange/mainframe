@@ -23,9 +23,9 @@ ADD COLUMN "integratedPublicAddressId" TEXT NOT NULL DEFAULT 'myId';
 -- AlterTable
 ALTER TABLE "Earning" DROP COLUMN "activeTimeInPeriod",
 DROP COLUMN "payoutId",
-ADD COLUMN     "blockHeight" INTEGER NOT NULL,
-ADD COLUMN     "lastEarningTimeStamp" TIMESTAMP(3) NOT NULL,
-ADD COLUMN     "timestamp" TIMESTAMP(3) NOT NULL;
+ADD COLUMN     "blockHeight" INTEGER NOT NULL DEFAULT 1,
+ADD COLUMN     "lastEarningTimeStamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
 -- DropTable
 DROP TABLE "Payout";
@@ -38,4 +38,8 @@ CREATE UNIQUE INDEX "DonationBox_integratedPublicAddressId_key" ON "DonationBox"
 
 ALTER TABLE "DonationBox" ALTER COLUMN "integratedPublicAddress" DROP DEFAULT;
 ALTER TABLE "DonationBox" ALTER COLUMN "integratedPublicAddressId" DROP DEFAULT;
+
+ALTER TABLE "Earning" ALTER COLUMN "blockHeight" DROP DEFAULT;
+ALTER TABLE "Earning" ALTER COLUMN "lastEarningTimeStamp" DROP DEFAULT;
+ALTER TABLE "Earning" ALTER COLUMN "timestamp" DROP DEFAULT;
 
