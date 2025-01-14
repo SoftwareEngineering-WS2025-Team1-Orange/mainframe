@@ -22,13 +22,7 @@ export class DonationBoxDto {
   readonly cuid: string;
 
   @Expose()
-  power_consumption?: number;
-
-  @Expose()
-  power_supply_id?: number;
-
-  @Expose()
-  lastStatus: string;
+  lastSolarStatus: string;
 
   @Expose()
   earningsLastSuccessfullUpdateAt: Date;
