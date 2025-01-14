@@ -3,6 +3,7 @@ import {
   Container,
   ContainerStatus,
   Donation,
+  DonationBox,
   Donator,
   Earning,
   NGO,
@@ -108,6 +109,27 @@ export const earning: Earning[] = [
     updatedAt: new Date(1_736_798_702),
     payoutId: 1,
     donationBoxId: 1,
+  },
+];
+
+export const donationboxes: DonationBox[] = [
+  {
+    id: 1,
+    cuid: 'vkebp3z3acle03b72w72t503',
+    name: 'Donation Box 1',
+    lastSolarStatus: {},
+    createdAt: new Date(1_736_798_702),
+    updatedAt: new Date(1_736_798_702),
+    donatorId: 1,
+  },
+  {
+    id: 2,
+    cuid: 'vl2xpsyu7az5j554a59qh2h3',
+    name: 'Donation Box 2',
+    lastSolarStatus: {},
+    createdAt: new Date(1_736_798_702),
+    updatedAt: new Date(1_736_798_702),
+    donatorId: 1,
   },
 ];
 
