@@ -110,6 +110,15 @@ export const earning: Earning[] = [
     payoutId: 1,
     donationBoxId: 1,
   },
+  {
+    id: 2,
+    amount: 700,
+    activeTimeInPeriod: 800,
+    createdAt: new Date(1_736_858_211),
+    updatedAt: new Date(1_736_858_211),
+    payoutId: 1,
+    donationBoxId: 1,
+  },
 ];
 
 export const donationboxes: DonationBox[] = [
@@ -142,5 +151,6 @@ describe('Test Database', () => {
     expect(ngo).toBeDefined();
     expect(project).toBeDefined();
     expect(earning).toBeDefined();
+    expect(donationboxes).toBeDefined();
   });
 });
