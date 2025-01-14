@@ -100,7 +100,6 @@ describe('DonatorService', () => {
         .spyOn(prismaService.donator, 'count')
         .mockResolvedValue(1);
 
-      // Spy of PrismaService.donation.findMany
       const findManySpy = jest
         .spyOn(prismaService.donator, 'findMany')
         .mockResolvedValue([donator[0]]);

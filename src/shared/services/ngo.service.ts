@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -217,7 +218,7 @@ export class NgoService {
   }
 
   async createNgo(ngo: CreateNgoDto): Promise<NGO & { scope: NGOScopeEnum[] }> {
-    const salt = randomBytes(16).toString('hex');
+    const salt = this.createSalt();
     const ngoWithHash = {
       ...ngo,
       password: await argon2.hash(ngo.password + salt),
@@ -225,27 +226,28 @@ export class NgoService {
 
     const defaultRoles = Object.values(NGOScopeEnum);
 
-    const newNgo = await this.prismaService.nGO.create({
-      data: {
-        ...ngoWithHash,
-        salt,
-        scope: {
-          connect: defaultRoles.map((scope) => ({ name: scope })),
+    const newNgo = await this.prismaService.nGO
+      .create({
+        data: {
+          ...ngoWithHash,
+          salt,
+          scope: {
+            connect: defaultRoles.map((scope) => ({ name: scope })),
+          },
         },
-      },
-    });
-
-    if (!newNgo) {
-      throw new HttpException(
-        'NGO could not be created',
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
-    }
+      })
+      .catch(() => {
+        throw new BadRequestException('NGO could not be created');
+      });
 
     return {
       ...newNgo,
       scope: defaultRoles,
     };
+  }
+
+  private createSalt(): string {
+    return randomBytes(32).toString('hex');
   }
 
   private async getBannerUriForDb(

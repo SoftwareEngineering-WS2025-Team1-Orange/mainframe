@@ -98,6 +98,22 @@ export const project: Project[] = [
     createdAt: new Date(1_736_798_702),
     updatedAt: new Date(1_736_798_702),
   },
+  {
+    id: 2,
+    name: 'Project 2',
+    ngoId: 1,
+    description: 'Test Description 2',
+    banner_uri: 'https://www.test.com',
+    fundraising_goal: 2000,
+    fundraising_current: 600,
+    fundraising_closed: false,
+    archived: false,
+    target_date: new Date(1_737_798_702),
+    category: Category.Education,
+    progress: 50,
+    createdAt: new Date(1_736_798_702),
+    updatedAt: new Date(1_736_798_702),
+  },
 ];
 
 export const earning: Earning[] = [
