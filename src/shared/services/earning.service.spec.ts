@@ -4,7 +4,8 @@ import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { EarningFilter } from '@/shared/filters/earning.filter.interface';
 import { SortType } from '@/utils/sort_filter.helper';
-import { earning } from '@/shared/services/database.spec';
+import { donationboxes, earning } from '@/shared/services/database.spec';
+import { MiningPoolApiClient } from '@/clients/miningpool-api/miningpool-api.client';
 
 describe('EarningService', () => {
   let earningService: EarningService;
@@ -36,6 +37,16 @@ describe('EarningService', () => {
               count: jest.fn(),
               findMany: jest.fn(),
             },
+            donationBox: {
+              findMany: jest.fn(),
+              update: jest.fn(),
+            },
+          },
+        },
+        {
+          provide: MiningPoolApiClient,
+          useValue: {
+            getMiningPoolStats: jest.fn(),
           },
         },
       ],
@@ -61,8 +72,9 @@ describe('EarningService', () => {
 
       expect(findFilteredEarningsWithPartialRelationsSpy).toHaveBeenCalledWith(
         filters,
-        { payout: false, donationBox: false },
+        { moneroMiningPayout: false, donationBox: false },
         true,
+        false,
       );
       expect(result).toEqual(expectedEarning);
     });
@@ -85,21 +97,33 @@ describe('EarningService', () => {
       const countSpy2 = jest
         .spyOn(prismaService.earning, 'count')
         .mockResolvedValueOnce(1); // Filtered count
-      const findManySpy = jest
+      const findManySpy1 = jest
+        .spyOn(prismaService.donationBox, 'findMany')
+        .mockResolvedValue([donationboxes[0]]);
+      const findManySpy2 = jest
         .spyOn(prismaService.earning, 'findMany')
         .mockResolvedValue([earning[0]]);
 
       const result =
         await earningService.findFilteredEarningsWithPartialRelations(
           filters,
-          { payout: true, donationBox: true },
+          { moneroMiningPayout: true, donationBox: true },
           true,
         );
 
       expect(result).toEqual(expectedEarningFiltered);
       expect(countSpy1).toHaveBeenCalled();
       expect(countSpy2).toHaveBeenCalled();
-      expect(findManySpy).toHaveBeenCalledWith({
+      expect(findManySpy1).toHaveBeenCalledWith({
+        where: {
+          donatorId: undefined,
+          id: undefined,
+        },
+        select: {
+          id: true,
+        },
+      });
+      expect(findManySpy2).toHaveBeenCalledWith({
         where: {
           AND: [
             { id: 1 },
@@ -113,10 +137,12 @@ describe('EarningService', () => {
         },
         ...expectedEarningFiltered.pagination.constructPaginationQueryObject(),
         include: {
-          payout: { select: { periodStart: true, periodEnd: true } },
+          moneroMiningPayout: {
+            select: { lastPayoutTimestamp: true, timestamp: true },
+          },
           donationBox: { select: { id: true, name: true, cuid: true } },
         },
-        orderBy: { amount: SortType.ASC },
+        orderBy: { amountInCent: SortType.ASC },
       });
     });
 
@@ -132,51 +158,63 @@ describe('EarningService', () => {
       const countSpy2 = jest
         .spyOn(prismaService.earning, 'count')
         .mockResolvedValueOnce(1); // Filtered count
-      const findManySpy = jest
+      const findManySpy1 = jest
+        .spyOn(prismaService.donationBox, 'findMany')
+        .mockResolvedValue([donationboxes[0]]);
+      const findManySpy2 = jest
         .spyOn(prismaService.earning, 'findMany')
         .mockResolvedValue(earning);
 
       const result =
         await earningService.findFilteredEarningsWithPartialRelations(
           filters,
-          { payout: false, donationBox: false },
+          { moneroMiningPayout: false, donationBox: false },
           true,
         );
 
       expect(result).toEqual(expectedEarningNoFiltered);
       expect(countSpy1).toHaveBeenCalled();
       expect(countSpy2).toHaveBeenCalled();
-      expect(findManySpy).toHaveBeenCalledWith({
+      expect(findManySpy1).toHaveBeenCalledWith({
+        where: {
+          donatorId: undefined,
+          id: undefined,
+        },
+        select: {
+          id: true,
+        },
+      });
+      expect(findManySpy2).toHaveBeenCalledWith({
         where: {
           AND: [{}, {}, {}, {}, {}, {}, {}],
         },
         ...expectedEarningNoFiltered.pagination.constructPaginationQueryObject(),
         include: {
-          payout: undefined,
+          moneroMiningPayout: undefined,
           donationBox: undefined,
         },
-        orderBy: { createdAt: SortType.DESC },
+        orderBy: { payoutTimestamp: SortType.DESC },
       });
     });
   });
 
   describe('getSortField', () => {
-    it('should return "createdAt" by default', () => {
+    it('should return "payoutTimestamp" by default', () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
-      expect(earningService.getSortField()).toBe('createdAt');
+      expect(earningService.getSortField()).toBe('payoutTimestamp');
     });
 
-    it('should return "amount" when sortFor is "amount"', () => {
+    it('should return "amountInCent" when sortFor is "amountInCent"', () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
-      expect(earningService.getSortField('amount')).toBe('amount');
+      expect(earningService.getSortField('amount')).toBe('amountInCent');
     });
 
-    it('should return "createdAt" for unknown sortFor values', () => {
+    it('should return "payoutTimestamp" for unknown sortFor values', () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
-      expect(earningService.getSortField('unknown')).toBe('createdAt');
+      expect(earningService.getSortField('unknown')).toBe('payoutTimestamp');
     });
   });
 });

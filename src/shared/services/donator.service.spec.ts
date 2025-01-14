@@ -7,11 +7,11 @@ import { DonatorService } from './donator.service';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { donation, donator, earning } from '@/shared/services/database.spec';
 import { Pagination } from '@/utils/pagination/pagination.helper';
+import { EarningService } from '@/shared/services/earning.service';
 
 describe('DonatorService', () => {
   let donatorService: DonatorService;
   let prismaService: PrismaService;
-
   const expectedDonator = {
     donators: [donator[0]],
     pagination: new Pagination(1, 1, 10, 1),
@@ -40,6 +40,12 @@ describe('DonatorService', () => {
             },
           },
         },
+        {
+          provide: EarningService,
+          useValue: {
+            updateEarningsForDonator: jest.fn((_a: number, _b: boolean) => {}),
+          },
+        },
       ],
     }).compile();
 
@@ -56,7 +62,7 @@ describe('DonatorService', () => {
 
       const calculateDonatorBalanceSpy = jest
         .spyOn(donatorService, 'calculateDonatorBalance')
-        .mockResolvedValue(earning[0].amount - donation[0].amount);
+        .mockResolvedValue(earning[0].amountInCent - donation[0].amountInCent);
 
       const result = await donatorService.findDonatorByIdWithBalance(1);
 
@@ -125,6 +131,10 @@ describe('DonatorService', () => {
           scope: [],
         } as never);
 
+      jest
+        .spyOn(donatorService, 'calculateDonatorBalance')
+        .mockResolvedValue(0);
+
       const updateDto = {
         firstName: 'John1',
         lastName: 'Doe1',
@@ -137,6 +147,7 @@ describe('DonatorService', () => {
         firstName: 'John1',
         lastName: 'Doe1',
         scope: [],
+        balance: 0,
       });
       expect(updateSpy).toHaveBeenCalledWith({
         where: { id, deletedAt: null },
@@ -272,7 +283,7 @@ describe('DonatorService', () => {
     it('should throw BadRequestException if donator has remaining balance', async () => {
       const calculateDonatorBalanceSpy = jest
         .spyOn(donatorService, 'calculateDonatorBalance')
-        .mockResolvedValue(earning[0].amount - donation[0].amount);
+        .mockResolvedValue(earning[0].amountInCent - donation[0].amountInCent);
 
       await expect(donatorService.deleteDonator(1)).rejects.toThrow(
         BadRequestException,
@@ -283,8 +294,8 @@ describe('DonatorService', () => {
 
   describe('calculateDonatorBalance', () => {
     it('should calculate balance correctly', async () => {
-      const earnings = { _sum: { amount: 600 } };
-      const donations = { _sum: { amount: 500 } };
+      const earnings = { _sum: { amountInCent: 600 } };
+      const donations = { _sum: { amountInCent: 500 } };
 
       const earningAggSpy = jest
         .spyOn(prismaService.earning, 'aggregate')
@@ -298,7 +309,7 @@ describe('DonatorService', () => {
       expect(result).toEqual(100);
       expect(earningAggSpy).toHaveBeenCalledWith({
         _sum: {
-          amount: true,
+          amountInCent: true,
         },
         where: {
           donationBox: {
@@ -308,7 +319,7 @@ describe('DonatorService', () => {
       });
       expect(donationAggSpy).toHaveBeenCalledWith({
         _sum: {
-          amount: true,
+          amountInCent: true,
         },
         where: {
           donatorId: 1,

@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { DonationService } from './donation.service';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { DonatorService } from '@/shared/services/donator.service';
-import { donation, earning } from '@/shared/services/database.spec';
+import { donation } from '@/shared/services/database.spec';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 
 describe('DonationService', () => {
@@ -15,10 +15,6 @@ describe('DonationService', () => {
     donations: [donation[0]],
     pagination: new Pagination(1, 1, 10, 1),
   };
-
-  const calculateDonatorBalanceSpy = jest.fn(
-    async () => earning[0].amount - donation[0].amount,
-  );
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -40,9 +36,7 @@ describe('DonationService', () => {
         {
           provide: DonatorService,
           useValue: {
-            calculateDonatorBalance: jest.fn(async () =>
-              calculateDonatorBalanceSpy(),
-            ),
+            calculateDonatorBalance: jest.fn(),
           },
         },
       ],
@@ -145,7 +139,6 @@ describe('DonationService', () => {
       expect(result).toEqual({ ...donation[0], newBalance: amount });
       expect(findFirstOrThrownSpy).toHaveBeenCalled();
       expect(transactionSpy).toHaveBeenCalled();
-      expect(calculateDonatorBalanceSpy).toHaveBeenCalled();
       expect(findFilteredDonationsWithPartialRelationsSpy).toHaveBeenCalledWith(
         { filterId: donatorId },
         { donator: false, ngo: true, project: true },

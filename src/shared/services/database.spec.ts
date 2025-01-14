@@ -35,7 +35,7 @@ export const donation: Donation[] = [
   {
     id: 1,
     donatorId: 1,
-    amount: 100,
+    amountInCent: 100,
     createdAt: new Date(1_736_798_702),
     updatedAt: new Date(1_736_798_702),
     projectId: 1,
@@ -119,21 +119,21 @@ export const project: Project[] = [
 export const earning: Earning[] = [
   {
     id: 1,
-    amount: 600,
-    activeTimeInPeriod: 100,
+    amountInCent: 600,
     createdAt: new Date(1_736_798_702),
     updatedAt: new Date(1_736_798_702),
-    payoutId: 1,
     donationBoxId: 1,
+    payoutTimestamp: new Date(1_736_798_702),
+    payoutType: 'MONERO_MINING',
   },
   {
     id: 2,
-    amount: 700,
-    activeTimeInPeriod: 800,
+    amountInCent: 700,
     createdAt: new Date(1_736_858_211),
     updatedAt: new Date(1_736_858_211),
-    payoutId: 1,
     donationBoxId: 1,
+    payoutTimestamp: new Date(1_736_798_702),
+    payoutType: 'MONERO_MINING',
   },
 ];
 
@@ -146,6 +146,10 @@ export const donationboxes: DonationBox[] = [
     createdAt: new Date(1_736_798_702),
     updatedAt: new Date(1_736_798_702),
     donatorId: 1,
+    integratedPublicMoneroAddress: '',
+    integratedPublicMoneroAddressId: '',
+    earningsLastSuccessfullUpdateAt: undefined,
+    earningsLastUpdateSuccessfull: false,
   },
   {
     id: 2,
@@ -155,6 +159,10 @@ export const donationboxes: DonationBox[] = [
     createdAt: new Date(1_736_798_702),
     updatedAt: new Date(1_736_798_702),
     donatorId: 1,
+    integratedPublicMoneroAddress: '',
+    integratedPublicMoneroAddressId: '',
+    earningsLastSuccessfullUpdateAt: undefined,
+    earningsLastUpdateSuccessfull: false,
   },
 ];
 
