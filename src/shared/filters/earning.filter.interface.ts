@@ -11,6 +11,6 @@ export interface EarningFilter extends BaseFilter {
 }
 
 export interface EarningIncludePartialRelations {
-  payout?: boolean;
+  moneroMiningPayout?: boolean;
   donationBox?: boolean;
 }

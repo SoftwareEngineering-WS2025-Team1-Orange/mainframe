@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Earning } from '@prisma/client';
+import { Donation, Earning } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
@@ -23,21 +23,11 @@ export class TransactionService {
     Donation: 'D',
   };
 
-  /**
-   * Finds filtered transactions based on the provided earning and donation filters,
-   * and paginates the results, which
-   * is based on a temporary union of the filtered results of both transaction types.
-   * Pagination and sorting use the provided base filter.
-   *
-   * @param earningFilters - Filters to apply to earnings.
-   * @param donationFilters - Filters to apply to donations.
-   * @param baseFilter - Base filter containing pagination and sorting information for the combined result.
-   * @returns An object containing filtered and paginated donations, earnings, and pagination details.
-   */
   async findFilteredTransactions(
     earningFilters: EarningFilter,
     donationFilters: DonationFilter,
     baseFilter: BaseFilter,
+    forceEarningsUpdate: boolean = false,
   ): Promise<{
     donations: DonationWithPartialRelations[];
     earnings: Earning[];
@@ -45,14 +35,24 @@ export class TransactionService {
   }> {
     const donationsResult =
       await this.donationService.findFilteredDonationsWithPartialRelations(
-        { ...donationFilters, ...baseFilter }, // Use pagination and sort from baseFilter
+        {
+          ...donationFilters,
+          ...baseFilter,
+          sortFor: this.getSortFieldDonation(baseFilter.sortFor),
+        }, // Use pagination and sort from baseFilter
         { donator: false, ngo: true, project: true },
+        false,
       );
     const earningsResult =
       await this.earningsService.findFilteredEarningsWithPartialRelations(
-        { ...earningFilters, ...baseFilter }, // Use pagination and sort from baseFilter
-        { payout: true, donationBox: true },
+        {
+          ...earningFilters,
+          ...baseFilter,
+          sortFor: this.getSortFieldEarning(baseFilter.sortFor),
+        }, // Use pagination and sort from baseFilter
+        { moneroMiningPayout: true, donationBox: true },
         false,
+        forceEarningsUpdate,
       );
 
     const donationsWithType = donationsResult.donations.map((donation) => ({
@@ -116,12 +116,22 @@ export class TransactionService {
 
     const combinedResults = [...donationsWithType, ...earningsWithType];
     combinedResults.sort((a, b) => {
-      const fieldA: Date | number = a[this.getSortField(baseFilter.sortFor)] as
-        | Date
-        | number; // created_at or amount
-      const fieldB: Date | number = b[this.getSortField(baseFilter.sortFor)] as
-        | Date
-        | number; // created_at or amount
+      const fieldA: Date | number =
+        a.type === this.transactionType.Donation
+          ? ((a as Donation)[this.getSortFieldDonation(baseFilter.sortFor)] as
+              | Date
+              | number)
+          : ((a as Earning)[this.getSortFieldEarning(baseFilter.sortFor)] as
+              | Date
+              | number);
+      const fieldB: Date | number =
+        b.type === this.transactionType.Donation
+          ? ((b as Donation)[this.getSortFieldDonation(baseFilter.sortFor)] as
+              | Date
+              | number)
+          : ((b as Earning)[this.getSortFieldEarning(baseFilter.sortFor)] as
+              | Date
+              | number);
       if (fieldA < fieldB)
         return getSortType(baseFilter.sortType) === (SortType.ASC as string)
           ? -1
@@ -136,14 +146,26 @@ export class TransactionService {
     return combinedResults;
   }
 
-  private getSortField(sortFor?: string): string {
+  private getSortFieldDonation(sortFor?: string): string {
+    switch (sortFor) {
+      case 'amount':
+        return 'amountInCent';
+      case 'created_at_or_timestamp':
+      case 'created_at':
+      default:
+        return 'createdAt';
+    }
+  }
+
+  private getSortFieldEarning(sortFor?: string): string {
     switch (sortFor) {
       case 'created_at':
         return 'createdAt';
       case 'amount':
-        return 'amount';
+        return 'amountInCent';
+      case 'payoutTimestamp':
       default:
-        return 'createdAt';
+        return 'payoutTimestamp';
     }
   }
 }

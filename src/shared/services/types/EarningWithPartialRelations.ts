@@ -1,6 +1,9 @@
-import { DonationBox, Earning, Payout } from '@prisma/client';
+import { DonationBox, Earning, MoneroMiningPayout } from '@prisma/client';
 
 export type EarningWithPartialRelations = Earning & {
-  payout?: Pick<Payout, 'periodStart' | 'periodEnd'>;
+  moneroMiningPayout?: Pick<
+    MoneroMiningPayout,
+    'timestamp' | 'lastPayoutTimestamp'
+  >;
   donationBox?: Pick<DonationBox, 'id' | 'name' | 'cuid'>;
 };

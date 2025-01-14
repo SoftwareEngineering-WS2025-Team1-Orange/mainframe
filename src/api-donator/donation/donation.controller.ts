@@ -29,8 +29,12 @@ export class DonationController {
     @Param('ngo_id', ParseIntPipe) ngoId: number,
     @Body() createDonationDto: CreateDonationDto,
   ) {
-    const { amount } = createDonationDto;
-    return this.donationService.createDonationToNgo(donatorId, ngoId, amount);
+    const { amountInCent } = createDonationDto;
+    return this.donationService.createDonationToNgo(
+      donatorId,
+      ngoId,
+      amountInCent,
+    );
   }
 
   @Post('donator/:donator_id/project/:project_id')
@@ -42,11 +46,11 @@ export class DonationController {
     @Param('project_id', ParseIntPipe) projectId: number,
     @Body() createDonationDto: CreateDonationDto,
   ) {
-    const { amount } = createDonationDto;
+    const { amountInCent } = createDonationDto;
     return this.donationService.createDonationToProject(
       donatorId,
       projectId,
-      amount,
+      amountInCent,
     );
   }
 }

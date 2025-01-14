@@ -54,12 +54,16 @@ enum DonatorScopeEnum {
 }
 
 model DonationBox {
-  id              Int      @id @default(autoincrement())
-  cuid            String   @unique @default(cuid())
-  name            String?
-  lastSolarStatus Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                              Int       @id @default(autoincrement())
+  cuid                            String    @unique @default(cuid())
+  name                            String?
+  lastSolarStatus                 Json?
+  createdAt                       DateTime  @default(now())
+  updatedAt                       DateTime  @updatedAt
+  integratedPublicMoneroAddress   String    @unique
+  integratedPublicMoneroAddressId String    @unique
+  earningsLastSuccessfullUpdateAt DateTime?
+  earningsLastUpdateSuccessfull   Boolean   @default(false)
 
   donatorId Int?
   donator   Donator?    @relation(fields: [donatorId], references: [id])
@@ -184,10 +188,10 @@ model Project {
 }
 
 model Donation {
-  id        Int      @id @default(autoincrement())
-  amount    Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  amountInCent Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   donatorId Int
   projectId Int?
@@ -198,28 +202,34 @@ model Donation {
 }
 
 model Earning {
-  id                 Int      @id @default(autoincrement())
-  amount             Float
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  activeTimeInPeriod Float
+  id              Int            @id @default(autoincrement())
+  amountInCent    Int
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  payoutTimestamp DateTime
+  payoutType      PayoutTypeEnum
 
-  donationBoxId Int
-  donationBox   DonationBox @relation(fields: [donationBoxId], references: [id])
-  payoutId      Int
-  payout        Payout      @relation(fields: [payoutId], references: [id])
+  donationBoxId      Int
+  donationBox        DonationBox         @relation(fields: [donationBoxId], references: [id])
+  moneroMiningPayout MoneroMiningPayout?
 }
 
-model Payout {
-  id              Int      @id @default(autoincrement())
-  amount          Float
-  periodStart     DateTime
-  periodEnd       DateTime
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  transactionHash String   @unique
+enum PayoutTypeEnum {
+  MONERO_MINING
+}
 
-  earnings Earning[]
+model MoneroMiningPayout {
+  id                  Int      @id @default(autoincrement())
+  amountInPiconero    Float
+  timestamp           DateTime
+  lastPayoutTimestamp DateTime
+  txnHash             String
+  txnKey              String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  earning   Earning @relation(fields: [earningId], references: [id])
+  earningId Int     @unique
 }
 
 model NGOClient {
