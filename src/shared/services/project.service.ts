@@ -190,7 +190,7 @@ export class ProjectService {
           ? {
               select: {
                 id: true,
-                amount: true,
+                amountInCent: true,
                 createdAt: true,
               },
             }

@@ -22,10 +22,13 @@ export class DonationBoxDto {
   readonly cuid: string;
 
   @Expose()
-  power_consumption?: number;
+  lastSolarStatus: string;
 
   @Expose()
-  power_supply_id?: number;
+  earningsLastSuccessfullUpdateAt: Date;
+
+  @Expose()
+  earningsLastUpdateSuccessfull: boolean;
 
   @Exclude()
   donatorId: number;
@@ -35,6 +38,12 @@ export class DonationBoxDto {
 
   @Exclude()
   updatedAt: Date;
+
+  @Exclude()
+  integratedPublicMoneroAddress: string;
+
+  @Exclude()
+  integratedPublicMoneroAddressId: string;
 
   constructor(partial: Partial<DonationBoxDto>) {
     Object.assign(this, partial);

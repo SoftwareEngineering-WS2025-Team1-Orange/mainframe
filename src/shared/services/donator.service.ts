@@ -14,18 +14,24 @@ import { CreateDonatorDto, UpdateDonatorDto } from '@/api-donator/donator/dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
 import { DonatorWithScope } from '@/api-donator/auth/types';
 import { DonatorFilter } from '@/shared/filters/donator.filter.interface';
+import { EarningService } from '@/shared/services/earning.service';
 
 @Injectable()
 export class DonatorService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private earningService: EarningService,
+  ) {}
 
   async findDonatorByIdWithBalance(
     id: number,
+    forceRecalculation: boolean = false,
   ): Promise<Donator & { balance: number }> {
-    const [donator, balance] = await Promise.all([
+    const [, donator] = await Promise.all([
+      this.earningService.updateEarningsForDonator(id, forceRecalculation),
       this.findDonatorById(id),
-      this.calculateDonatorBalance(id),
     ]);
+    const balance = await this.calculateDonatorBalance(id);
     return { ...donator, balance };
   }
 
@@ -136,7 +142,7 @@ export class DonatorService {
   async updateDonator(
     id: number,
     donator: UpdateDonatorDto,
-  ): Promise<Donator & { scope: DonatorScopeEnum[] }> {
+  ): Promise<Donator & { scope: DonatorScopeEnum[]; balance: number }> {
     const salt = this.createSalt();
 
     const donatorWithHash = {
@@ -166,6 +172,7 @@ export class DonatorService {
 
     return {
       ...updatedDonator,
+      balance: await this.calculateDonatorBalance(id),
       scope: updatedDonator.scope.map((scope) => scope.name),
     };
   }
@@ -225,7 +232,7 @@ export class DonatorService {
   async calculateDonatorBalance(donatorId: number): Promise<number> {
     const earnings = await this.prismaService.earning.aggregate({
       _sum: {
-        amount: true,
+        amountInCent: true,
       },
       where: {
         donationBox: {
@@ -236,18 +243,17 @@ export class DonatorService {
 
     const donations = await this.prismaService.donation.aggregate({
       _sum: {
-        amount: true,
+        amountInCent: true,
       },
       where: {
         donatorId,
       },
     });
 
-    // eslint-disable-next-line no-underscore-dangle
-    const earningsAmount = Number((earnings._sum.amount || 0).toFixed(2));
-    // eslint-disable-next-line no-underscore-dangle
-    const donationsAmount = Number((donations._sum.amount || 0).toFixed(2));
-    return Number((earningsAmount - donationsAmount).toFixed(2));
+    return (
+      // eslint-disable-next-line no-underscore-dangle
+      (earnings._sum.amountInCent || 0) - (donations._sum.amountInCent || 0)
+    );
   }
 
   private createSalt(): string {

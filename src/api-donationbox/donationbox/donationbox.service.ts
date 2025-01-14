@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createId } from '@paralleldrive/cuid2';
@@ -6,6 +11,8 @@ import { StatusCodes } from 'http-status-codes';
 import { JobName, PluginName } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { formatMessage, formatError } from '@/utils/ws.helper';
+import { MoneroIntegratedAddressService } from '@/utils/integrated_address_generator/monero_integrated_key.service';
+import { MoneroIntegratedPublicAddress } from '@/utils/integrated_address_generator/types';
 import {
   ContainerStatusDto,
   DonationBoxDtoResponse,
@@ -22,6 +29,7 @@ export class DonationboxService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private prismaService: PrismaService,
+    private moneroIntegratedKeyService: MoneroIntegratedAddressService,
   ) {
     const loadMiner = async () => {
       await prismaService.job.upsert({
@@ -53,14 +61,27 @@ export class DonationboxService {
   }
 
   async initNewDonationBox(): Promise<DonationBoxDtoResponse> {
-    const cuid = createId();
-    await this.prismaService.donationBox.create({
-      data: {
-        cuid,
-        name: null,
-      },
-    });
-    return { cuid };
+    try {
+      const cuid = createId();
+      const moneroIntegratedPublicAddress: MoneroIntegratedPublicAddress =
+        await this.moneroIntegratedKeyService.generateIntegratedAddress();
+      await this.prismaService.donationBox.create({
+        data: {
+          cuid,
+          name: null,
+          integratedPublicMoneroAddress:
+            moneroIntegratedPublicAddress.integratedPublicAddress,
+          integratedPublicMoneroAddressId:
+            moneroIntegratedPublicAddress.integratedPublicAddressId,
+        },
+      });
+      return { cuid };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to initialize donation box',
+        error,
+      );
+    }
   }
 
   async generateToken(cuid: string): Promise<JwtDonationBoxDtoResponse> {
