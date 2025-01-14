@@ -115,7 +115,7 @@ export class ReturnMoneroMiningPayoutDto {
   timestamp: Date;
 
   @Expose()
-  lastPayoutTimestamp: Date;
+  periodStart: Date;
 }
 
 export class ReturnTransactionEarningDto {

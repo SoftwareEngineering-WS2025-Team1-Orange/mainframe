@@ -8,6 +8,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server } from 'ws';
+import { validate } from 'class-validator';
+import { plainToClass } from 'class-transformer';
 import { DonationboxService } from '@/api-donationbox/donationbox/donationbox.service';
 import {
   JwtDonationBoxDto,
@@ -26,6 +28,24 @@ export default class DonationboxGateway
 
   @WebSocketServer()
   server: Server;
+
+  private async validateDto<T extends object>(
+    client: WebSocket,
+    data: object,
+    dto: new () => T,
+  ): Promise<T> {
+    const dtoInstance = plainToClass(dto, data);
+    const errors = await validate(dtoInstance);
+    if (errors.length > 0) {
+      const clientId = this.donationboxService.authorizedClients.get(client);
+      this.logger.error(
+        `Received invalid data format from DonationBox with id: ${clientId}`,
+      );
+      this.donationboxService.removeAuthorizedClient(client);
+      client.close();
+    }
+    return dtoInstance;
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   afterInit(server: Server) {
@@ -54,10 +74,12 @@ export default class DonationboxGateway
     client: WebSocket,
     payload: JwtDonationBoxDto,
   ): Promise<void> {
+    const jwtDto = await this.validateDto(client, payload, JwtDonationBoxDto);
     const authenticated = await this.donationboxService.verifyClient(
       client,
-      payload,
+      jwtDto,
     );
+
     if (authenticated) {
       await this.donationboxService.handleContainerStatusInsertToDB(
         {
@@ -68,11 +90,12 @@ export default class DonationboxGateway
         client,
       );
     } else {
-      const errorAuth = formatMessage('authResponse', {
-        success: false,
-        monitored_containers: [],
-      });
-      client.send(errorAuth);
+      client.send(
+        formatMessage('authResponse', {
+          success: false,
+          monitored_containers: [],
+        }),
+      );
       client.close();
     }
   }
@@ -86,18 +109,32 @@ export default class DonationboxGateway
       container: ContainerStatusDto[];
     },
   ): Promise<void> {
-    if (!this.donationboxService.isAuthorizedClient(client)) {
-      return;
-    }
+    if (!this.donationboxService.isAuthorizedClient(client)) return;
+
     const { power_supply: powerSupply, container } = payload;
+    const validatedContainers = await Promise.all(
+      container.map((status) =>
+        this.validateDto(client, status, ContainerStatusDto),
+      ),
+    );
+
+    if (powerSupply) {
+      await this.validateDto(
+        client,
+        powerSupply,
+        DonationBoxPowerSupplyStatusDto,
+      );
+    }
+
     await this.donationboxService.handleContainerStatusResponse(
       client,
-      container,
+      validatedContainers,
     );
     if (powerSupply) {
       await this.donationboxService.handlePowerSupplyStatusResponse(
         client,
         powerSupply,
+        validatedContainers,
       );
     }
   }
@@ -107,11 +144,14 @@ export default class DonationboxGateway
     client: WebSocket,
     payload: ContainerStatusDto,
   ): Promise<void> {
-    if (!this.donationboxService.isAuthorizedClient(client)) {
-      return;
-    }
-    await this.donationboxService.handleContainerStatusInsertToDB(
+    if (!this.donationboxService.isAuthorizedClient(client)) return;
+    const containerDto = await this.validateDto(
+      client,
       payload,
+      ContainerStatusDto,
+    );
+    await this.donationboxService.handleContainerStatusInsertToDB(
+      containerDto,
       client,
     );
   }

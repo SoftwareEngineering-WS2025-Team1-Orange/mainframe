@@ -28,7 +28,10 @@ export class DonationBoxDto {
   power_supply_id?: number;
 
   @Expose()
-  last_status: Status;
+  lastSolarData: JSON;
+
+  @Expose()
+  status: string;
 
   @Expose()
   earningsLastSuccessfullUpdateAt: Date;

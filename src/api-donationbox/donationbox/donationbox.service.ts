@@ -93,10 +93,23 @@ export class DonationboxService {
     return { token };
   }
 
-  authorizedClients: Map<WebSocket, string> = new Map();
+  authorizedClients: Map<WebSocket, number> = new Map();
 
-  private addAuthorizedClient(client: WebSocket, cuid: string) {
-    this.authorizedClients.set(client, cuid);
+  private async getDonationBoxIdByCuid(cuid: string): Promise<number> {
+    const donationBox = await this.prismaService.donationBox.findUnique({
+      select: {
+        id: true,
+      },
+      where: {
+        cuid,
+      },
+    });
+    return donationBox?.id;
+  }
+
+  private async addAuthorizedClient(client: WebSocket, cuid: string) {
+    const donationBoxId = await this.getDonationBoxIdByCuid(cuid);
+    this.authorizedClients.set(client, donationBoxId);
   }
 
   removeAuthorizedClient(client: WebSocket) {
@@ -144,7 +157,7 @@ export class DonationboxService {
 
     if (!clientExists) return false;
 
-    this.addAuthorizedClient(client, cuid);
+    await this.addAuthorizedClient(client, cuid);
 
     /**
      * WITH latestMessage AS (
@@ -245,16 +258,28 @@ export class DonationboxService {
   async handlePowerSupplyStatusResponse(
     client: WebSocket,
     status: DonationBoxPowerSupplyStatusDto,
+    container: ContainerStatusDto[],
   ) {
+    if (
+      Object.keys(status).length === 0 &&
+      !container.some((c) => c.containerName === JobName.MONERO_MINER)
+    ) {
+      return this.dispatchReady(client, JobName.MONERO_MINER);
+    }
+
     await this.prismaService.donationBox.update({
       where: {
-        cuid: this.authorizedClients.get(client),
+        id: this.authorizedClients.get(client),
       },
       data: {
-        lastSolarStatus: JSON.stringify(status),
+        lastSolarData: JSON.stringify(status),
+        solarDataLastUpdateAt: new Date(Date.now()),
       },
     });
-    if (status.production.grid + DELTA >= 0) {
+    if (
+      status.production.grid + DELTA >= 0 &&
+      container.some((c) => c.containerName === JobName.MONERO_MINER)
+    ) {
       await this.handleContainerStatusInsertToDB(
         {
           containerName: 'db-main',
@@ -265,20 +290,25 @@ export class DonationboxService {
       );
       return this.dispatchStop(client, JobName.MONERO_MINER);
     }
-    await this.handleContainerStatusInsertToDB(
-      {
-        containerName: 'db-main',
-        statusCode: 1,
-        statusMsg: 'Working',
-      },
-      client,
-    );
+    if (
+      status.production.grid + DELTA < 0 &&
+      !container.some((c) => c.containerName === JobName.MONERO_MINER)
+    )
+      await this.handleContainerStatusInsertToDB(
+        {
+          containerName: 'db-main',
+          statusCode: 1,
+          statusMsg: 'Working',
+        },
+        client,
+      );
     return this.dispatchReady(client, JobName.MONERO_MINER);
   }
 
   async sendConfig(cuid: string, pluginName: PluginName, config: object) {
+    const donationBoxId = await this.getDonationBoxIdByCuid(cuid);
     const client = [...this.authorizedClients.entries()].find(
-      (entry) => entry[1] === cuid,
+      (entry) => entry[1] === donationBoxId,
     );
     if (!client) {
       throw new NotFoundException('Client not found');
@@ -300,8 +330,9 @@ export class DonationboxService {
   }
 
   async sendStatusUpdateRequest(cuid: string) {
+    const donationBoxId = await this.getDonationBoxIdByCuid(cuid);
     const client = [...this.authorizedClients.entries()].find(
-      (entry) => entry[1] === cuid,
+      (entry) => entry[1] === donationBoxId,
     );
     if (!client) {
       throw new NotFoundException('Client not found');
@@ -317,28 +348,34 @@ export class DonationboxService {
   ) {
     const { statusCode, statusMsg, containerName } = statusDto;
 
-    const status = {
-      create: {
-        statusCode,
-        statusMsg,
-      },
-    };
-
     return this.prismaService.container.upsert({
       where: {
-        name: containerName,
+        name_donationBoxId: {
+          name: containerName,
+          donationBoxId: this.authorizedClients.get(client),
+        },
       },
       update: {
-        status,
+        status: {
+          create: {
+            statusCode,
+            statusMsg,
+          },
+        },
       },
       create: {
         name: containerName,
         donationBox: {
           connect: {
-            cuid: this.authorizedClients.get(client),
+            id: this.authorizedClients.get(client),
           },
         },
-        status,
+        status: {
+          create: {
+            statusCode,
+            statusMsg,
+          },
+        },
       },
     });
   }

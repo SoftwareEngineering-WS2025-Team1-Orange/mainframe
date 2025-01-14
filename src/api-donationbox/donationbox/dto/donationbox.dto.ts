@@ -1,5 +1,5 @@
 import { Expose, Type } from 'class-transformer';
-import { IsEnum, IsInt, IsObject, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsObject, IsOptional, IsString } from 'class-validator';
 import { PluginName } from '@prisma/client';
 
 export class DonationBoxDtoResponse {
@@ -41,15 +41,19 @@ class ConsumptionDto {
 }
 
 export class DonationBoxPowerSupplyStatusDto {
+  @IsOptional()
   @IsInt()
   sysStatus: number;
 
+  @IsOptional()
   @IsInt()
   stateOfCharge: number;
 
+  @IsOptional()
   @Type(() => ProductionDto)
   production: ProductionDto;
 
+  @IsOptional()
   @Type(() => ConsumptionDto)
   consumption: ConsumptionDto;
 }

@@ -17,6 +17,7 @@ import { EarningWithPartialRelations } from './types/EarningWithPartialRelations
 import { MiningPoolApiClient } from '@/clients/miningpool-api/miningpool-api.client';
 import { MiningPoolApiPayoutDto } from '@/clients/miningpool-api/miningpool-api.dto';
 import { convertPiconeroToCent } from '@/utils/converter_helper';
+import { calculateWorkingTime } from '@/utils/log.helper';
 
 @Injectable()
 export class EarningService {
@@ -39,6 +40,83 @@ export class EarningService {
     return lastPayout ?? null;
   }
 
+  private async getWorkingTimePerNewPayout(
+    donationBoxId: number,
+    sortedPayouts: MiningPoolApiPayoutDto[],
+    lastPayoutDate: Date | null,
+  ) {
+    return Promise.all(
+      sortedPayouts.map(async (payout, index) => {
+        const periodStart = await this.getPeriodStart(
+          payout,
+          lastPayoutDate,
+          index,
+          sortedPayouts,
+          donationBoxId,
+        );
+
+        const logs = await this.prismaService.containerStatus.findMany({
+          where: {
+            container: {
+              name: 'db-main',
+              donationBoxId,
+            },
+            createdAt: {
+              gte: periodStart,
+              lte: new Date(payout.ts * 1000),
+            },
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        });
+        const totalWorkingTime = calculateWorkingTime(
+          logs,
+          new Date(payout.ts * 1000),
+        );
+        return { totalWorkingTime, index };
+      }),
+    );
+  }
+
+  private getPeriodStart = async (
+    payout: MiningPoolApiPayoutDto,
+    lastPayoutDate: Date | null,
+    index: number,
+    sortedPayouts: MiningPoolApiPayoutDto[],
+    donationBoxId: number,
+  ) => {
+    if (index === 0) {
+      if (lastPayoutDate) {
+        return lastPayoutDate;
+      } // For first payout the "lastPayoutDate" is null, so we try to get the first "Working" log, where the container was first started
+      const lastLog = await this.prismaService.containerStatus.findFirst({
+        select: {
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        take: 1,
+        where: {
+          container: {
+            name: 'db-main',
+            donationBoxId,
+          },
+          statusMsg: 'Working',
+        },
+      });
+      if (
+        lastLog?.createdAt &&
+        lastLog.createdAt < new Date(payout.ts * 1000)
+      ) {
+        return lastLog.createdAt;
+      }
+      return new Date(payout.ts * 1000);
+    }
+    return new Date(sortedPayouts[index - 1].ts * 1000);
+  };
+
   private async updateEarningsWithMoneroPayouts(
     donationBoxIds: number[],
     forceEarningsUpdate: boolean = false,
@@ -59,7 +137,7 @@ export class EarningService {
 
         if (shouldUpdate) {
           const lastPayout = await this.getLastMoneroPayout(donationBoxId);
-          const lastPayoutDate = lastPayout?.timestamp ?? new Date(0);
+          const lastPayoutDate = lastPayout?.timestamp ?? null;
 
           const payouts: MiningPoolApiPayoutDto[] =
             await this.miningPoolApiClient.getMiningPayouts(
@@ -68,31 +146,43 @@ export class EarningService {
             );
 
           const sortedPayouts = [...payouts].sort((a, b) => a.ts - b.ts);
+
+          const workingTimePerPayout = await this.getWorkingTimePerNewPayout(
+            donationBoxId,
+            sortedPayouts,
+            lastPayoutDate,
+          );
           if (sortedPayouts.length > 0) {
-            await this.prismaService.$transaction(
-              sortedPayouts.map((payout, index) =>
-                this.prismaService.earning.create({
+            await this.prismaService.$transaction(async (prisma) => {
+              const promises = sortedPayouts.map(async (payout, index) => {
+                const periodStart = await this.getPeriodStart(
+                  payout,
+                  lastPayoutDate,
+                  index,
+                  sortedPayouts,
+                  donationBoxId,
+                );
+                return prisma.earning.create({
                   data: {
                     donationBoxId,
                     amountInCent: convertPiconeroToCent(payout.amount),
                     payoutType: PayoutTypeEnum.MONERO_MINING,
                     payoutTimestamp: new Date(payout.ts * 1000),
+                    workingTime: workingTimePerPayout[index].totalWorkingTime,
                     moneroMiningPayout: {
                       create: {
                         amountInPiconero: payout.amount,
                         timestamp: new Date(payout.ts * 1000),
-                        lastPayoutTimestamp:
-                          index === 0
-                            ? new Date(payout.ts * 1000)
-                            : new Date(sortedPayouts[index - 1].ts * 1000),
+                        periodStart,
                         txnHash: payout.txnHash,
                         txnKey: payout.txnKey,
                       },
                     },
                   },
-                }),
-              ),
-            );
+                });
+              });
+              return Promise.all(promises);
+            });
           }
         }
         await this.prismaService.donationBox.update({
@@ -225,7 +315,7 @@ export class EarningService {
           ? {
               select: {
                 timestamp: true,
-                lastPayoutTimestamp: true,
+                periodStart: true,
               },
             }
           : undefined,

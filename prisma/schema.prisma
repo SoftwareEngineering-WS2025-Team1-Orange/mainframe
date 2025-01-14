@@ -56,13 +56,16 @@ model DonationBox {
   id                              Int       @id @default(autoincrement())
   cuid                            String    @unique @default(cuid())
   name                            String?
-  lastSolarStatus                 Json?
+  lastSolarData                   Json?
+  solarDataLastUpdateAt           DateTime?
   createdAt                       DateTime  @default(now())
   updatedAt                       DateTime  @updatedAt
   integratedPublicMoneroAddress   String    @unique
   integratedPublicMoneroAddressId String    @unique
   earningsLastSuccessfullUpdateAt DateTime?
   earningsLastUpdateSuccessfull   Boolean   @default(false)
+  averageWorkingTimeLastSevenDays Int?
+  averageWorkingTimeLastSevenDaysLastUpdateAt DateTime?
 
   donatorId Int?
   donator   Donator?    @relation(fields: [donatorId], references: [id])
@@ -72,12 +75,14 @@ model DonationBox {
 
 model Container {
   id            Int               @id @default(autoincrement())
-  name          String            @unique
+  name          String            
   status        ContainerStatus[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   donationBoxId Int
   donationBox   DonationBox       @relation(fields: [donationBoxId], references: [id])
+
+  @@unique([name, donationBoxId])
 }
 
 model ContainerStatus {
@@ -206,6 +211,7 @@ model Earning {
   updatedAt    DateTime @updatedAt
   payoutTimestamp DateTime
   payoutType PayoutTypeEnum
+  workingTime Int
 
   donationBoxId      Int
   donationBox        DonationBox         @relation(fields: [donationBoxId], references: [id])
@@ -222,7 +228,7 @@ model MoneroMiningPayout {
   id                  Int      @id @default(autoincrement())
   amountInPiconero    Float
   timestamp           DateTime
-  lastPayoutTimestamp DateTime
+  periodStart         DateTime //Will usually be last payout timestamp
   txnHash             String
   txnKey              String
   createdAt           DateTime @default(now())
