@@ -142,7 +142,7 @@ export class DonatorService {
   async updateDonator(
     id: number,
     donator: UpdateDonatorDto,
-  ): Promise<Donator & { scope: DonatorScopeEnum[], balance: number }> {
+  ): Promise<Donator & { scope: DonatorScopeEnum[]; balance: number }> {
     const salt = this.createSalt();
 
     const donatorWithHash = {

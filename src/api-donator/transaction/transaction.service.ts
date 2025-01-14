@@ -88,10 +88,10 @@ export class TransactionService {
 
     const paginatedDonations: DonationWithPartialRelations[] = paginatedResults
       .filter((result) => result.type === 'D')
-      .map(({ type, ...rest }) => rest as DonationWithPartialRelations);
+      .map(({ type: _type, ...rest }) => rest as DonationWithPartialRelations);
     const paginatedEarnings: Earning[] = paginatedResults
       .filter((result) => result.type === 'E')
-      .map(({ type, ...rest }) => rest as Earning);
+      .map(({ type: _type, ...rest }) => rest as Earning);
 
     return {
       earnings: paginatedEarnings,

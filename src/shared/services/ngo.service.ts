@@ -18,8 +18,7 @@ import { NGOWithScope } from '@/api-ngo/auth/types';
 import { NgoFilter } from '@/shared/filters/ngo.filter.interface';
 import { ProjectFilter } from '@/shared/filters/project.filter.interface';
 import { ProjectService } from '@/shared/services/project.service';
-
-const BUCKET_NAME = 'public';
+import { BUCKET_NAME, createBannerUri } from '@/utils/minio.helper';
 
 @Injectable()
 export class NgoService {
@@ -80,25 +79,23 @@ export class NgoService {
       throw new HttpException('NGO not found', StatusCodes.NOT_FOUND);
     }
 
-    if (projectFilter) {
-      const { projects, pagination } =
-        await this.projectService.findFilteredProjects({
-          ...projectFilter,
-          filterNgoId: id,
-        });
+    if (!projectFilter) {
       return {
         ...ngo,
         scope: ngo.scope.map((scope) => scope.name),
-        projects: {
-          projects,
-          pagination,
-        },
       };
     }
 
+    const paginatedProjects = await this.projectService.findFilteredProjects({
+      ...projectFilter,
+      filterNgoId: id,
+    });
     return {
       ...ngo,
       scope: ngo.scope.map((scope) => scope.name),
+      projects: {
+        ...paginatedProjects,
+      },
     };
   }
 
@@ -251,19 +248,6 @@ export class NgoService {
     };
   }
 
-  private createBannerUri(banner_address: string) {
-    const protocol = (JSON.parse(
-      this.configService.get('MINIO_USE_SSL'),
-    ) as boolean)
-      ? 'https://'
-      : 'http://';
-
-    const address = this.configService.get<string>('MINIO_ENDPOINT');
-    const port = this.configService.get<string>('MINIO_PORT');
-
-    return `${protocol}${address}:${port}/${BUCKET_NAME}/${banner_address}`;
-  }
-
   private async getBannerUriForDb(
     id: number,
     banner: Express.Multer.File,
@@ -292,7 +276,7 @@ export class NgoService {
         'Content-Type': banner.mimetype,
       },
     );
-    return this.createBannerUri(storagePath);
+    return createBannerUri(storagePath, this.configService);
   }
 
   async updateNgoBanner(
@@ -393,7 +377,7 @@ export class NgoService {
         );
       });
     if (!ngo) {
-      throw new HttpException('NGO not found', StatusCodes.NOT_FOUND);
+      throw new HttpException('NGO not found.', StatusCodes.NOT_FOUND);
     }
 
     return {

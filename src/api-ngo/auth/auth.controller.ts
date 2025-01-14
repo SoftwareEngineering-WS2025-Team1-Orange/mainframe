@@ -21,6 +21,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '@/api-ngo/auth/auth.service';
 import {
   DeleteOAuth2ClientDto,
+  GrantType,
   OAuth2ClientResponseDto,
   OAuth2Dto,
   OAuth2PasswordDto,
@@ -82,7 +83,9 @@ export class AuthController {
     const client = await this.authService.validateClientWithScopes(
       data.client_id,
       data.client_secret,
-      data.scope,
+      data.grant_type === GrantType.REFRESH_TOKEN
+        ? req.cookies.refresh_token
+        : data.scope,
     );
     return handleOAuthFlow(
       data,

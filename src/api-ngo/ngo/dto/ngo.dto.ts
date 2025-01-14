@@ -6,9 +6,9 @@ import {
   IsStrongPassword,
   IsOptional,
 } from 'class-validator';
-import { DonatorScope, Project } from '@prisma/client';
+import { DonatorScope } from '@prisma/client';
 import { ReturnPaginationDto } from '@/utils/pagination/dto/pagination.dto';
-import { ReturnProjectDto } from '@/api-donator/project/dto/project.dto';
+import { ReturnProjectWithoutFavDto } from '@/api-ngo/project/dto/project.dto';
 
 class PaginatedProjects {
   @Expose()
@@ -16,8 +16,8 @@ class PaginatedProjects {
   pagination: ReturnPaginationDto;
 
   @Expose()
-  @Type(() => ReturnProjectDto)
-  projects: Project[];
+  @Type(() => ReturnProjectWithoutFavDto)
+  projects: ReturnProjectWithoutFavDto[];
 }
 
 export class ReturnNgoWithoutProjectsDto {
@@ -45,7 +45,7 @@ export class ReturnNgoWithoutProjectsDto {
   @Exclude()
   password: string;
 
-  @Exclude()
+  @Expose()
   email: string;
 
   @Exclude()
@@ -96,7 +96,7 @@ export class ReturnNgoDto {
   @Exclude()
   password: string;
 
-  @Exclude()
+  @Expose()
   email: string;
 
   @Exclude()

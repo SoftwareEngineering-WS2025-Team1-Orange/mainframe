@@ -1,6 +1,5 @@
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { Expose, Exclude } from 'class-transformer';
-import { Status } from '@prisma/client';
 
 export class RegisterDonationBoxDto {
   @IsString()
@@ -22,9 +21,6 @@ export class DonationBoxDto {
   @Expose()
   readonly cuid: string;
 
-  @IsEnum(Status)
-  status: Status;
-
   @Expose()
   power_consumption?: number;
 
@@ -32,7 +28,7 @@ export class DonationBoxDto {
   power_supply_id?: number;
 
   @Expose()
-  last_status: Status;
+  lastStatus: string;
 
   @Expose()
   earningsLastSuccessfullUpdateAt: Date;
