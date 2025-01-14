@@ -130,13 +130,11 @@ export default class DonationboxGateway
       client,
       validatedContainers,
     );
-    if (powerSupply) {
-      await this.donationboxService.handlePowerSupplyStatusResponse(
-        client,
-        powerSupply,
-        validatedContainers,
-      );
-    }
+    await this.donationboxService.handlePowerSupplyStatusResponse(
+      client,
+      validatedContainers,
+      powerSupply,
+    );
   }
 
   @SubscribeMessage('addErrorResponse')

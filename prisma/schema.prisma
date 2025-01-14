@@ -64,8 +64,10 @@ model DonationBox {
   integratedPublicMoneroAddressId String    @unique
   earningsLastSuccessfullUpdateAt DateTime?
   earningsLastUpdateSuccessfull   Boolean   @default(false)
-  averageWorkingTimeLastSevenDays Int?
-  averageWorkingTimeLastSevenDaysLastUpdateAt DateTime?
+  averageWorkingTime Int?
+  averageWorkingTimeLastUpdateAt DateTime?
+  averageIncomePerDayInCent Int?
+  averageIncomePerDayInCentLastUpdateAt DateTime?
 
   donatorId Int?
   donator   Donator?    @relation(fields: [donatorId], references: [id])

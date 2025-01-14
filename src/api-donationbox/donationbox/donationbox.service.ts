@@ -257,14 +257,13 @@ export class DonationboxService {
 
   async handlePowerSupplyStatusResponse(
     client: WebSocket,
-    status: DonationBoxPowerSupplyStatusDto,
     container: ContainerStatusDto[],
+    status?: DonationBoxPowerSupplyStatusDto,
   ) {
-    if (
-      Object.keys(status).length === 0 &&
-      !container.some((c) => c.containerName === JobName.MONERO_MINER)
-    ) {
-      return this.dispatchReady(client, JobName.MONERO_MINER);
+    if (!status) {
+      return container.some((c) => c.containerName === JobName.MONERO_MINER)
+        ? Promise.resolve()
+        : this.dispatchReady(client, JobName.MONERO_MINER);
     }
 
     await this.prismaService.donationBox.update({
@@ -276,6 +275,7 @@ export class DonationboxService {
         solarDataLastUpdateAt: new Date(Date.now()),
       },
     });
+
     if (
       status.production.grid + DELTA >= 0 &&
       container.some((c) => c.containerName === JobName.MONERO_MINER)
@@ -290,10 +290,11 @@ export class DonationboxService {
       );
       return this.dispatchStop(client, JobName.MONERO_MINER);
     }
+
     if (
       status.production.grid + DELTA < 0 &&
       !container.some((c) => c.containerName === JobName.MONERO_MINER)
-    )
+    ) {
       await this.handleContainerStatusInsertToDB(
         {
           containerName: 'db-main',
@@ -302,6 +303,7 @@ export class DonationboxService {
         },
         client,
       );
+    }
     return this.dispatchReady(client, JobName.MONERO_MINER);
   }
 

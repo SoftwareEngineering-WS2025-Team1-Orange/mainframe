@@ -1,4 +1,5 @@
 import { ContainerStatus } from '@prisma/client';
+import { PrismaService } from '../shared/prisma/prisma.service';
 
 export function calculateWorkingTime(
   logs: ContainerStatus[],
@@ -24,4 +25,22 @@ export function calculateWorkingTime(
       logs[logs.length - 1].createdAt.getTime();
   }
   return totalWorkingTime / 1000;
+}
+
+export async function getFirstConnectedLog(
+  donationBoxId: number,
+  prismaService: PrismaService,
+) {
+  return prismaService.containerStatus.findFirst({
+    where: {
+      container: {
+        name: 'db-main',
+        donationBoxId,
+      },
+      statusMsg: 'Connected',
+    },
+    orderBy: {
+      createdAt: 'asc',
+    },
+  });
 }
