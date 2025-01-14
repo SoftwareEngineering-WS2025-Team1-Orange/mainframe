@@ -17,8 +17,8 @@
 ALTER TABLE "Earning" DROP CONSTRAINT "Earning_payoutId_fkey";
 
 -- AlterTable
-ALTER TABLE "DonationBox" ADD COLUMN     "integratedPublicAddress" TEXT NOT NULL,
-ADD COLUMN     "integratedPublicAddressId" TEXT NOT NULL;
+ALTER TABLE "DonationBox" ADD COLUMN "integratedPublicAddress" TEXT NOT NULL DEFAULT '4BN1m6Y75RT9a7mNpfxk13NxqB2FrzFc5HSnbDn1NUPwXy6dkkUgsyQVUBZ7qweyP19BWdMYJ4oq4D2SJ1eexPTvDQrXVzi2DoH8ChhQqd',
+ADD COLUMN "integratedPublicAddressId" TEXT NOT NULL DEFAULT 'myId';
 
 -- AlterTable
 ALTER TABLE "Earning" DROP COLUMN "activeTimeInPeriod",
@@ -35,3 +35,7 @@ CREATE UNIQUE INDEX "DonationBox_integratedPublicAddress_key" ON "DonationBox"("
 
 -- CreateIndex
 CREATE UNIQUE INDEX "DonationBox_integratedPublicAddressId_key" ON "DonationBox"("integratedPublicAddressId");
+
+ALTER TABLE "DonationBox" ALTER COLUMN "integratedPublicAddress" DROP DEFAULT;
+ALTER TABLE "DonationBox" ALTER COLUMN "integratedPublicAddressId" DROP DEFAULT;
+
