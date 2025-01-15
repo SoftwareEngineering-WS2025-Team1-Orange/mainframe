@@ -35,7 +35,7 @@ export class DonationController {
   @UseGuards(NGOAccessTokenGuard, ScopesGuard)
   @Scopes(NGOScopeEnum.READ_DONATION)
   getDonations(
-    @Param(':ngo_id', ParseIntPipe) ngoId: number,
+    @Param('ngo_id', ParseIntPipe) ngoId: number,
     @Req() req: Request,
     @Query('filter_donation_id', new ParseIntPipe({ optional: true }))
     filterId?: number,
