@@ -53,21 +53,21 @@ enum DonatorScopeEnum {
 }
 
 model DonationBox {
-  id                              Int       @id @default(autoincrement())
-  cuid                            String    @unique @default(cuid())
-  name                            String?
-  lastSolarData                   Json?
-  solarDataLastUpdateAt           DateTime?
-  createdAt                       DateTime  @default(now())
-  updatedAt                       DateTime  @updatedAt
-  integratedPublicMoneroAddress   String    @unique
-  integratedPublicMoneroAddressId String    @unique
-  earningsLastSuccessfullUpdateAt DateTime?
-  earningsLastUpdateSuccessfull   Boolean   @default(false)
-  averageWorkingTimePerDayInSeconds Int?
+  id                                            Int       @id @default(autoincrement())
+  cuid                                          String    @unique @default(cuid())
+  name                                          String?
+  lastSolarData                                 Json?
+  solarDataLastSuccessfulUpdateAt               DateTime?
+  createdAt                                     DateTime  @default(now())
+  updatedAt                                     DateTime  @updatedAt
+  integratedPublicMoneroAddress                 String    @unique
+  integratedPublicMoneroAddressId               String    @unique
+  earningsLastSuccessfulUpdateAt                DateTime?
+  earningsLastUpdateSuccessful                  Boolean   @default(false)
+  averageWorkingTimePerDayInSeconds             Int?
   averageWorkingTimePerDayInSecondsLastUpdateAt DateTime?
-  averageIncomePerDayInCent Int?
-  averageIncomePerDayInCentLastUpdateAt DateTime?
+  averageIncomePerDayInCent                     Int?
+  averageIncomePerDayInCentLastUpdateAt         DateTime?
 
   donatorId Int?
   donator   Donator?    @relation(fields: [donatorId], references: [id])
@@ -77,7 +77,7 @@ model DonationBox {
 
 model Container {
   id            Int               @id @default(autoincrement())
-  name          String            
+  name          String
   status        ContainerStatus[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
@@ -193,10 +193,10 @@ model Project {
 }
 
 model Donation {
-  id        Int      @id @default(autoincrement())
-  amountInCent    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  amountInCent Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   donatorId Int
   projectId Int?
@@ -207,13 +207,13 @@ model Donation {
 }
 
 model Earning {
-  id           Int      @id @default(autoincrement())
-  amountInCent Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  payoutTimestamp DateTime
-  payoutType PayoutTypeEnum
-  workingTime Int
+  id                   Int            @id @default(autoincrement())
+  amountInCent         Int
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  payoutTimestamp      DateTime
+  payoutType           PayoutTypeEnum
+  workingTimeInSeconds Int
 
   donationBoxId      Int
   donationBox        DonationBox         @relation(fields: [donationBoxId], references: [id])
@@ -224,17 +224,15 @@ enum PayoutTypeEnum {
   MONERO_MINING
 }
 
-
-
 model MoneroMiningPayout {
-  id                  Int      @id @default(autoincrement())
-  amountInPiconero    Float
-  timestamp           DateTime
-  periodStart         DateTime //Will usually be last payout timestamp
-  txnHash             String
-  txnKey              String
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  amountInPiconero Float
+  timestamp        DateTime
+  periodStart      DateTime //Will usually be last payout timestamp
+  txnHash          String
+  txnKey           String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   earning   Earning @relation(fields: [earningId], references: [id])
   earningId Int     @unique

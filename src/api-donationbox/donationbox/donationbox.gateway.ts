@@ -89,7 +89,7 @@ export default class DonationboxGateway
       await this.donationboxService.handleContainerStatusInsertToDB(
         {
           containerName: StandardContainerNames.MAIN,
-          statusCode: 1,
+          statusCode: 0,
           statusMsg: 'Connected',
         },
         client,

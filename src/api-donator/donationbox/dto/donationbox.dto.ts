@@ -25,7 +25,7 @@ export class DonationBoxDto {
   lastSolarData?: JSON;
 
   @Expose()
-  solarDataLastUpdateAt: Date;
+  solarDataLastSuccessfulUpdateAt: Date;
 
   @Expose()
   averageWorkingTimePerDayInSeconds: number;
@@ -43,10 +43,10 @@ export class DonationBoxDto {
   status: string;
 
   @Expose()
-  earningsLastSuccessfullUpdateAt: Date;
+  earningsLastSuccessfulUpdateAt: Date;
 
   @Expose()
-  earningsLastUpdateSuccessfull: boolean;
+  earningsLastUpdateSuccessful: boolean;
 
   @Exclude()
   donatorId: number;

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RegisterDonationBoxDto } from '@/api-donator/donationbox/dto';
 import {
-  calculateWorkingTime,
+  calculateWorkingTimeInSeconds,
   getFirstConnectedLog,
 } from '@/utils/logContainerStatus.helper';
 import { EarningService } from './earning.service';
@@ -148,7 +148,10 @@ export class DonationboxService {
             },
           });
 
-          const totalWorkingTime = calculateWorkingTime(logs, yesterday);
+          const totalWorkingTimeInSeconds = calculateWorkingTimeInSeconds(
+            logs,
+            yesterday,
+          );
           const daysInPeriod = Math.ceil(
             (yesterday.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
           );
@@ -159,7 +162,7 @@ export class DonationboxService {
             },
             data: {
               averageWorkingTimePerDayInSeconds: Math.round(
-                totalWorkingTime / daysInPeriod,
+                totalWorkingTimeInSeconds / daysInPeriod,
               ),
               averageWorkingTimePerDayInSecondsLastUpdateAt: new Date(
                 Date.now(),

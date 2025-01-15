@@ -17,7 +17,7 @@ import { EarningWithPartialRelations } from './types/EarningWithPartialRelations
 import { MiningPoolApiClient } from '@/clients/miningpool-api/miningpool-api.client';
 import { MiningPoolApiPayoutDto } from '@/clients/miningpool-api/miningpool-api.dto';
 import { convertPiconeroToCent } from '@/utils/converter_helper';
-import { calculateWorkingTime } from '@/utils/logContainerStatus.helper';
+import { calculateWorkingTimeInSeconds } from '@/utils/logContainerStatus.helper';
 import { StandardContainerNames } from './types/StandardContainerNames';
 
 @Injectable()
@@ -41,7 +41,7 @@ export class EarningService {
     return lastPayout ?? null;
   }
 
-  private async getWorkingTimePerNewPayout(
+  private async getWorkingTimePerNewPayoutInSeconds(
     donationBoxId: number,
     sortedPayouts: MiningPoolApiPayoutDto[],
     lastPayoutDate: Date | null,
@@ -71,7 +71,7 @@ export class EarningService {
             createdAt: 'asc',
           },
         });
-        const totalWorkingTime = calculateWorkingTime(
+        const totalWorkingTime = calculateWorkingTimeInSeconds(
           logs,
           new Date(payout.ts * 1000),
         );
@@ -131,9 +131,9 @@ export class EarningService {
 
         const shouldUpdate =
           forceEarningsUpdate ||
-          !donationBox.earningsLastSuccessfullUpdateAt ||
-          !donationBox.earningsLastUpdateSuccessfull ||
-          Date.now() - donationBox.earningsLastSuccessfullUpdateAt.getTime() >
+          !donationBox.earningsLastSuccessfulUpdateAt ||
+          !donationBox.earningsLastSuccessfulUpdateAt ||
+          Date.now() - donationBox.earningsLastSuccessfulUpdateAt.getTime() >
             1000 * 60 * 10;
 
         if (shouldUpdate) {
@@ -148,11 +148,12 @@ export class EarningService {
 
           const sortedPayouts = [...payouts].sort((a, b) => a.ts - b.ts);
 
-          const workingTimePerPayout = await this.getWorkingTimePerNewPayout(
-            donationBoxId,
-            sortedPayouts,
-            lastPayoutDate,
-          );
+          const workingTimePerPayoutInSeconds =
+            await this.getWorkingTimePerNewPayoutInSeconds(
+              donationBoxId,
+              sortedPayouts,
+              lastPayoutDate,
+            );
           if (sortedPayouts.length > 0) {
             await this.prismaService.$transaction(async (prisma) => {
               const promises = sortedPayouts.map(async (payout, index) => {
@@ -169,7 +170,8 @@ export class EarningService {
                     amountInCent: convertPiconeroToCent(payout.amount),
                     payoutType: PayoutTypeEnum.MONERO_MINING,
                     payoutTimestamp: new Date(payout.ts * 1000),
-                    workingTime: workingTimePerPayout[index].totalWorkingTime,
+                    workingTimeInSeconds:
+                      workingTimePerPayoutInSeconds[index].totalWorkingTime,
                     moneroMiningPayout: {
                       create: {
                         amountInPiconero: payout.amount,
@@ -189,8 +191,8 @@ export class EarningService {
         await this.prismaService.donationBox.update({
           where: { id: donationBoxId },
           data: {
-            earningsLastSuccessfullUpdateAt: new Date(Date.now()),
-            earningsLastUpdateSuccessfull: true,
+            earningsLastSuccessfulUpdateAt: new Date(Date.now()),
+            earningsLastUpdateSuccessful: true,
           },
         });
       } catch (error) {
@@ -202,7 +204,7 @@ export class EarningService {
           await this.prismaService.donationBox.update({
             where: { id: donationBoxId },
             data: {
-              earningsLastUpdateSuccessfull: false,
+              earningsLastUpdateSuccessful: false,
             },
           });
         }

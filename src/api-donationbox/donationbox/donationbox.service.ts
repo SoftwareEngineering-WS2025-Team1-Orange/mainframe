@@ -61,10 +61,10 @@ export class DonationboxService {
       });
     };
     loadMiner().catch(() => {});
-    this.updateContainers().catch(() => {});
+    this.setDonationboxesToDisconnected().catch(() => {});
   }
 
-  private async updateContainers() {
+  private async setDonationboxesToDisconnected() {
     const containers = await this.prismaService.container.findMany({
       where: {
         name: StandardContainerNames.MAIN,
@@ -305,7 +305,7 @@ export class DonationboxService {
       },
       data: {
         lastSolarData: JSON.stringify(status),
-        solarDataLastUpdateAt: new Date(Date.now()),
+        solarDataLastSuccessfulUpdateAt: new Date(Date.now()),
       },
     });
 

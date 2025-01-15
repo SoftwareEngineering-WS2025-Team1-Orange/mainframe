@@ -2,7 +2,7 @@ import { ContainerStatus } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { StandardContainerNames } from '@/shared/services/types/StandardContainerNames';
 
-export function calculateWorkingTime(
+export function calculateWorkingTimeInSeconds(
   logs: ContainerStatus[],
   newestDateIfLastLogIsWorking: Date = new Date(Date.now()),
 ) {
@@ -25,7 +25,7 @@ export function calculateWorkingTime(
       newestDateIfLastLogIsWorking.getTime() -
       logs[logs.length - 1].createdAt.getTime();
   }
-  return totalWorkingTime / 1000;
+  return Math.round(totalWorkingTime / 1000);
 }
 
 export async function getFirstConnectedLog(

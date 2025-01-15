@@ -88,10 +88,10 @@ export class ReturnEarningsDonationBoxDto {
   cuid: string;
 
   @Exclude()
-  earningsLastSuccessfullUpdateAt: Date;
+  earningsLastSuccessfulUpdateAt: Date;
 
   @Exclude()
-  earningsLastUpdateSuccessfull: boolean;
+  earningsLastUpdateSuccessful: boolean;
 
   @Exclude()
   donatorId: number;
@@ -130,6 +130,9 @@ export class ReturnTransactionEarningDto {
 
   @Expose()
   payoutType: PayoutTypeEnum;
+
+  @Expose()
+  workingTimeInSeconds: number;
 
   @Exclude()
   createdAt: Date;
