@@ -20,6 +20,7 @@ describe('DonationboxService', () => {
             donationBox: {
               update: jest.fn(),
               findMany: jest.fn(),
+              findFirst: jest.fn(),
             },
             containerStatus: {
               findFirst: jest.fn(),
@@ -27,6 +28,9 @@ describe('DonationboxService', () => {
             },
             earning: {
               findMany: jest.fn((_el) => []),
+            },
+            donator: {
+              findFirst: jest.fn(),
             },
           },
         },
@@ -54,6 +58,12 @@ describe('DonationboxService', () => {
       const updateSpy = jest
         .spyOn(prismaService.donationBox, 'update')
         .mockResolvedValue(null);
+
+      jest.spyOn(prismaService.donator, 'findFirst').mockResolvedValue();
+
+      jest
+        .spyOn(prismaService.donationBox, 'findFirst')
+        .mockResolvedValue(donationBox[0]);
 
       await donationboxService.registerDonationBox(donatorId, donationBox);
 
