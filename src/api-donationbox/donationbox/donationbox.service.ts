@@ -322,7 +322,9 @@ export class DonationboxService {
       }
 
       if (donationBox.runSolarAlways === false) {
-        return this.dispatchStop(client, JobName.MONERO_MINER);
+        return container.some((c) => c.containerName === JobName.MONERO_MINER)
+          ? this.dispatchStop(client, JobName.MONERO_MINER)
+          : Promise.resolve();
       }
     }
 
