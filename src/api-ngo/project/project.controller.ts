@@ -54,7 +54,7 @@ export class ProjectController {
   @UseGuards(NGOAccessTokenGuard, ScopesGuard)
   @Scopes(NGOScopeEnum.READ_NGO)
   getFilteredProjects(
-    @Param(':ngo_id', ParseIntPipe) ngoId: number,
+    @Param('ngo_id', ParseIntPipe) ngoId: number,
     @Req() req: Request,
     @Query('filter_project_id', new ParseIntPipe({ optional: true }))
     filter_project_id?: number,
@@ -101,8 +101,8 @@ export class ProjectController {
   @UseGuards(NGOAccessTokenGuard, ScopesGuard)
   @Scopes(NGOScopeEnum.READ_NGO, NGOScopeEnum.READ_PROJECT)
   getProjectWithDonations(
-    @Param(':ngo_id', ParseIntPipe) ngoId: number,
-    @Param(':project_id', ParseIntPipe) projectId: number,
+    @Param('ngo_id', ParseIntPipe) ngoId: number,
+    @Param('project_id', ParseIntPipe) projectId: number,
     @Req() req: Request,
     @Query('filter_donation_id', new ParseIntPipe({ optional: true }))
     filterId?: number,
@@ -155,7 +155,7 @@ export class ProjectController {
   @UseGuards(NGOAccessTokenGuard, ScopesGuard)
   @Scopes(NGOScopeEnum.WRITE_PROJECT)
   createProject(
-    @Param(':ngo_id', ParseIntPipe) ngoId: number,
+    @Param('ngo_id', ParseIntPipe) ngoId: number,
     @Req() req: Request,
     @Body() createProjectDto: CreateProjectDto,
   ) {
@@ -170,8 +170,8 @@ export class ProjectController {
   @UseGuards(NGOAccessTokenGuard, ScopesGuard)
   @Scopes(NGOScopeEnum.WRITE_PROJECT)
   updateProject(
-    @Param(':ngo_id', ParseIntPipe) ngoId: number,
-    @Param(':project_id', ParseIntPipe) projectId: number,
+    @Param('ngo_id', ParseIntPipe) ngoId: number,
+    @Param('project_id', ParseIntPipe) projectId: number,
     @Req() req: Request,
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
