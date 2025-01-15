@@ -19,6 +19,11 @@ import {
   JwtDonationBoxDto,
   JwtDonationBoxDtoResponse,
 } from '@/api-donationbox/donationbox/dto';
+import {
+  SolarStatusCodes,
+  SolarStatusMessages,
+} from '@/shared/services/types/SolarStatusMessages';
+import { StandardContainerNames } from '@/shared/services/types/StandardContainerNames';
 
 const DELTA = 20;
 
@@ -55,8 +60,34 @@ export class DonationboxService {
         },
       });
     };
-
     loadMiner().catch(() => {});
+    this.updateContainers().catch(() => {});
+  }
+
+  private async updateContainers() {
+    const containers = await this.prismaService.container.findMany({
+      where: {
+        name: StandardContainerNames.MAIN,
+      },
+      select: {
+        id: true,
+      },
+    });
+    await Promise.all(
+      containers.map((container) =>
+        this.prismaService.containerStatus.create({
+          data: {
+            statusCode: 1,
+            statusMsg: 'Disconnected',
+            container: {
+              connect: {
+                id: container.id,
+              },
+            },
+          },
+        }),
+      ),
+    );
   }
 
   async initNewDonationBox(): Promise<DonationBoxDtoResponse> {
@@ -122,6 +153,7 @@ export class DonationboxService {
         formatError('authResponse', StatusCodes.FORBIDDEN, 'Unauthorized'),
       );
       client.close();
+      return false;
     }
     return true;
   }
@@ -259,8 +291,8 @@ export class DonationboxService {
     client: WebSocket,
     container: ContainerStatusDto[],
     status?: DonationBoxPowerSupplyStatusDto,
-  ) {
-    if (!status) {
+  ): Promise<void> {
+    if (status == null) {
       return container.some((c) => c.containerName === JobName.MONERO_MINER)
         ? Promise.resolve()
         : this.dispatchReady(client, JobName.MONERO_MINER);
@@ -282,7 +314,7 @@ export class DonationboxService {
     ) {
       await this.handleContainerStatusInsertToDB(
         {
-          containerName: 'db-main',
+          containerName: StandardContainerNames.MAIN,
           statusCode: 1,
           statusMsg: 'Connected',
         },
@@ -291,44 +323,85 @@ export class DonationboxService {
       return this.dispatchStop(client, JobName.MONERO_MINER);
     }
 
-    if (
-      status.production.grid + DELTA < 0 &&
+    return status.production.grid + DELTA < 0 &&
       !container.some((c) => c.containerName === JobName.MONERO_MINER)
-    ) {
-      await this.handleContainerStatusInsertToDB(
-        {
-          containerName: 'db-main',
-          statusCode: 1,
-          statusMsg: 'Working',
-        },
-        client,
-      );
-    }
-    return this.dispatchReady(client, JobName.MONERO_MINER);
+      ? (async () => {
+          await this.handleContainerStatusInsertToDB(
+            {
+              containerName: StandardContainerNames.MAIN,
+              statusCode: 1,
+              statusMsg: 'Working',
+            },
+            client,
+          );
+          return this.dispatchReady(client, JobName.MONERO_MINER);
+        })()
+      : Promise.resolve();
   }
 
   async sendConfig(cuid: string, pluginName: PluginName, config: object) {
-    const donationBoxId = await this.getDonationBoxIdByCuid(cuid);
-    const client = [...this.authorizedClients.entries()].find(
-      (entry) => entry[1] === donationBoxId,
-    );
-    if (!client) {
-      throw new NotFoundException('Client not found');
+    try {
+      const donationBoxId = await this.getDonationBoxIdByCuid(cuid);
+      const client = [...this.authorizedClients.entries()].find(
+        (entry) => entry[1] === donationBoxId,
+      );
+      if (!client) {
+        throw new NotFoundException('Client not found');
+      }
+      const [ws] = client;
+
+      const plugin = await this.prismaService.supportedPowerSupply.findUnique({
+        where: {
+          name: pluginName,
+        },
+      });
+
+      ws.send(
+        formatMessage('addConfigurationRequest', {
+          plugin_image_name: plugin.imageUri,
+          plugin_configuration: config,
+        }),
+      );
+
+      await this.prismaService.container.upsert({
+        where: {
+          name_donationBoxId: {
+            name: StandardContainerNames.SOLAR_PLUGIN,
+            donationBoxId,
+          },
+        },
+        create: {
+          name: StandardContainerNames.SOLAR_PLUGIN,
+          donationBox: {
+            connect: {
+              id: donationBoxId,
+            },
+          },
+          status: {
+            create: {
+              statusCode: SolarStatusCodes.PENDING,
+              statusMsg: SolarStatusMessages[SolarStatusCodes.PENDING],
+            },
+          },
+        },
+        update: {
+          status: {
+            create: {
+              statusCode: SolarStatusCodes.PENDING,
+              statusMsg: SolarStatusMessages[SolarStatusCodes.PENDING],
+            },
+          },
+        },
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error when sending config. The donation box might have saved the config even though. ',
+        error,
+      );
     }
-    const [ws] = client;
-
-    const plugin = await this.prismaService.supportedPowerSupply.findUnique({
-      where: {
-        name: pluginName,
-      },
-    });
-
-    ws.send(
-      formatMessage('addConfigurationRequest', {
-        plugin_image_name: plugin.imageUri,
-        plugin_configuration: config,
-      }),
-    );
   }
 
   async sendStatusUpdateRequest(cuid: string) {
@@ -349,7 +422,6 @@ export class DonationboxService {
     client: WebSocket,
   ) {
     const { statusCode, statusMsg, containerName } = statusDto;
-
     return this.prismaService.container.upsert({
       where: {
         name_donationBoxId: {

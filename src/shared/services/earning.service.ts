@@ -17,7 +17,8 @@ import { EarningWithPartialRelations } from './types/EarningWithPartialRelations
 import { MiningPoolApiClient } from '@/clients/miningpool-api/miningpool-api.client';
 import { MiningPoolApiPayoutDto } from '@/clients/miningpool-api/miningpool-api.dto';
 import { convertPiconeroToCent } from '@/utils/converter_helper';
-import { calculateWorkingTime } from '@/utils/log.helper';
+import { calculateWorkingTime } from '@/utils/logContainerStatus.helper';
+import { StandardContainerNames } from './types/StandardContainerNames';
 
 @Injectable()
 export class EarningService {
@@ -58,7 +59,7 @@ export class EarningService {
         const logs = await this.prismaService.containerStatus.findMany({
           where: {
             container: {
-              name: 'db-main',
+              name: StandardContainerNames.MAIN,
               donationBoxId,
             },
             createdAt: {
@@ -100,7 +101,7 @@ export class EarningService {
         take: 1,
         where: {
           container: {
-            name: 'db-main',
+            name: StandardContainerNames.MAIN,
             donationBoxId,
           },
           statusMsg: 'Working',

@@ -17,6 +17,7 @@ import {
   ContainerStatusDto,
 } from './dto';
 import { formatMessage } from '@/utils/ws.helper';
+import { StandardContainerNames } from '@/shared/services/types/StandardContainerNames';
 
 @WebSocketGateway({ version: 1, path: '/api/v1/api-donationbox' })
 export default class DonationboxGateway
@@ -39,10 +40,10 @@ export default class DonationboxGateway
     if (errors.length > 0) {
       const clientId = this.donationboxService.authorizedClients.get(client);
       this.logger.error(
-        `Received invalid data format from DonationBox with id: ${clientId}`,
+        `Received invalid data format from DonationBox with id: ${clientId}. Dto: ${JSON.stringify(dtoInstance)}. Errors: ${JSON.stringify(errors)}`,
       );
-      this.donationboxService.removeAuthorizedClient(client);
       client.close();
+      return null;
     }
     return dtoInstance;
   }
@@ -58,15 +59,17 @@ export default class DonationboxGateway
   }
 
   async handleDisconnect(client: WebSocket) {
-    await this.donationboxService.handleContainerStatusInsertToDB(
-      {
-        containerName: 'db-main',
-        statusCode: 1,
-        statusMsg: 'Disconnected',
-      },
-      client,
-    );
-    this.donationboxService.removeAuthorizedClient(client);
+    if (this.donationboxService.authorizedClients.has(client)) {
+      await this.donationboxService.handleContainerStatusInsertToDB(
+        {
+          containerName: StandardContainerNames.MAIN,
+          statusCode: 1,
+          statusMsg: 'Disconnected',
+        },
+        client,
+      );
+      this.donationboxService.removeAuthorizedClient(client);
+    }
   }
 
   @SubscribeMessage('authRequest')
@@ -75,6 +78,8 @@ export default class DonationboxGateway
     payload: JwtDonationBoxDto,
   ): Promise<void> {
     const jwtDto = await this.validateDto(client, payload, JwtDonationBoxDto);
+    if (!jwtDto) return;
+
     const authenticated = await this.donationboxService.verifyClient(
       client,
       jwtDto,
@@ -83,7 +88,7 @@ export default class DonationboxGateway
     if (authenticated) {
       await this.donationboxService.handleContainerStatusInsertToDB(
         {
-          containerName: 'db-main',
+          containerName: StandardContainerNames.MAIN,
           statusCode: 1,
           statusMsg: 'Connected',
         },
@@ -118,12 +123,16 @@ export default class DonationboxGateway
       ),
     );
 
+    if (validatedContainers.some((containerStatus) => !containerStatus)) return;
+
+    let validPowerSupply;
     if (powerSupply) {
-      await this.validateDto(
+      validPowerSupply = await this.validateDto(
         client,
         powerSupply,
         DonationBoxPowerSupplyStatusDto,
       );
+      if (!validPowerSupply) return;
     }
 
     await this.donationboxService.handleContainerStatusResponse(
@@ -133,7 +142,7 @@ export default class DonationboxGateway
     await this.donationboxService.handlePowerSupplyStatusResponse(
       client,
       validatedContainers,
-      powerSupply,
+      validPowerSupply,
     );
   }
 
@@ -148,6 +157,7 @@ export default class DonationboxGateway
       payload,
       ContainerStatusDto,
     );
+    if (!containerDto) return;
     await this.donationboxService.handleContainerStatusInsertToDB(
       containerDto,
       client,

@@ -1,8 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RegisterDonationBoxDto } from '@/api-donator/donationbox/dto';
-import { calculateWorkingTime, getFirstConnectedLog } from '@/utils/log.helper';
+import {
+  calculateWorkingTime,
+  getFirstConnectedLog,
+} from '@/utils/logContainerStatus.helper';
 import { EarningService } from './earning.service';
+import {
+  SolarStatusCodes,
+  SolarStatusMessages,
+} from './types/SolarStatusMessages';
+import { StandardContainerNames } from './types/StandardContainerNames';
 
 @Injectable()
 export class DonationboxService {
@@ -33,7 +41,7 @@ export class DonationboxService {
       },
       where: {
         container: {
-          name: 'db-main',
+          name: StandardContainerNames.MAIN,
           donationBoxId,
         },
       },
@@ -48,38 +56,43 @@ export class DonationboxService {
     donationBoxId: number,
   ): Promise<string> {
     const status = await this.prismaService.containerStatus.findFirst({
-      take: 1,
       where: {
         container: {
-          name: 'pluginContainer',
+          name: StandardContainerNames.SOLAR_PLUGIN,
           donationBoxId,
+        },
+        statusCode: {
+          in: [
+            SolarStatusCodes.OK,
+            SolarStatusCodes.ERROR,
+            SolarStatusCodes.PENDING,
+          ],
         },
       },
       orderBy: {
         updatedAt: 'desc',
       },
       select: {
-        statusCode: true,
+        statusCode: true as const,
         statusMsg: true,
       },
     });
     if (!status) {
-      return 'ERROR';
+      return SolarStatusMessages.UNINITIALIZED;
     }
-    if (status?.statusCode === 0) {
-      if (status?.statusMsg === 'RUNNING') {
-        return 'Connected';
-      }
 
-      return 'ERROR';
+    const { statusCode } = status;
+
+    if (statusCode === (SolarStatusCodes.OK as number)) {
+      return SolarStatusMessages[SolarStatusCodes.OK];
     }
-    if (status?.statusCode === 400) {
-      return 'ERROR';
+    if (statusCode === (SolarStatusCodes.ERROR as number)) {
+      return SolarStatusMessages[SolarStatusCodes.ERROR];
     }
-    if (status?.statusCode === 401) {
-      return 'UNAUTHORIZED';
+    if (statusCode === (SolarStatusCodes.PENDING as number)) {
+      return SolarStatusMessages[SolarStatusCodes.PENDING];
     }
-    return 'UNKNOWN_STATUS';
+    return SolarStatusMessages.UNKNOWN;
   }
 
   // Updates working time, currently for 14 days
@@ -122,7 +135,7 @@ export class DonationboxService {
           const logs = await this.prismaService.containerStatus.findMany({
             where: {
               container: {
-                name: 'db-main',
+                name: StandardContainerNames.MAIN,
                 donationBoxId: donationBox.id,
               },
               createdAt: {
@@ -181,7 +194,7 @@ export class DonationboxService {
       donationBoxes.map(async (donationBox) => {
         if (
           !donationBox.averageIncomePerDayInCentLastUpdateAt ||
-          !donationBox.averageIncomePerDayInCent ||
+          donationBox.averageIncomePerDayInCent == null ||
           donationBox.averageIncomePerDayInCentLastUpdateAt <= yesterday
         ) {
           await this.earningService.updateEarnings([donationBox.id], true);

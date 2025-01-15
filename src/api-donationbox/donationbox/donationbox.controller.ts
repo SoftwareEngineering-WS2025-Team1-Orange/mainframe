@@ -2,6 +2,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  HttpCode,
   Post,
   SerializeOptions,
   UseInterceptors,
@@ -41,6 +42,7 @@ export class DonationboxController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: JwtDonationBoxDtoResponse })
   @Post('/sendConfig')
+  @HttpCode(202)
   async sendConfigForDonationBox(@Body() dpDto: DeployPluginDto) {
     const msg = await this.donationboxService.sendConfig(
       dpDto.cuid,
@@ -48,5 +50,12 @@ export class DonationboxController {
       dpDto.config,
     );
     return msg;
+  }
+
+  @Version('1')
+  @Post('/sendStatusUpdateRequest')
+  @HttpCode(202)
+  async sendStatusUpdateRequest(@Body('cuid') cuid: string) {
+    await this.donationboxService.sendStatusUpdateRequest(cuid);
   }
 }
