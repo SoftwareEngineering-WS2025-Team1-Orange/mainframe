@@ -247,7 +247,7 @@ export class ProjectService {
 
     const hasNoDonations: Rule<ProjectWithDonations, UpdateProjectDto> = {
       condition: (previous: ProjectWithDonations, future: UpdateProjectDto) =>
-        previous.donations.donations.length === 0 &&
+        previous.donations.donations.length === 0 ||
         future.fundraising_goal === undefined,
       onFailure: new BadRequestException(
         'Only the name, description, category and progress can be updated for projects with donations',
