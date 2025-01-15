@@ -5,9 +5,11 @@ import {
   HttpCode,
   Post,
   SerializeOptions,
+  UseGuards,
   UseInterceptors,
   Version,
 } from '@nestjs/common';
+import { DonatorScopeEnum } from '@prisma/client';
 import { DonationboxService } from '@/api-donationbox/donationbox/donationbox.service';
 import {
   CreateJWTDonationBoxDto,
@@ -15,6 +17,10 @@ import {
   DonationBoxDtoResponse,
   JwtDonationBoxDtoResponse,
 } from './dto';
+import { NGOAccessTokenGuard } from '@/api-ngo/auth/accessToken.guard';
+import { ScopesGuard } from '@/shared/auth/scopes.guard';
+import { DonatorAccessTokenGuard } from '@/api-donator/auth/accessToken.guard';
+import { Scopes } from '@/shared/auth/scopes.decorator';
 
 @Controller('api-donationbox')
 export class DonationboxController {
@@ -32,6 +38,7 @@ export class DonationboxController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: JwtDonationBoxDtoResponse })
+  @UseGuards(NGOAccessTokenGuard)
   @Post('/token')
   async getJWTforDonationbox(@Body() cuid_obj: CreateJWTDonationBoxDto) {
     const token = await this.donationboxService.generateToken(cuid_obj.cuid);
@@ -41,6 +48,8 @@ export class DonationboxController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: JwtDonationBoxDtoResponse })
+  @UseGuards(DonatorAccessTokenGuard, ScopesGuard)
+  @Scopes(DonatorScopeEnum.WRITE_DONATIONBOX)
   @Post('/sendConfig')
   @HttpCode(202)
   async sendConfigForDonationBox(@Body() dpDto: DeployPluginDto) {
@@ -53,6 +62,8 @@ export class DonationboxController {
   }
 
   @Version('1')
+  @UseGuards(DonatorAccessTokenGuard, ScopesGuard)
+  @Scopes(DonatorScopeEnum.WRITE_DONATIONBOX)
   @Post('/sendStatusUpdateRequest')
   @HttpCode(202)
   async sendStatusUpdateRequest(@Body('cuid') cuid: string) {

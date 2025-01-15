@@ -7,10 +7,14 @@ import {
   ParseBoolPipe,
   ParseIntPipe,
   Query,
+  Req,
   SerializeOptions,
+  UseGuards,
   UseInterceptors,
   Version,
 } from '@nestjs/common';
+import { DonatorScopeEnum } from '@prisma/client';
+import { Request } from 'express';
 import { PaginationQueryArguments } from '@/utils/pagination/pagination.helper';
 import { getSortType, SortType } from '@/utils/sort_filter.helper';
 import { DonationFilter } from '@/shared/filters/donation.filter.interface';
@@ -18,6 +22,10 @@ import { prefix } from '@/api-donator/prefix';
 import { EarningFilter } from '@/shared/filters/earning.filter.interface';
 import { TransactionService } from '@/api-donator/transaction/transaction.service';
 import { ReturnPaginatedTransactionsDto } from '@/api-donator/transaction/dto/transaction.dto';
+import { ScopesGuard } from '@/shared/auth/scopes.guard';
+import { DonatorAccessTokenGuard } from '../auth/accessToken.guard';
+import { Scopes } from '@/shared/auth/scopes.decorator';
+import { rejectOnNotOwnedResource } from '@/utils/auth.helper';
 
 @Controller(`${prefix}/transaction`)
 export class TransactionController {
@@ -26,10 +34,13 @@ export class TransactionController {
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnPaginatedTransactionsDto })
+  @UseGuards(DonatorAccessTokenGuard, ScopesGuard)
+  @Scopes(DonatorScopeEnum.READ_TRANSACTION)
   @Get('donator/:donator_id')
   getDonatorsTransactions(
     @Param('donator_id', ParseIntPipe)
     donatorId: number,
+    @Req() req: Request,
     @Query('filter_donation_ngo_id', new ParseIntPipe({ optional: true }))
     filterNgoId?: number,
     @Query('filter_donation_ngo_name') filterNgoName?: string,
@@ -59,6 +70,7 @@ export class TransactionController {
     )
     paginationPageSize?: number,
   ) {
+    rejectOnNotOwnedResource(donatorId, req);
     const baseFilter = {
       paginationPage,
       paginationPageSize,
