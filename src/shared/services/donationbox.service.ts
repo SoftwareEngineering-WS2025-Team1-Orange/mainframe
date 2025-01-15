@@ -70,7 +70,7 @@ export class DonationboxService {
         },
       },
       orderBy: {
-        updatedAt: 'desc',
+        createdAt: 'desc',
       },
       select: {
         statusCode: true as const,

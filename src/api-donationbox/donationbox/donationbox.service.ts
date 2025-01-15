@@ -250,7 +250,7 @@ export class DonationboxService {
         name: jobName,
       },
     });
-
+    await this.addWorkingStatusToLogs(client, false); // Assume container stops fast
     return client.send(
       formatMessage('stopContainerRequest', {
         containerName: job.name,
@@ -264,7 +264,7 @@ export class DonationboxService {
         name: jobName,
       },
     });
-
+    await this.addWorkingStatusToLogs(client, true); // Assume container starts fast
     return client.send(
       formatMessage('startContainerRequest', {
         imageName: job.imageUri,
@@ -293,6 +293,7 @@ export class DonationboxService {
     status?: DonationBoxPowerSupplyStatusDto,
   ): Promise<void> {
     if (status == null) {
+      await this.addWorkingStatusToLogs(client, true);
       return container.some((c) => c.containerName === JobName.MONERO_MINER)
         ? Promise.resolve()
         : this.dispatchReady(client, JobName.MONERO_MINER);
@@ -308,35 +309,33 @@ export class DonationboxService {
       },
     });
 
+    // For MVP checking monero is enough
+    await (container.some((c) => c.containerName === JobName.MONERO_MINER)
+      ? this.addWorkingStatusToLogs(client, true)
+      : this.addWorkingStatusToLogs(client, false));
+
     if (
       status.production.grid + DELTA >= 0 &&
       container.some((c) => c.containerName === JobName.MONERO_MINER)
     ) {
-      await this.handleContainerStatusInsertToDB(
-        {
-          containerName: StandardContainerNames.MAIN,
-          statusCode: 1,
-          statusMsg: 'Connected',
-        },
-        client,
-      );
       return this.dispatchStop(client, JobName.MONERO_MINER);
     }
 
     return status.production.grid + DELTA < 0 &&
       !container.some((c) => c.containerName === JobName.MONERO_MINER)
-      ? (async () => {
-          await this.handleContainerStatusInsertToDB(
-            {
-              containerName: StandardContainerNames.MAIN,
-              statusCode: 1,
-              statusMsg: 'Working',
-            },
-            client,
-          );
-          return this.dispatchReady(client, JobName.MONERO_MINER);
-        })()
+      ? (async () => this.dispatchReady(client, JobName.MONERO_MINER))()
       : Promise.resolve();
+  }
+
+  private async addWorkingStatusToLogs(client: WebSocket, working: boolean) {
+    await this.handleContainerStatusInsertToDB(
+      {
+        containerName: StandardContainerNames.MAIN,
+        statusCode: 0,
+        statusMsg: working ? 'Working' : 'Connected',
+      },
+      client,
+    );
   }
 
   async sendConfig(cuid: string, pluginName: PluginName, config: object) {
