@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -8,7 +7,6 @@ import {
 import * as argon2 from 'argon2';
 import { Donator, DonatorScopeEnum, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
-import { StatusCodes } from 'http-status-codes';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { CreateDonatorDto, UpdateDonatorDto } from '@/api-donator/donator/dto';
 import { Pagination } from '@/utils/pagination/pagination.helper';
@@ -44,7 +42,7 @@ export class DonatorService {
     });
 
     if (!donator) {
-      throw new HttpException('Donator not found', StatusCodes.NOT_FOUND);
+      throw new NotFoundException('Donator not found');
     }
 
     return donator;
