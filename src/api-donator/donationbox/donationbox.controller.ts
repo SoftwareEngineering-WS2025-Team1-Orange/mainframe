@@ -37,6 +37,8 @@ export class DonationboxController {
   getDonationboxesOfDonator(
     @Param('donator_id', ParseIntPipe) donatorId: number,
   ) {
-    return this.donationboxService.findDonationboxesByDonatorId(donatorId);
+    return this.donationboxService.findDonationboxesWithStatusesByDonatorId(
+      donatorId,
+    );
   }
 }

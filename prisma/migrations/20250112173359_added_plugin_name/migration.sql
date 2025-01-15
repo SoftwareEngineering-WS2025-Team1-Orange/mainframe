@@ -10,8 +10,9 @@
 CREATE TYPE "PluginName" AS ENUM ('E3DC');
 
 -- AlterTable
-ALTER TABLE "SupportedPowerSupply" ADD COLUMN     "imageUri" TEXT NOT NULL,
-ADD COLUMN     "name" "PluginName" NOT NULL;
+ALTER TABLE "SupportedPowerSupply" ADD COLUMN "imageUri" TEXT NOT NULL DEFAULT 'ghcr.io/softwareengineering-ws2025-team1-orange/donation-box-e3dc-plugin:preview',
+ADD COLUMN "name" "PluginName" NOT NULL;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SupportedPowerSupply_name_key" ON "SupportedPowerSupply"("name");
+ALTER TABLE "SupportedPowerSupply" ALTER COLUMN "imageUri" DROP DEFAULT;

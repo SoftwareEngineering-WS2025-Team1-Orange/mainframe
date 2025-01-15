@@ -22,13 +22,31 @@ export class DonationBoxDto {
   readonly cuid: string;
 
   @Expose()
-  lastSolarStatus: string;
+  lastSolarData?: JSON;
 
   @Expose()
-  earningsLastSuccessfullUpdateAt: Date;
+  solarDataLastSuccessfulUpdateAt: Date;
 
   @Expose()
-  earningsLastUpdateSuccessfull: boolean;
+  averageWorkingTimePerDayInSeconds: number;
+
+  @Expose()
+  averageWorkingTimePerDayInSecondsLastUpdateAt: Date;
+
+  @Expose()
+  averageIncomePerDayInCents: number;
+
+  @Expose()
+  averageIncomePerDayLastUpdateAt: Date;
+
+  @Expose()
+  status: string;
+
+  @Expose()
+  earningsLastSuccessfulUpdateAt: Date;
+
+  @Expose()
+  earningsLastUpdateSuccessful: boolean;
 
   @Exclude()
   donatorId: number;

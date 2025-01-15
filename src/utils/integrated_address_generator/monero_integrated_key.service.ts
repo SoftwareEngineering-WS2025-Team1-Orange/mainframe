@@ -12,7 +12,7 @@ export class MoneroIntegratedAddressService {
   constructor(private configService: ConfigService) {}
 
   async generateIntegratedAddress(): Promise<MoneroIntegratedPublicAddress> {
-    const walletPublicKey = this.configService.get<string>('WALLET_PUBLIC_KEY');
+    const walletPublicKey = this.configService.get<string>('MONERO_WALLET_PUBLIC_KEY');
     if (!walletPublicKey) {
       throw new IntegratedKeyGenerationError(
         'WALLET_PUBLIC_KEY is not configured',
