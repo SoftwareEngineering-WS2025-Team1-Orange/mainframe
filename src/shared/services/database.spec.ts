@@ -157,6 +157,7 @@ export const donationboxes: DonationBox[] = [
     averageIncomePerDayInCent: 0,
     averageIncomePerDayInCentLastUpdateAt: undefined,
     solarDataLastSuccessfulUpdateAt: undefined,
+    runSolarAlways: null,
   },
   {
     id: 2,
@@ -175,6 +176,7 @@ export const donationboxes: DonationBox[] = [
     averageWorkingTimePerDayInSecondsLastUpdateAt: undefined,
     averageIncomePerDayInCent: 0,
     averageIncomePerDayInCentLastUpdateAt: undefined,
+    runSolarAlways: null,
   },
 ];
 
