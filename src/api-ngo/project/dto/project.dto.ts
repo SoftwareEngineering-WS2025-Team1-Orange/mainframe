@@ -1,4 +1,4 @@
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { Category } from '@prisma/client';
 import {
   IsDate,
@@ -21,6 +21,7 @@ export class CreateProjectDto {
   @IsPositive()
   fundraising_goal: number;
 
+  @Transform(({ value }) => new Date(value))
   @IsDate()
   target_date: Date;
 
