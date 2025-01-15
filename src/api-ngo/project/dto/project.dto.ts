@@ -4,6 +4,7 @@ import {
   IsDate,
   IsEnum,
   IsNumber,
+  IsOptional,
   IsPositive,
   IsString,
 } from 'class-validator';
@@ -29,21 +30,26 @@ export class CreateProjectDto {
 
 export class UpdateProjectDto {
   @IsString()
-  name: string;
+  @IsOptional()
+  name?: string;
 
   @IsString()
-  description: string;
+  @IsOptional()
+  description?: string;
 
   @IsEnum(Category)
-  category: Category;
+  @IsOptional()
+  category?: Category;
 
   @IsNumber()
   @IsPositive()
-  progress: number;
+  @IsOptional()
+  progress?: number;
 
   @IsNumber()
   @IsPositive()
-  fundraising_goal: number;
+  @IsOptional()
+  fundraising_goal?: number;
 }
 
 export class ReturnProjectWithoutFavDto {

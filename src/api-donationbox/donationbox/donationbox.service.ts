@@ -3,7 +3,6 @@ import {
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
-
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createId } from '@paralleldrive/cuid2';
@@ -20,6 +19,11 @@ import {
   JwtDonationBoxDto,
   JwtDonationBoxDtoResponse,
 } from '@/api-donationbox/donationbox/dto';
+import {
+  SolarStatusCodes,
+  SolarStatusMessages,
+} from '@/shared/services/types/SolarStatusMessages';
+import { StandardContainerNames } from '@/shared/services/types/StandardContainerNames';
 
 const DELTA = 20;
 
@@ -56,8 +60,34 @@ export class DonationboxService {
         },
       });
     };
-
     loadMiner().catch(() => {});
+    this.setDonationboxesToDisconnected().catch(() => {});
+  }
+
+  private async setDonationboxesToDisconnected() {
+    const containers = await this.prismaService.container.findMany({
+      where: {
+        name: StandardContainerNames.MAIN,
+      },
+      select: {
+        id: true,
+      },
+    });
+    await Promise.all(
+      containers.map((container) =>
+        this.prismaService.containerStatus.create({
+          data: {
+            statusCode: 1,
+            statusMsg: 'Disconnected',
+            container: {
+              connect: {
+                id: container.id,
+              },
+            },
+          },
+        }),
+      ),
+    );
   }
 
   async initNewDonationBox(): Promise<DonationBoxDtoResponse> {
@@ -94,10 +124,23 @@ export class DonationboxService {
     return { token };
   }
 
-  authorizedClients: Map<WebSocket, string> = new Map();
+  authorizedClients: Map<WebSocket, number> = new Map();
 
-  private addAuthorizedClient(client: WebSocket, cuid: string) {
-    this.authorizedClients.set(client, cuid);
+  private async getDonationBoxIdByCuid(cuid: string): Promise<number> {
+    const donationBox = await this.prismaService.donationBox.findUnique({
+      select: {
+        id: true,
+      },
+      where: {
+        cuid,
+      },
+    });
+    return donationBox?.id;
+  }
+
+  private async addAuthorizedClient(client: WebSocket, cuid: string) {
+    const donationBoxId = await this.getDonationBoxIdByCuid(cuid);
+    this.authorizedClients.set(client, donationBoxId);
   }
 
   removeAuthorizedClient(client: WebSocket) {
@@ -110,6 +153,7 @@ export class DonationboxService {
         formatError('authResponse', StatusCodes.FORBIDDEN, 'Unauthorized'),
       );
       client.close();
+      return false;
     }
     return true;
   }
@@ -145,7 +189,7 @@ export class DonationboxService {
 
     if (!clientExists) return false;
 
-    this.addAuthorizedClient(client, cuid);
+    await this.addAuthorizedClient(client, cuid);
 
     /**
      * WITH latestMessage AS (
@@ -206,7 +250,7 @@ export class DonationboxService {
         name: jobName,
       },
     });
-
+    await this.addWorkingStatusToLogs(client, false); // Assume container stops fast
     return client.send(
       formatMessage('stopContainerRequest', {
         containerName: job.name,
@@ -220,7 +264,7 @@ export class DonationboxService {
         name: jobName,
       },
     });
-
+    await this.addWorkingStatusToLogs(client, true); // Assume container starts fast
     return client.send(
       formatMessage('startContainerRequest', {
         imageName: job.imageUri,
@@ -245,64 +289,124 @@ export class DonationboxService {
 
   async handlePowerSupplyStatusResponse(
     client: WebSocket,
-    status: DonationBoxPowerSupplyStatusDto,
-  ) {
+    container: ContainerStatusDto[],
+    status?: DonationBoxPowerSupplyStatusDto,
+  ): Promise<void> {
+    if (status == null) {
+      await this.addWorkingStatusToLogs(client, true);
+      return container.some((c) => c.containerName === JobName.MONERO_MINER)
+        ? Promise.resolve()
+        : this.dispatchReady(client, JobName.MONERO_MINER);
+    }
+
     await this.prismaService.donationBox.update({
       where: {
-        cuid: this.authorizedClients.get(client),
+        id: this.authorizedClients.get(client),
       },
       data: {
-        lastSolarStatus: JSON.stringify(status),
+        lastSolarData: JSON.stringify(status),
+        solarDataLastSuccessfulUpdateAt: new Date(Date.now()),
       },
     });
-    if (status.production.grid + DELTA >= 0) {
-      await this.handleContainerStatusInsertToDB(
-        {
-          containerName: 'db-main',
-          statusCode: 1,
-          statusMsg: 'Connected',
-        },
-        client,
-      );
+
+    // For MVP checking monero is enough
+    await (container.some((c) => c.containerName === JobName.MONERO_MINER)
+      ? this.addWorkingStatusToLogs(client, true)
+      : this.addWorkingStatusToLogs(client, false));
+
+    if (
+      status.production.grid + DELTA >= 0 &&
+      container.some((c) => c.containerName === JobName.MONERO_MINER)
+    ) {
       return this.dispatchStop(client, JobName.MONERO_MINER);
     }
+
+    return status.production.grid + DELTA < 0 &&
+      !container.some((c) => c.containerName === JobName.MONERO_MINER)
+      ? (async () => this.dispatchReady(client, JobName.MONERO_MINER))()
+      : Promise.resolve();
+  }
+
+  private async addWorkingStatusToLogs(client: WebSocket, working: boolean) {
     await this.handleContainerStatusInsertToDB(
       {
-        containerName: 'db-main',
-        statusCode: 1,
-        statusMsg: 'Working',
+        containerName: StandardContainerNames.MAIN,
+        statusCode: 0,
+        statusMsg: working ? 'Working' : 'Connected',
       },
       client,
     );
-    return this.dispatchReady(client, JobName.MONERO_MINER);
   }
 
   async sendConfig(cuid: string, pluginName: PluginName, config: object) {
-    const client = [...this.authorizedClients.entries()].find(
-      (entry) => entry[1] === cuid,
-    );
-    if (!client) {
-      throw new NotFoundException('Client not found');
+    try {
+      const donationBoxId = await this.getDonationBoxIdByCuid(cuid);
+      const client = [...this.authorizedClients.entries()].find(
+        (entry) => entry[1] === donationBoxId,
+      );
+      if (!client) {
+        throw new NotFoundException('Client not found');
+      }
+      const [ws] = client;
+
+      const plugin = await this.prismaService.supportedPowerSupply.findUnique({
+        where: {
+          name: pluginName,
+        },
+      });
+
+      ws.send(
+        formatMessage('addConfigurationRequest', {
+          plugin_image_name: plugin.imageUri,
+          plugin_configuration: config,
+        }),
+      );
+
+      await this.prismaService.container.upsert({
+        where: {
+          name_donationBoxId: {
+            name: StandardContainerNames.SOLAR_PLUGIN,
+            donationBoxId,
+          },
+        },
+        create: {
+          name: StandardContainerNames.SOLAR_PLUGIN,
+          donationBox: {
+            connect: {
+              id: donationBoxId,
+            },
+          },
+          status: {
+            create: {
+              statusCode: SolarStatusCodes.PENDING,
+              statusMsg: SolarStatusMessages[SolarStatusCodes.PENDING],
+            },
+          },
+        },
+        update: {
+          status: {
+            create: {
+              statusCode: SolarStatusCodes.PENDING,
+              statusMsg: SolarStatusMessages[SolarStatusCodes.PENDING],
+            },
+          },
+        },
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error when sending config. The donation box might have saved the config even though. ',
+        error,
+      );
     }
-    const [ws] = client;
-
-    const plugin = await this.prismaService.supportedPowerSupply.findUnique({
-      where: {
-        name: pluginName,
-      },
-    });
-
-    ws.send(
-      formatMessage('addConfigurationRequest', {
-        plugin_image_name: plugin.imageUri,
-        plugin_configuration: config,
-      }),
-    );
   }
 
   async sendStatusUpdateRequest(cuid: string) {
+    const donationBoxId = await this.getDonationBoxIdByCuid(cuid);
     const client = [...this.authorizedClients.entries()].find(
-      (entry) => entry[1] === cuid,
+      (entry) => entry[1] === donationBoxId,
     );
     if (!client) {
       throw new NotFoundException('Client not found');
@@ -317,29 +421,34 @@ export class DonationboxService {
     client: WebSocket,
   ) {
     const { statusCode, statusMsg, containerName } = statusDto;
-
-    const status = {
-      create: {
-        statusCode,
-        statusMsg,
-      },
-    };
-
     return this.prismaService.container.upsert({
       where: {
-        name: containerName,
+        name_donationBoxId: {
+          name: containerName,
+          donationBoxId: this.authorizedClients.get(client),
+        },
       },
       update: {
-        status,
+        status: {
+          create: {
+            statusCode,
+            statusMsg,
+          },
+        },
       },
       create: {
         name: containerName,
         donationBox: {
           connect: {
-            cuid: this.authorizedClients.get(client),
+            id: this.authorizedClients.get(client),
           },
         },
-        status,
+        status: {
+          create: {
+            statusCode,
+            statusMsg,
+          },
+        },
       },
     });
   }

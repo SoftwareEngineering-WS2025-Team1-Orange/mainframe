@@ -251,7 +251,7 @@ export class ProjectService {
         (future.description === undefined ||
           future.fundraising_goal === undefined),
       onFailure: new BadRequestException(
-        'Only the name and category can be updated for projects with donations',
+        'Only the name, category and progress can be updated for projects with donations',
       ),
     };
 
@@ -315,7 +315,7 @@ export class ProjectService {
       .update({
         where: {
           id,
-          archived: null,
+          archived: false,
         },
         data: {
           banner_uri: bannerUriForDB,

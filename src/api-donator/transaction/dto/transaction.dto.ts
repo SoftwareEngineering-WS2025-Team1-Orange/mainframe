@@ -88,10 +88,10 @@ export class ReturnEarningsDonationBoxDto {
   cuid: string;
 
   @Exclude()
-  earningsLastSuccessfullUpdateAt: Date;
+  earningsLastSuccessfulUpdateAt: Date;
 
   @Exclude()
-  earningsLastUpdateSuccessfull: boolean;
+  earningsLastUpdateSuccessful: boolean;
 
   @Exclude()
   donatorId: number;
@@ -115,7 +115,7 @@ export class ReturnMoneroMiningPayoutDto {
   timestamp: Date;
 
   @Expose()
-  lastPayoutTimestamp: Date;
+  periodStart: Date;
 }
 
 export class ReturnTransactionEarningDto {
@@ -130,6 +130,9 @@ export class ReturnTransactionEarningDto {
 
   @Expose()
   payoutType: PayoutTypeEnum;
+
+  @Expose()
+  workingTimeInSeconds: number;
 
   @Exclude()
   createdAt: Date;
