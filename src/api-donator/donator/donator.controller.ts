@@ -38,7 +38,7 @@ export class DonatorController {
 
   @Version('1')
   @UseInterceptors(ClassSerializerInterceptor)
-  @SerializeOptions({ type: ReturnDonatorDto })
+  @SerializeOptions({ type: ReturnDonatorWithBalanceDto })
   @Post('/')
   postDonator(@Body() createDonatorDto: CreateDonatorDto) {
     return this.donatorService.createDonator(createDonatorDto);

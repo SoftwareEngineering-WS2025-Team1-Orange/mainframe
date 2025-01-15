@@ -20,6 +20,7 @@ describe('DonationboxService', () => {
             donationBox: {
               update: jest.fn(),
               findMany: jest.fn(),
+              findFirst: jest.fn(),
             },
             containerStatus: {
               findFirst: jest.fn(),
@@ -27,6 +28,9 @@ describe('DonationboxService', () => {
             },
             earning: {
               findMany: jest.fn((_el) => []),
+            },
+            donator: {
+              findFirst: jest.fn(),
             },
           },
         },
@@ -46,22 +50,29 @@ describe('DonationboxService', () => {
   describe('registerDonationBox', () => {
     it('should successfully register a donation box', async () => {
       const donatorId = 1;
+
       const donationBox: RegisterDonationBoxDto = {
         cuid: 'vkebp3z3acle03b72w72t503',
-        name: 'Donationbox 1',
+        name: 'Donation Box 1',
       };
 
       const updateSpy = jest
         .spyOn(prismaService.donationBox, 'update')
         .mockResolvedValue(null);
 
+      jest.spyOn(prismaService.donator, 'findFirst').mockResolvedValue(null);
+
+      jest
+        .spyOn(prismaService.donationBox, 'findFirst')
+        .mockResolvedValue(donationboxes[0]);
+
       await donationboxService.registerDonationBox(donatorId, donationBox);
 
       expect(updateSpy).toHaveBeenCalledWith({
-        where: { cuid: donationBox.cuid },
+        where: { cuid: donationboxes[0].cuid },
         data: {
           donatorId,
-          name: donationBox.name,
+          name: donationboxes[0].name,
         },
       });
     });
@@ -69,8 +80,8 @@ describe('DonationboxService', () => {
     it('should throw an error if the donation box is not found', async () => {
       const donatorId = 1;
       const donationBox: RegisterDonationBoxDto = {
-        cuid: 'cuid123',
-        name: 'Charity Box',
+        cuid: 'vkebp3z3acle03b72w72t503',
+        name: 'Donation Box 1',
       };
 
       jest.spyOn(prismaService.donationBox, 'update').mockRejectedValue(

@@ -115,9 +115,10 @@ export class DonatorService {
     };
   }
 
-  async createDonator(donator: CreateDonatorDto): Promise<Donator> {
+  async createDonator(
+    donator: CreateDonatorDto,
+  ): Promise<Donator & { balance: number }> {
     const salt = this.createSalt();
-
     const donatorWithHash = {
       ...donator,
       password: await argon2.hash(donator.password + salt),
@@ -134,7 +135,10 @@ export class DonatorService {
         },
       },
     });
-    return newDonator;
+    return {
+      ...newDonator,
+      balance: 0,
+    };
   }
 
   async updateDonator(

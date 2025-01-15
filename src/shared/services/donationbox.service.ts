@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RegisterDonationBoxDto } from '@/api-donator/donationbox/dto';
 import {
@@ -23,14 +23,27 @@ export class DonationboxService {
     donatorId: number,
     donationBox: RegisterDonationBoxDto,
   ) {
+    const [existingDonator, existingDonationBox] = await Promise.all([
+      this.prismaService.donator.findFirst({
+        where: { donationBox: { some: { cuid: donationBox.cuid } } },
+      }),
+      this.prismaService.donationBox.findFirst({
+        where: { cuid: donationBox.cuid },
+      }),
+    ]);
+
+    if (existingDonator) {
+      throw new BadRequestException(
+        'DonationBox already registered to a donator.',
+      );
+    }
+    if (!existingDonationBox) {
+      throw new BadRequestException('DonationBox does not exist.');
+    }
+
     await this.prismaService.donationBox.update({
-      where: {
-        cuid: donationBox.cuid,
-      },
-      data: {
-        donatorId,
-        name: donationBox.name,
-      },
+      where: { cuid: donationBox.cuid },
+      data: { donatorId, name: donationBox.name },
     });
   }
 
