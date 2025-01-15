@@ -232,7 +232,7 @@ describe('DonatorService', () => {
 
       const result = await donatorService.createDonator(createDto);
 
-      expect(result).toEqual(donator[0]);
+      expect(result).toEqual({ ...donator[0], balance: 0 });
       expect(createSpy).toHaveBeenCalledWith({
         data: {
           ...createDto,

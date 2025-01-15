@@ -137,7 +137,7 @@ export class DonatorService {
     });
     return {
       ...newDonator,
-      balance: await this.calculateDonatorBalance(newDonator.id),
+      balance: 0,
     };
   }
 
