@@ -39,7 +39,7 @@ export class DonationController {
     @Req() req: Request,
     @Query('filter_donation_id', new ParseIntPipe({ optional: true }))
     filterId?: number,
-    @Query(':project_id', new ParseIntPipe({ optional: true }))
+    @Query('filter_project_id', new ParseIntPipe({ optional: true }))
     projectId?: number,
     @Query('filter_created_from', new ParseDatePipe({ optional: true }))
     filter_created_from?: Date,
