@@ -31,6 +31,7 @@ import { prefix } from '@/api-donator/prefix';
 import { DonatorAccessTokenGuard } from '@/api-donator/auth/accessToken.guard';
 import { ScopesGuard } from '@/shared/auth/scopes.guard';
 import { Scopes } from '@/shared/auth/scopes.decorator';
+import { rejectOnNotOwnedResource } from '@/utils/auth.helper';
 
 @Controller(`${prefix}/donator`)
 export class DonatorController {
@@ -66,11 +67,15 @@ export class DonatorController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnDonatorWithBalanceDto })
   @Get('/:donator_id')
+  @UseGuards(DonatorAccessTokenGuard, ScopesGuard)
+  @Scopes(DonatorScopeEnum.READ_DONATOR)
   getDonatorById(
     @Param('donator_id', ParseIntPipe) donatorId: number,
+    @Req() req: Request,
     @Query('force_earnings_update', new DefaultValuePipe(false), ParseBoolPipe)
     forceEarningsUpdate?: boolean,
   ) {
+    rejectOnNotOwnedResource(donatorId, req);
     return this.donatorService.findDonatorByIdWithBalance(
       donatorId,
       forceEarningsUpdate,
@@ -78,24 +83,32 @@ export class DonatorController {
   }
 
   @Version('1')
+  @UseGuards(DonatorAccessTokenGuard, ScopesGuard)
+  @Scopes(DonatorScopeEnum.WRITE_DONATOR)
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({ type: ReturnDonatorDto })
   @Put('/:donator_id')
   updateDonator(
     @Param('donator_id', ParseIntPipe)
     donatorId: number,
+    @Req() req: Request,
     @Body() updateDonatorDto: UpdateDonatorDto,
   ) {
+    rejectOnNotOwnedResource(donatorId, req);
     return this.donatorService.updateDonator(donatorId, updateDonatorDto);
   }
 
   @Version('1')
   @Delete('/:donator_id')
+  @UseGuards(DonatorAccessTokenGuard, ScopesGuard)
+  @Scopes(DonatorScopeEnum.WRITE_DONATOR)
   @HttpCode(204)
   deleteDonator(
     @Param('donator_id', ParseIntPipe)
     donatorId: number,
+    @Req() req: Request,
   ) {
+    rejectOnNotOwnedResource(donatorId, req);
     return this.donatorService.deleteDonator(donatorId);
   }
 }
