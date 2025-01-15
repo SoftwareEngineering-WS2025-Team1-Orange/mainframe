@@ -140,8 +140,13 @@ export class AuthService {
   async validateClientWithScopes(
     clientId: string,
     clientSecret: string,
-    scope: string[],
-  ) {
+    token_or_scope: string | string[],
+  ): Promise<DonatorClientWithScope> {
+    const scope =
+      typeof token_or_scope === 'string'
+        ? this.jwtService.decode<{ scope: string[] }>(token_or_scope).scope
+        : token_or_scope;
+
     return (await validateClientWithScopesImpl(
       clientId,
       clientSecret,
