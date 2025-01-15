@@ -12,6 +12,7 @@ export class RegisterDonationBoxDto {
 }
 
 export class DonationBoxDto {
+
   @Expose()
   readonly id: number;
 
@@ -22,16 +23,26 @@ export class DonationBoxDto {
   readonly cuid: string;
 
   @Expose()
-  power_consumption?: number;
+  lastSolarData?: JSON;
 
   @Expose()
-  power_supply_id?: number;
+  solarDataLastUpdateAt: Date;
 
   @Expose()
-  lastSolarData: JSON;
+  averageWorkingTimePerDayInSeconds: number;
+
+  @Expose()
+  averageWorkingTimePerDayInSecondsLastUpdateAt: Date;
+
+  @Expose()
+  averageIncomePerDayInCents: number;
+
+  @Expose()
+  averageIncomePerDayLastUpdateAt: Date;
 
   @Expose()
   status: string;
+
 
   @Expose()
   earningsLastSuccessfullUpdateAt: Date;

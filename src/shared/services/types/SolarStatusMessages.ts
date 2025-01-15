@@ -9,5 +9,5 @@ export const SolarStatusMessages = {
   [SolarStatusCodes.ERROR]: 'Error',
   [SolarStatusCodes.PENDING]: 'Pending',
   UNINITIALIZED: 'Uninitialized',
-  UNKNOWN: 'Unknown',
+  UNKNOWN: 'Unknown_Status_Code',
 };

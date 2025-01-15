@@ -118,9 +118,9 @@ export class DonationboxService {
     const updates = await Promise.all(
       donationBoxes.map(async (donationBox) => {
         if (
-          !donationBox.averageWorkingTimeLastUpdateAt ||
-          !donationBox.averageWorkingTime ||
-          donationBox.averageWorkingTimeLastUpdateAt <= yesterday
+          !donationBox.averageWorkingTimePerDayInSecondsLastUpdateAt ||
+          donationBox.averageWorkingTimePerDayInSeconds == null ||
+          donationBox.averageWorkingTimePerDayInSecondsLastUpdateAt <= yesterday
         ) {
           const firstConnectedLog = await getFirstConnectedLog(
             donationBox.id,
@@ -158,8 +158,8 @@ export class DonationboxService {
               id: donationBox.id,
             },
             data: {
-              averageWorkingTime: Math.round(totalWorkingTime / daysInPeriod),
-              averageWorkingTimeLastUpdateAt: new Date(Date.now()),
+              averageWorkingTimePerDayInSeconds: Math.round(totalWorkingTime / daysInPeriod),
+              averageWorkingTimePerDayInSecondsLastUpdateAt: new Date(Date.now()),
             },
           });
           return true;

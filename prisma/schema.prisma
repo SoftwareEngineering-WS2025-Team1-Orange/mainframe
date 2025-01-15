@@ -64,8 +64,8 @@ model DonationBox {
   integratedPublicMoneroAddressId String    @unique
   earningsLastSuccessfullUpdateAt DateTime?
   earningsLastUpdateSuccessfull   Boolean   @default(false)
-  averageWorkingTime Int?
-  averageWorkingTimeLastUpdateAt DateTime?
+  averageWorkingTimePerDayInSeconds Int?
+  averageWorkingTimePerDayInSecondsLastUpdateAt DateTime?
   averageIncomePerDayInCent Int?
   averageIncomePerDayInCentLastUpdateAt DateTime?
 
