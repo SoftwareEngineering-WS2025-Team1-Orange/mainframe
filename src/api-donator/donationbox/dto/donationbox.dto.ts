@@ -12,7 +12,6 @@ export class RegisterDonationBoxDto {
 }
 
 export class DonationBoxDto {
-
   @Expose()
   readonly id: number;
 
@@ -42,7 +41,6 @@ export class DonationBoxDto {
 
   @Expose()
   status: string;
-
 
   @Expose()
   earningsLastSuccessfullUpdateAt: Date;

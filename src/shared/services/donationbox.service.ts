@@ -158,8 +158,12 @@ export class DonationboxService {
               id: donationBox.id,
             },
             data: {
-              averageWorkingTimePerDayInSeconds: Math.round(totalWorkingTime / daysInPeriod),
-              averageWorkingTimePerDayInSecondsLastUpdateAt: new Date(Date.now()),
+              averageWorkingTimePerDayInSeconds: Math.round(
+                totalWorkingTime / daysInPeriod,
+              ),
+              averageWorkingTimePerDayInSecondsLastUpdateAt: new Date(
+                Date.now(),
+              ),
             },
           });
           return true;
