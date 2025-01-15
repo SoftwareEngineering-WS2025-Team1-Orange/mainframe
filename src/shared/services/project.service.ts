@@ -37,10 +37,25 @@ export class ProjectService {
     @InjectMinio() private minioClient: Client,
   ) {}
 
+  async calculateCurrentFundraisingTotal(projectId: number): Promise<number> {
+    const donations = await this.prismaService.donation.aggregate({
+      _sum: {
+        amountInCent: true,
+      },
+      where: {
+        projectId,
+      },
+    });
+    // eslint-disable-next-line no-underscore-dangle
+    return donations._sum.amountInCent || 0;
+  }
+
   async findProjectById(
     id: number,
     filters: DonationFilter | null = null,
-  ): Promise<Project | ProjectWithDonations> {
+  ): Promise<
+    (Project & { fundraising_current: number }) | ProjectWithDonations
+  > {
     const project = await this.prismaService.project.findFirst({
       where: {
         id,
@@ -51,7 +66,12 @@ export class ProjectService {
       throw new HttpException('Project not found', StatusCodes.NOT_FOUND);
     }
     if (!filters) {
-      return project;
+      return {
+        ...project,
+        fundraising_current: await this.calculateCurrentFundraisingTotal(
+          project.id,
+        ),
+      };
     }
 
     const paginatedDonations =
@@ -59,6 +79,9 @@ export class ProjectService {
 
     return {
       ...project,
+      fundraising_current: await this.calculateCurrentFundraisingTotal(
+        project.id,
+      ),
       donations: {
         ...paginatedDonations,
       },
@@ -110,7 +133,7 @@ export class ProjectService {
     filters: ProjectFilter,
     includePartialRelations: ProjectIncludePartialRelations,
   ): Promise<{
-    projects: Project[];
+    projects: (Project & { fundraising_current: number })[];
     pagination: Pagination;
   }> {
     const whereInputObject: Prisma.ProjectWhereInput = {
@@ -205,7 +228,16 @@ export class ProjectService {
       },
       orderBy: { [this.getSortField(filters.sortFor)]: filters.sortType },
     });
-    return { projects, pagination };
+    const projectsWithFundraisingCurrent = projects.map(async (project) => ({
+      ...project,
+      fundraising_current: await this.calculateCurrentFundraisingTotal(
+        project.id,
+      ),
+    }));
+    return {
+      projects: await Promise.all(projectsWithFundraisingCurrent),
+      pagination,
+    };
   }
 
   async createProject(
@@ -232,7 +264,10 @@ export class ProjectService {
         },
       },
     });
-    return createdProject;
+    return {
+      ...createdProject,
+      fundraising_current: 0,
+    };
   }
 
   async updateProject(
@@ -270,7 +305,12 @@ export class ProjectService {
       data: project,
     });
 
-    return updatedProject;
+    return {
+      ...updatedProject,
+      fundraising_current: await this.calculateCurrentFundraisingTotal(
+        updatedProject.id,
+      ),
+    };
   }
 
   private async getBannerUriForDb(
@@ -329,7 +369,12 @@ export class ProjectService {
         );
       });
 
-    return updatedProject;
+    return {
+      ...updatedProject,
+      fundraising_current: await this.calculateCurrentFundraisingTotal(
+        updatedProject.id,
+      ),
+    };
   }
 
   async deleteProject(id: number): Promise<ReturnProjectWithoutFavDto> {
@@ -371,7 +416,12 @@ export class ProjectService {
       throw new HttpException('Project not found.', StatusCodes.NOT_FOUND);
     }
 
-    return project;
+    return {
+      ...project,
+      fundraising_current: await this.calculateCurrentFundraisingTotal(
+        project.id,
+      ),
+    };
   }
 
   async findFilteredProjects(
@@ -400,7 +450,7 @@ export class ProjectService {
     donatorId: number,
     projectId: number,
     favorite: boolean,
-  ): Promise<Project & { is_favorite: boolean }> {
+  ): Promise<Project & { is_favorite: boolean; fundraising_current: number }> {
     try {
       const donator = await this.prismaService.donator.findFirstOrThrow({
         where: {
@@ -423,7 +473,13 @@ export class ProjectService {
           },
         },
       });
-      return { ...project, is_favorite: favorite };
+      return {
+        ...project,
+        fundraising_current: await this.calculateCurrentFundraisingTotal(
+          project.id,
+        ),
+        is_favorite: favorite,
+      };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         throw new NotFoundException('Project or Donator not found.');
