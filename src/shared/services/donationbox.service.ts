@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RegisterDonationBoxDto } from '@/api-donator/donationbox/dto';
 import {
@@ -11,7 +11,6 @@ import {
   SolarStatusMessages,
 } from './types/SolarStatusMessages';
 import { StandardContainerNames } from './types/StandardContainerNames';
-import { BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class DonationboxService {
@@ -34,7 +33,9 @@ export class DonationboxService {
     ]);
 
     if (existingDonator) {
-      throw new BadRequestException('DonationBox already registered to a donator.');
+      throw new BadRequestException(
+        'DonationBox already registered to a donator.',
+      );
     }
     if (!existingDonationBox) {
       throw new BadRequestException('DonationBox does not exist.');

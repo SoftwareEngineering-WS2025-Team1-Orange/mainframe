@@ -117,7 +117,9 @@ export class DonatorService {
     };
   }
 
-  async createDonator(donator: CreateDonatorDto): Promise<Donator & { balance: number }> {
+  async createDonator(
+    donator: CreateDonatorDto,
+  ): Promise<Donator & { balance: number }> {
     const salt = this.createSalt();
     const donatorWithHash = {
       ...donator,
@@ -135,7 +137,10 @@ export class DonatorService {
         },
       },
     });
-    return { ...newDonator, balance: await this.calculateDonatorBalance(newDonator.id) };
+    return {
+      ...newDonator,
+      balance: await this.calculateDonatorBalance(newDonator.id),
+    };
   }
 
   async updateDonator(

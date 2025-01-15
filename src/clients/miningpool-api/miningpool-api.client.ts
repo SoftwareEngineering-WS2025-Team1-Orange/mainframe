@@ -16,10 +16,14 @@ export class MiningPoolApiClient {
     private httpService: HttpService,
     private prismaService: PrismaService,
   ) {
-    this.baseUrl = this.configService.get<string>('MONERO_MINING_POOL_BASE_URL');
+    this.baseUrl = this.configService.get<string>(
+      'MONERO_MINING_POOL_BASE_URL',
+    );
 
     if (!this.baseUrl) {
-      throw new Error('MONERO_MINING_POOL_BASE_URL environment variable is not set');
+      throw new Error(
+        'MONERO_MINING_POOL_BASE_URL environment variable is not set',
+      );
     }
   }
 

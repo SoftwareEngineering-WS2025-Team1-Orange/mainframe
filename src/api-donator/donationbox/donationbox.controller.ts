@@ -25,7 +25,7 @@ export class DonationboxController {
     @Param('donator_id', ParseIntPipe) donatorId: number,
     @Body() donationBox: RegisterDonationBoxDto,
   ) {
-    return this.donationboxService.registerDonationBox(donatorId, donationBox)
+    return this.donationboxService.registerDonationBox(donatorId, donationBox);
   }
 
   @Version('1')
