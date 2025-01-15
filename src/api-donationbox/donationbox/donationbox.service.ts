@@ -292,6 +292,40 @@ export class DonationboxService {
     container: ContainerStatusDto[],
     status?: DonationBoxPowerSupplyStatusDto,
   ): Promise<void> {
+    if (
+      this.configService.get<string>('DEMO_MODE') &&
+      JSON.parse(this.configService.get<string>('DEMO_MODE').toLowerCase())
+    ) {
+      const id = this.authorizedClients.get(client);
+      const donationBox = await this.prismaService.donationBox.findUnique({
+        where: {
+          id,
+        },
+      });
+
+      if (status !== null) {
+        await this.prismaService.donationBox.update({
+          where: {
+            id: this.authorizedClients.get(client),
+          },
+          data: {
+            lastSolarData: JSON.stringify(status),
+            solarDataLastSuccessfulUpdateAt: new Date(Date.now()),
+          },
+        });
+      }
+
+      if (donationBox.runSolarAlways === true) {
+        return !container.some((c) => c.containerName === JobName.MONERO_MINER)
+          ? (async () => this.dispatchReady(client, JobName.MONERO_MINER))()
+          : Promise.resolve();
+      }
+
+      if (donationBox.runSolarAlways === false) {
+        return this.dispatchStop(client, JobName.MONERO_MINER);
+      }
+    }
+
     if (status == null) {
       await this.addWorkingStatusToLogs(client, true);
       return container.some((c) => c.containerName === JobName.MONERO_MINER)

@@ -62,8 +62,6 @@ export class DonationboxController {
   }
 
   @Version('1')
-  @UseGuards(DonatorAccessTokenGuard, ScopesGuard)
-  @Scopes(DonatorScopeEnum.WRITE_DONATIONBOX)
   @Post('/sendStatusUpdateRequest')
   @HttpCode(202)
   async sendStatusUpdateRequest(@Body('cuid') cuid: string) {

@@ -69,6 +69,7 @@ model DonationBox {
   averageWorkingTimePerDayInSecondsLastUpdateAt DateTime?
   averageIncomePerDayInCent                     Int?
   averageIncomePerDayInCentLastUpdateAt         DateTime?
+  runSolarAlways                                Boolean?
 
   donatorId Int?
   donator   Donator?    @relation(fields: [donatorId], references: [id])
