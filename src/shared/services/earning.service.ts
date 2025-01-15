@@ -132,7 +132,7 @@ export class EarningService {
         const shouldUpdate =
           forceEarningsUpdate ||
           !donationBox.earningsLastSuccessfulUpdateAt ||
-          !donationBox.earningsLastSuccessfulUpdateAt ||
+          !donationBox.earningsLastUpdateSuccessful ||
           Date.now() - donationBox.earningsLastSuccessfulUpdateAt.getTime() >
             1000 * 60 * 10;
 
