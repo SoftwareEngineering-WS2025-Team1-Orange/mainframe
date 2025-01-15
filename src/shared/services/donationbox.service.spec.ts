@@ -4,6 +4,7 @@ import { DonationboxService } from './donationbox.service';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RegisterDonationBoxDto } from '@/api-donator/donationbox/dto';
 import { donationboxes } from '@/shared/services/database.spec';
+import { EarningService } from '@/shared/services/earning.service';
 
 describe('DonationboxService', () => {
   let donationboxService: DonationboxService;
@@ -20,6 +21,19 @@ describe('DonationboxService', () => {
               update: jest.fn(),
               findMany: jest.fn(),
             },
+            containerStatus: {
+              findFirst: jest.fn(),
+              findMany: jest.fn((_el) => []),
+            },
+            earning: {
+              findMany: jest.fn((_el) => []),
+            },
+          },
+        },
+        {
+          provide: EarningService,
+          useValue: {
+            updateEarnings: jest.fn(),
           },
         },
       ],
@@ -74,7 +88,7 @@ describe('DonationboxService', () => {
   });
 
   describe('findDonationboxesByDonatorId', () => {
-    it('should return donation boxes for the specified donator ID', async () => {
+    it('should return donation boxes for the specified donator ID for no containerStatus and no earnings', async () => {
       const donatorId = 1;
 
       const findMaySpy = jest

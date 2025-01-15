@@ -138,7 +138,7 @@ describe('EarningService', () => {
         ...expectedEarningFiltered.pagination.constructPaginationQueryObject(),
         include: {
           moneroMiningPayout: {
-            select: { lastPayoutTimestamp: true, timestamp: true },
+            select: { periodStart: true, timestamp: true },
           },
           donationBox: { select: { id: true, name: true, cuid: true } },
         },
